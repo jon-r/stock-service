@@ -1,4 +1,4 @@
-import { Stack, StackProps } from 'aws-cdk-lib';
+import { Stack, type StackProps } from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 
@@ -19,7 +19,7 @@ export class DatabaseStack extends Stack {
         name: `${LOGS_MODEL_NAME}Id`,
         type: dynamodb.AttributeType.STRING,
       },
-      tableName: LOGS_MODEL_NAME,
+      tableName: `stock-app_${LOGS_MODEL_NAME}`,
     });
 
     // users table
@@ -28,7 +28,7 @@ export class DatabaseStack extends Stack {
         name: `${USERS_MODEL_NAME}Id`,
         type: dynamodb.AttributeType.STRING,
       },
-      tableName: USERS_MODEL_NAME,
+      tableName: `stock-app_${USERS_MODEL_NAME}`,
     });
 
     // stock indexes table
@@ -37,7 +37,7 @@ export class DatabaseStack extends Stack {
         name: `${STOCK_INDEXES_MODEL_NAME}Id`,
         type: dynamodb.AttributeType.STRING,
       },
-      tableName: STOCK_INDEXES_MODEL_NAME,
+      tableName: `stock-app_${STOCK_INDEXES_MODEL_NAME}`,
     });
 
     // transactions table
@@ -46,7 +46,7 @@ export class DatabaseStack extends Stack {
         name: `${TRANSACTIONS_MODEL_NAME}Id`,
         type: dynamodb.AttributeType.STRING,
       },
-      tableName: TRANSACTIONS_MODEL_NAME,
+      tableName: `stock-app_${TRANSACTIONS_MODEL_NAME}`,
     });
   }
 }
