@@ -2,7 +2,7 @@
 import * as cdk from 'aws-cdk-lib';
 import 'source-map-support/register';
 
-import { StockAppStack } from '../lib/stock-app-stack';
+import { StockAppStack } from '../lib/stock-app-stack.js';
 
 const app = new cdk.App();
 new StockAppStack(app, 'StockAppStack', {

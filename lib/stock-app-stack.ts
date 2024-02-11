@@ -1,6 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
+import { DatabaseStack } from './database-stack.js';
+
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class StockAppStack extends cdk.Stack {
@@ -8,6 +10,7 @@ export class StockAppStack extends cdk.Stack {
     super(scope, id, props);
 
     // The code that defines your stack goes here
+    new DatabaseStack(scope, 'DatabaseStack', props);
 
     // example resource
     // const queue = new sqs.Queue(this, 'StockAppQueue', {
