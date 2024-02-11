@@ -25,6 +25,7 @@ module.exports = {
   reportUnusedDisableDirectives: true,
   rules: {
     'import/prefer-default-export': 'off',
+    'import/extensions': ['error', 'always', { ignorePackages: true }],
 
     '@typescript-eslint/naming-convention': [
       'error',

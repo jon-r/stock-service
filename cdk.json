@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts bin/stock-app.ts",
+  "app": "npx vite-node bin/stock-app.ts",
   "watch": {
     "include": ["**"],
     "exclude": [
