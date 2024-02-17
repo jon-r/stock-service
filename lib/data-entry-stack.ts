@@ -13,12 +13,12 @@ export class DataEntryStack extends Stack {
   constructor(app: Construct, id: string, props?: StackProps) {
     super(app, id, props);
 
-    // orchestrator lambda - creates the list of things to fetch (database?), sends the first queue item
     const managerFunctionRole = this.#newDbRole(
       'DataEntryManager',
       DB_FULL_ACCESS_POLICY_ARN,
     );
 
+    // orchestrator lambda - creates the list of things to fetch (database?), sends the first queue item
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const managerFunction = new go.GoFunction(
       this,
@@ -29,12 +29,12 @@ export class DataEntryStack extends Stack {
       },
     );
 
-    // worker lambda - reads the list, fetches the data, queues up the next fetch, then parses the fetch result
     const workerFunctionRole = this.#newDbRole(
       'DataEntryWorker',
       DB_FULL_ACCESS_POLICY_ARN,
     );
 
+    // worker lambda - reads the list, fetches the data, queues up the next fetch, then parses the fetch result
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const workerFunction = new go.GoFunction(this, 'DataEntryWorkerFunction', {
       entry: 'lambdas/dataWorker',

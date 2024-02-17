@@ -11,7 +11,7 @@ import (
 )
 
 type JobEvent struct {
-	JobId string `json:"jobId"`
+	JobId string `json:"JobId"`
 	Name  string `json:"name"`
 	Delay int    `json:"delay"`
 }
@@ -38,12 +38,13 @@ func loadData(ctx context.Context, event JobEvent) {
 
 	dbService := dynamodb.New(dbSession)
 
+	// todo instead of marshal the event, this should just create it itself?
 	av, err := dynamodbattribute.MarshalMap(event)
 	if err != nil {
 		log.Fatalf("Error marshalling new job item: %s", err)
 	}
 
-	tableName := "JobTable"
+	tableName := "stock-app_Job"
 
 	input := &dynamodb.PutItemInput{
 		Item:      av,
