@@ -7,39 +7,14 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import type { Construct } from 'constructs';
 
-import { DB_FULL_ACCESS_POLICY_ARN } from './helpers/db.ts';
+import {
+  DB_FULL_ACCESS_POLICY_ARN,
+  SQS_FULL_ACCESS_POLICY_ARN,
+} from './helpers/iam.ts';
 
 export class DataEntryStack extends Stack {
   constructor(app: Construct, id: string, props?: StackProps) {
     super(app, id, props);
-
-    const managerFunctionRole = this.#newDbRole(
-      'DataEntryManager',
-      DB_FULL_ACCESS_POLICY_ARN,
-    );
-
-    // orchestrator lambda - creates the list of things to fetch (database?), sends the first queue item
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const managerFunction = new go.GoFunction(
-      this,
-      'DataEntryManagerFunction',
-      {
-        entry: 'lambdas/dataManager',
-        role: managerFunctionRole,
-      },
-    );
-
-    const workerFunctionRole = this.#newDbRole(
-      'DataEntryWorker',
-      DB_FULL_ACCESS_POLICY_ARN,
-    );
-
-    // worker lambda - reads the list, fetches the data, queues up the next fetch, then parses the fetch result
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const workerFunction = new go.GoFunction(this, 'DataEntryWorkerFunction', {
-      entry: 'lambdas/dataWorker',
-      role: workerFunctionRole,
-    });
 
     // event trigger - starts the orchestrator to trigger at regular points
     //   (daily? hourly?) maybe do it overnight so data is ready next day
@@ -57,7 +32,6 @@ export class DataEntryStack extends Stack {
       retentionPeriod: Duration.days(7),
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const queue = new sqs.Queue(this, 'DataEntryQueue', {
       queueName: 'DataEntryQueue',
       visibilityTimeout: Duration.seconds(30),
@@ -67,22 +41,57 @@ export class DataEntryStack extends Stack {
       },
     });
 
+    const managerFunctionRole = this.#newIamRole(
+      'DataEntryManager',
+      'lambda.amazonaws.com',
+      [DB_FULL_ACCESS_POLICY_ARN, SQS_FULL_ACCESS_POLICY_ARN],
+    );
+
+    // orchestrator lambda - creates the list of things to fetch (database?), sends the first queue item
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const managerFunction = new go.GoFunction(
+      this,
+      'DataEntryManagerFunction',
+      {
+        entry: 'lambdas/dataManager',
+        role: managerFunctionRole,
+        environment: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          SQS_QUEUE_URL: queue.queueUrl,
+        },
+      },
+    );
+
+    const workerFunctionRole = this.#newIamRole(
+      'DataEntryWorker',
+      'lambda.amazonaws.com',
+      [DB_FULL_ACCESS_POLICY_ARN],
+    );
+
+    // worker lambda - reads the list, fetches the data, queues up the next fetch, then parses the fetch result
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const workerFunction = new go.GoFunction(this, 'DataEntryWorkerFunction', {
+      entry: 'lambdas/dataWorker',
+      role: workerFunctionRole,
+    });
+
     /* fixme no queue trigger for now
     const invokeEventSource = new lambdaEvents.SqsEventSource(queue);
     workerFunction.addEventSource(invokeEventSource);
     */
   }
 
-  #newDbRole(name: string, policyArn: string) {
+  // todo prob move this to a helper file, the api will need it also
+  #newIamRole(name: string, service: string, policyArns: string[]) {
     return new iam.Role(this, `${name}Role`, {
-      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
+      assumedBy: new iam.ServicePrincipal(service),
+      managedPolicies: policyArns.map((policyArn, i) =>
         iam.ManagedPolicy.fromManagedPolicyArn(
           this,
-          `${name}Policy`,
+          `${name}Policy_${i}`,
           policyArn,
         ),
-      ],
+      ),
     });
   }
 }
