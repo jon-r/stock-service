@@ -1,20 +1,15 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
+import { DataEntryStack } from './data-entry-stack.ts';
 import { DatabaseStack } from './database-stack.js';
-
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class StockAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
     new DatabaseStack(scope, 'DatabaseStack', props);
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'StockAppQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    new DataEntryStack(scope, 'DataEntryStack', props);
   }
 }

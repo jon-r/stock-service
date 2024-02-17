@@ -1,8 +1,9 @@
 import { Stack, type StackProps } from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import { Construct } from 'constructs';
+import type { Construct } from 'constructs';
 
 import {
+  JOBS_MODEL_NAME,
   LOGS_MODEL_NAME,
   STOCK_INDEXES_MODEL_NAME,
   TRANSACTIONS_MODEL_NAME,
@@ -14,39 +15,28 @@ export class DatabaseStack extends Stack {
     super(app, id, props);
 
     // logs table
-    new dynamodb.Table(this, `${LOGS_MODEL_NAME}Table`, {
-      partitionKey: {
-        name: `${LOGS_MODEL_NAME}Id`,
-        type: dynamodb.AttributeType.STRING,
-      },
-      tableName: `stock-app_${LOGS_MODEL_NAME}`,
-    });
+    this.#newDynamodbTable(LOGS_MODEL_NAME);
 
     // users table
-    new dynamodb.Table(this, `${USERS_MODEL_NAME}Table`, {
-      partitionKey: {
-        name: `${USERS_MODEL_NAME}Id`,
-        type: dynamodb.AttributeType.STRING,
-      },
-      tableName: `stock-app_${USERS_MODEL_NAME}`,
-    });
+    this.#newDynamodbTable(USERS_MODEL_NAME);
 
     // stock indexes table
-    new dynamodb.Table(this, `${STOCK_INDEXES_MODEL_NAME}Table`, {
-      partitionKey: {
-        name: `${STOCK_INDEXES_MODEL_NAME}Id`,
-        type: dynamodb.AttributeType.STRING,
-      },
-      tableName: `stock-app_${STOCK_INDEXES_MODEL_NAME}`,
-    });
+    this.#newDynamodbTable(STOCK_INDEXES_MODEL_NAME);
 
     // transactions table
-    new dynamodb.Table(this, `${TRANSACTIONS_MODEL_NAME}Table`, {
+    this.#newDynamodbTable(TRANSACTIONS_MODEL_NAME);
+
+    // queued api jobs
+    this.#newDynamodbTable(JOBS_MODEL_NAME);
+  }
+
+  #newDynamodbTable(modelName: string) {
+    return new dynamodb.Table(this, `${modelName}Table`, {
       partitionKey: {
-        name: `${TRANSACTIONS_MODEL_NAME}Id`,
+        name: `${modelName}Id`,
         type: dynamodb.AttributeType.STRING,
       },
-      tableName: `stock-app_${TRANSACTIONS_MODEL_NAME}`,
+      tableName: `stock-app_${modelName}`,
     });
   }
 }
