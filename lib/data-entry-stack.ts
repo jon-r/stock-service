@@ -6,8 +6,6 @@ import * as lambdaEvents from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import type { Construct } from 'constructs';
 
-import { CRON_JOB_EVERY_HOUR } from './helpers/events.js';
-
 export class DataEntryStack extends Stack {
   constructor(app: Construct, id: string, props?: StackProps) {
     super(app, id, props);
@@ -17,7 +15,6 @@ export class DataEntryStack extends Stack {
       this,
       'DataEntryManagerFunction',
       {
-        // todo make a placehold function
         entry: 'lambdas/dataManager',
       },
     );
@@ -25,7 +22,6 @@ export class DataEntryStack extends Stack {
 
     // worker lambda - reads the list, fetches the data, queues up the next fetch, then parses the fetch result
     const workerFunction = new go.GoFunction(this, 'DataEntryWorkerFunction', {
-      // todo make a placehold function
       entry: 'lambdas/dataWorker',
     });
     // todo permissions to read/write databases
@@ -33,7 +29,7 @@ export class DataEntryStack extends Stack {
     // event trigger - starts the orchestrator to trigger at regular points
     //   (daily? hourly?) maybe do it overnight so data is ready next day
     const rule = new events.Rule(this, 'DataEntryScheduler', {
-      schedule: events.Schedule.expression(CRON_JOB_EVERY_HOUR),
+      schedule: events.Schedule.rate(Duration.hours(1)),
     });
 
     rule.addTarget(new targets.LambdaFunction(managerFunction));
