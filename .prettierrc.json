@@ -2,6 +2,7 @@
   "importOrder": ["^~", "^[./]"],
   "importOrderSeparation": true,
   "importOrderSortSpecifiers": true,
+  "//": "todo remove this then rerun",
   "singleQuote": true,
   "plugins": ["@trivago/prettier-plugin-sort-imports"]
 }

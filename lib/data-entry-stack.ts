@@ -65,7 +65,7 @@ export class DataEntryStack extends Stack {
     const workerFunctionRole = this.#newIamRole(
       'DataEntryWorker',
       'lambda.amazonaws.com',
-      [DB_FULL_ACCESS_POLICY_ARN],
+      [DB_FULL_ACCESS_POLICY_ARN, SQS_FULL_ACCESS_POLICY_ARN],
     );
 
     // worker lambda - reads the list, fetches the data, queues up the next fetch, then parses the fetch result

@@ -1,18 +1,19 @@
 package main
 
 import (
-	"context"
+	"encoding/json"
+	"log"
+	"os"
+
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/google/uuid"
-	"log"
-	"os"
 )
 
-type JobEvent struct {
+type JobItem struct {
 	JobId string `json:"JobId"`
 	Name  string `json:"name"`
 	Group string `json:"group"`
@@ -23,10 +24,16 @@ type QueueEvent struct {
 	Delay int
 }
 
+var awsSession = session.Must(session.NewSessionWithOptions(session.Options{
+	SharedConfigState: session.SharedConfigEnable,
+}))
+var dbService = dynamodb.New(awsSession)
+var sqsService = sqs.New(awsSession)
+
 func namesToDbJobs(names []string, delay int, group string) ([]*dynamodb.WriteRequest, QueueEvent) {
 	requests := make([]*dynamodb.WriteRequest, len(names))
 	for i, name := range names {
-		job := JobEvent{
+		job := JobItem{
 			JobId: uuid.NewString(),
 			Name:  name,
 			Group: group,
@@ -51,22 +58,30 @@ func namesToDbJobs(names []string, delay int, group string) ([]*dynamodb.WriteRe
 	return requests, queueItem
 }
 
-// todo split this file up. move sqs + dynmo db helpers to own files
-func jobsToSQS(queueItem []QueueEvent) []*sqs.SendMessageBatchRequestEntry {
-	requests := make([]*sqs.SendMessageBatchRequestEntry, len(queueItem))
-	for i, item := range queueItem {
+// todo split this file up. move sqs + dynamo db helpers to own files
+func jobsToSQS(queueItems []QueueEvent) ([]*sqs.SendMessageBatchRequestEntry, error) {
+	requests := make([]*sqs.SendMessageBatchRequestEntry, len(queueItems))
+	for i, item := range queueItems {
 		id := uuid.NewString()
 		delay := int64(item.Delay)
+
+		data, err := json.Marshal(item)
+		if err != nil {
+			return nil, err
+		}
+
+		body := string(data)
+
 		event := &sqs.SendMessageBatchRequestEntry{
 			Id:           &id,
 			DelaySeconds: &delay,
-			MessageBody:  &item.Group,
+			MessageBody:  &body,
 		}
 
 		requests[i] = event
 	}
 
-	return requests
+	return requests, nil
 }
 
 func fakeInputs() ([]*dynamodb.WriteRequest, []QueueEvent) {
@@ -93,14 +108,7 @@ func fakeInputs() ([]*dynamodb.WriteRequest, []QueueEvent) {
 	return append(jobs1, jobs2...), []QueueEvent{queue1, queue2}
 }
 
-func loadData(ctx context.Context) {
-	awsSession := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
-
-	dbService := dynamodb.New(awsSession)
-	sqsService := sqs.New(awsSession)
-
+func loadData() {
 	jobs, queue := fakeInputs()
 
 	tableName := "stock-app_Job"
@@ -118,11 +126,15 @@ func loadData(ctx context.Context) {
 		log.Println("Successfully added items to table " + tableName)
 	}
 
-	// todo use event bridge instead of queue
 	queueUrl := os.Getenv("SQS_QUEUE_URL")
+	entries, err := jobsToSQS(queue)
+	if err != nil {
+		log.Fatalf("Error preparing sqs data: %s", err)
+	}
+
 	sqsInput := &sqs.SendMessageBatchInput{
 		QueueUrl: &queueUrl,
-		Entries:  jobsToSQS(queue),
+		Entries:  entries,
 	}
 
 	_, err = sqsService.SendMessageBatch(sqsInput)

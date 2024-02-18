@@ -1,4 +1,4 @@
-module lambdas/dataManager
+module github.com/jon-r/stock-service/data-manager
 
 go 1.22.0
 
