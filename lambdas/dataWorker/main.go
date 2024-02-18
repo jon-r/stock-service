@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -20,16 +21,16 @@ import (
 
 type JobItem struct {
 	JobId string `json:"JobId"`
-	Name  string `json:"name"`
-	Group string `json:"group"`
+	Name  string `json:"Name"`
+	Group string `json:"Group"`
 }
 
 type StockItem struct {
 	StockIndexId string `json:"StockIndexId"`
-	Name         string `json:"name"`
-	Group        string `json:"group"`
-	Image        string `json:"image"`
-	UpdatedAt    string `json:"updatedAt"`
+	Name         string `json:"Name"`
+	Group        string `json:"Group"`
+	Image        string `json:"Image"`
+	UpdatedAt    string `json:"UpdatedAt"`
 }
 
 type DogApiRes struct {
@@ -49,7 +50,7 @@ var dbService = dynamodb.New(awsSession)
 var sqsService = sqs.New(awsSession)
 
 func getJobItemByGroup(group string) (*JobItem, error) {
-	input := &dynamodb.GetItemInput{
+	input := &dynamodb.QueryInput{
 		TableName: aws.String("stock-app_Job"),
 		Key: map[string]*dynamodb.AttributeValue{
 			"Group": {
@@ -58,16 +59,19 @@ func getJobItemByGroup(group string) (*JobItem, error) {
 		},
 	}
 
-	result, err := dbService.GetItem(input)
+	result, err := dbService.Query(input)
 	if err != nil {
 		return nil, err
 	}
-	if result.Item == nil {
+
+	item := result.Items[0]
+
+	if item == nil {
 		return nil, nil
 	}
 
 	job := new(JobItem)
-	err = dynamodbattribute.UnmarshalMap(result.Item, job)
+	err = dynamodbattribute.UnmarshalMap(item, job)
 
 	if err != nil {
 		return nil, err
@@ -143,9 +147,11 @@ func jobsToSQS(queueItem QueueEvent) (*sqs.SendMessageInput, error) {
 		return nil, err
 	}
 
+	queueUrl := os.Getenv("SQS_QUEUE_URL")
 	body := string(data)
 
 	input := &sqs.SendMessageInput{
+		QueueUrl:     &queueUrl,
 		DelaySeconds: &delay,
 		MessageBody:  &body,
 	}

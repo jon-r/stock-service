@@ -3,12 +3,13 @@ import { Duration, Stack, type StackProps } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 // import * as events from 'aws-cdk-lib/aws-events';
 // import * as targets from 'aws-cdk-lib/aws-events-targets';
-// import * as lambdaEvents from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as lambdaEvents from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import type { Construct } from 'constructs';
 
 import {
   DB_FULL_ACCESS_POLICY_ARN,
+  LAMBDA_BASIC_POLICY_ARN,
   SQS_FULL_ACCESS_POLICY_ARN,
 } from './helpers/iam.ts';
 
@@ -41,13 +42,12 @@ export class DataEntryStack extends Stack {
       },
     });
 
+    // orchestrator lambda - creates the list of things to fetch (database?), sends the first queue item
     const managerFunctionRole = this.#newIamRole(
       'DataEntryManager',
       'lambda.amazonaws.com',
       [DB_FULL_ACCESS_POLICY_ARN, SQS_FULL_ACCESS_POLICY_ARN],
     );
-
-    // orchestrator lambda - creates the list of things to fetch (database?), sends the first queue item
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const managerFunction = new go.GoFunction(
       this,
@@ -56,42 +56,45 @@ export class DataEntryStack extends Stack {
         entry: 'lambdas/dataManager',
         role: managerFunctionRole,
         environment: {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           SQS_QUEUE_URL: queue.queueUrl,
         },
       },
     );
 
+    // worker lambda - reads the list, fetches the data, queues up the next fetch, then parses the fetch result
     const workerFunctionRole = this.#newIamRole(
       'DataEntryWorker',
       'lambda.amazonaws.com',
       [DB_FULL_ACCESS_POLICY_ARN, SQS_FULL_ACCESS_POLICY_ARN],
     );
-
-    // worker lambda - reads the list, fetches the data, queues up the next fetch, then parses the fetch result
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const workerFunction = new go.GoFunction(this, 'DataEntryWorkerFunction', {
       entry: 'lambdas/dataWorker',
       role: workerFunctionRole,
+      environment: {
+        SQS_QUEUE_URL: queue.queueUrl,
+        // todo add failed items to DL queue
+        //  https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/sqs-example-dead-letter-queues.html
+        SQS_DL_QUEUE_URL: deadLetterQueue.queueUrl,
+      },
     });
-
-    /* fixme no queue trigger for now
     const invokeEventSource = new lambdaEvents.SqsEventSource(queue);
     workerFunction.addEventSource(invokeEventSource);
-    */
   }
 
   // todo prob move this to a helper file, the api will need it also
   #newIamRole(name: string, service: string, policyArns: string[]) {
-    return new iam.Role(this, `${name}Role`, {
-      assumedBy: new iam.ServicePrincipal(service),
-      managedPolicies: policyArns.map((policyArn, i) =>
+    const lambdaPolicies = [...policyArns, LAMBDA_BASIC_POLICY_ARN].map(
+      (policyArn, i) =>
         iam.ManagedPolicy.fromManagedPolicyArn(
           this,
           `${name}Policy_${i}`,
           policyArn,
         ),
-      ),
+    );
+
+    return new iam.Role(this, `${name}Role`, {
+      assumedBy: new iam.ServicePrincipal(service),
+      managedPolicies: lambdaPolicies,
     });
   }
 }

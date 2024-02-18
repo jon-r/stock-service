@@ -15,8 +15,8 @@ import (
 
 type JobItem struct {
 	JobId string `json:"JobId"`
-	Name  string `json:"name"`
-	Group string `json:"group"`
+	Name  string `json:"Name"`
+	Group string `json:"Group"`
 }
 
 type QueueEvent struct {
@@ -102,8 +102,9 @@ func fakeInputs() ([]*dynamodb.WriteRequest, []QueueEvent) {
 		"Bruno",
 	}
 
-	jobs1, queue1 := namesToDbJobs(names1, 60, "slow")
-	jobs2, queue2 := namesToDbJobs(names2, 25, "fast")
+	// todo these values are the rate limit for api requests
+	jobs1, queue1 := namesToDbJobs(names1, 5, "slow")
+	jobs2, queue2 := namesToDbJobs(names2, 3, "fast")
 
 	return append(jobs1, jobs2...), []QueueEvent{queue1, queue2}
 }

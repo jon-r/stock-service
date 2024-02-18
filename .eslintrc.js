@@ -84,6 +84,7 @@ module.exports = {
       files: ['{bin,lib}/**/*.ts'],
       rules: {
         'no-new': 'off',
+        '@typescript-eslint/naming-convention': 'off',
       },
     },
     {
