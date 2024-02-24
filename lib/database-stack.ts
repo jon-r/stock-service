@@ -1,6 +1,6 @@
-import { Stack, type StackProps } from 'aws-cdk-lib';
-import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import type { Construct } from 'constructs';
+import { Stack, type StackProps } from "aws-cdk-lib";
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import type { Construct } from "constructs";
 
 import {
   JOBS_MODEL_NAME,
@@ -8,12 +8,13 @@ import {
   STOCK_INDEXES_MODEL_NAME,
   TRANSACTIONS_MODEL_NAME,
   USERS_MODEL_NAME,
-} from './helpers/db.js';
+} from "./helpers/db.js";
 
 export class DatabaseStack extends Stack {
   constructor(app: Construct, id: string, props?: StackProps) {
     super(app, id, props);
 
+    // todo add schemas - attribute definitions?
     // logs table
     this.#newDynamodbTable(LOGS_MODEL_NAME);
 
@@ -27,15 +28,22 @@ export class DatabaseStack extends Stack {
     this.#newDynamodbTable(TRANSACTIONS_MODEL_NAME);
 
     // queued api jobs
-    this.#newDynamodbTable(JOBS_MODEL_NAME);
+    this.#newDynamodbTable(JOBS_MODEL_NAME, ["Group"]);
   }
 
-  #newDynamodbTable(modelName: string) {
-    return new dynamodb.Table(this, `${modelName}Table`, {
+  #newDynamodbTable(modelName: string, secondaryIndexes?: string[]) {
+    return new dynamodb.TableV2(this, `${modelName}Table`, {
       partitionKey: {
         name: `${modelName}Id`,
         type: dynamodb.AttributeType.STRING,
       },
+      globalSecondaryIndexes: secondaryIndexes?.map((indexName) => ({
+        indexName: `${indexName}Index`,
+        partitionKey: {
+          name: indexName,
+          type: dynamodb.AttributeType.STRING,
+        },
+      })),
       tableName: `stock-app_${modelName}`,
     });
   }
