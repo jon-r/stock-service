@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/google/uuid"
 )
@@ -50,13 +51,18 @@ var dbService = dynamodb.New(awsSession)
 var sqsService = sqs.New(awsSession)
 
 func getJobItemByGroup(group string) (*JobItem, error) {
+	keyEx := expression.Key("Group").Equal(expression.Value(group))
+	expr, err := expression.NewBuilder().WithKeyCondition(keyEx).Build()
+	if err != nil {
+		return nil, err
+	}
+
 	input := &dynamodb.QueryInput{
-		TableName: aws.String("stock-app_Job"),
-		Key: map[string]*dynamodb.AttributeValue{
-			"Group": {
-				S: aws.String(group),
-			},
-		},
+		TableName:                 aws.String("stock-app_Job"),
+		IndexName:                 aws.String("GroupIndex"),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.KeyCondition(),
 	}
 
 	result, err := dbService.Query(input)
@@ -65,7 +71,6 @@ func getJobItemByGroup(group string) (*JobItem, error) {
 	}
 
 	item := result.Items[0]
-
 	if item == nil {
 		return nil, nil
 	}
