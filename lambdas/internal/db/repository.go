@@ -32,7 +32,7 @@ func NewDatabaseService(session session.Session) *DatabaseRepository {
 //	Group string
 //}
 //
-//var JobsTableName = "stock-app_Job"
+//var jobTableName = "stock-app_Job"
 //
 //func (db DatabaseRepository) InsertJobs(jobInputs []JobInput) error {
 //	var err error
@@ -60,7 +60,7 @@ func NewDatabaseService(session session.Session) *DatabaseRepository {
 //
 //	dbInput := &dynamodb.BatchWriteItemInput{
 //		RequestItems: map[string][]*dynamodb.WriteRequest{
-//			JobsTableName: writeRequests,
+//			jobTableName: writeRequests,
 //		},
 //	}
 //	_, err = db.svc.BatchWriteItem(dbInput)

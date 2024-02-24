@@ -1,18 +1,18 @@
 package db
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"github.com/google/uuid"
-	"log"
 )
 
-var JobsTableName = "stock-app_Job"
+var jobTableName = "stock-app_Job"
 
 type JobInput struct {
 	Name  string
 	Group string
-	Speed int
 }
 
 type JobItem struct {
@@ -35,7 +35,6 @@ func (db DatabaseRepository) InsertJobs(jobInputs []JobInput) error {
 
 		av, err := dynamodbattribute.MarshalMap(job)
 		if err != nil {
-			log.Print("could not convert input to JobItem")
 			break
 		}
 		writeRequests[i] = &dynamodb.WriteRequest{
@@ -49,10 +48,62 @@ func (db DatabaseRepository) InsertJobs(jobInputs []JobInput) error {
 
 	input := dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]*dynamodb.WriteRequest{
-			JobsTableName: writeRequests,
+			jobTableName: writeRequests,
 		},
 	}
 	_, err = db.svc.BatchWriteItem(&input)
+
+	return err
+}
+
+func (db DatabaseRepository) FindJobByGroup(group string) (*JobItem, error) {
+	keyEx := expression.Key("Group").Equal(expression.Value(group))
+
+	expr, err := expression.NewBuilder().WithKeyCondition(keyEx).Build()
+
+	if err != nil {
+		return nil, err
+	}
+
+	input := dynamodb.QueryInput{
+		TableName:                 aws.String(jobTableName),
+		IndexName:                 aws.String("GroupIndex"),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.KeyCondition(),
+	}
+
+	result, err := db.svc.Query(&input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	item := result.Items[0]
+
+	if item == nil {
+		return nil, nil
+	}
+
+	job := new(JobItem)
+
+	err = dynamodbattribute.UnmarshalMap(item, job)
+	if err != nil {
+		return nil, err
+	}
+
+	return job, nil
+}
+
+func (db DatabaseRepository) DeleteJob(job *JobItem) error {
+	var err error
+
+	request := dynamodb.DeleteItemInput{
+		TableName: &jobTableName,
+		Key:       map[string]*dynamodb.AttributeValue{"JobId": {S: aws.String(job.JobId)}},
+	}
+
+	_, err = db.svc.DeleteItem(&request)
 
 	return err
 }

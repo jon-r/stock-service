@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/aws/aws-lambda-go/lambda"
 	"log"
+
+	"github.com/aws/aws-lambda-go/lambda"
 
 	"jon-richards.com/stock-app/db"
 	"jon-richards.com/stock-app/queue"
@@ -14,19 +15,19 @@ var dbService = db.NewDatabaseService(*awsSession)
 var queueService = queue.NewQueueService(*awsSession)
 
 var fakeJobs = []db.JobInput{
-	{Name: "Phoebe", Group: "long", Speed: 5},
-	{Name: "Harley", Group: "long", Speed: 5},
-	{Name: "Bandit", Group: "long", Speed: 5},
-	{Name: "Delilah", Group: "long", Speed: 5},
-	{Name: "Tiger", Group: "long", Speed: 5},
-	{Name: "Panda", Group: "long", Speed: 5},
+	{Name: "Phoebe", Group: "long"},
+	{Name: "Harley", Group: "long"},
+	{Name: "Bandit", Group: "long"},
+	{Name: "Delilah", Group: "long"},
+	{Name: "Tiger", Group: "long"},
+	{Name: "Panda", Group: "long"},
 
-	{Name: "Whiskey", Group: "short", Speed: 3},
-	{Name: "Jasper", Group: "short", Speed: 3},
-	{Name: "Belle", Group: "short", Speed: 3},
-	{Name: "Shelby", Group: "short", Speed: 3},
-	{Name: "Zara", Group: "short", Speed: 3},
-	{Name: "Bruno", Group: "short", Speed: 3},
+	{Name: "Whiskey", Group: "short"},
+	{Name: "Jasper", Group: "short"},
+	{Name: "Belle", Group: "short"},
+	{Name: "Shelby", Group: "short"},
+	{Name: "Zara", Group: "short"},
+	{Name: "Bruno", Group: "short"},
 }
 
 // todo have the delay and everything as some sort of config file?
@@ -35,7 +36,7 @@ var fakeQueueEvents = []queue.QueueMessage{
 	{Group: "short", Delay: 3},
 }
 
-func loadData() {
+func handleRequest() {
 	var err error
 
 	err = dbService.InsertJobs(fakeJobs)
@@ -46,7 +47,7 @@ func loadData() {
 		log.Println("Successfully added items to DB")
 	}
 
-	err = queueService.InsertDelayedEvents(fakeQueueEvents)
+	err = queueService.SendDelayedEvents(fakeQueueEvents)
 
 	if err != nil {
 		log.Fatalf("Error adding items to Queue: %s", err)
@@ -56,5 +57,5 @@ func loadData() {
 }
 
 func main() {
-	lambda.Start(loadData)
+	lambda.Start(handleRequest)
 }

@@ -27,7 +27,7 @@ export class DatabaseStack extends Stack {
     // transactions table
     this.#newDynamodbTable(TRANSACTIONS_MODEL_NAME);
 
-    // queued api jobs
+    // queued remote jobs
     this.#newDynamodbTable(JOBS_MODEL_NAME, ["Group"]);
   }
 

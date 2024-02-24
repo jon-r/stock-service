@@ -26,7 +26,7 @@ export class DataEntryStack extends Stack {
     rule.addTarget(new targets.LambdaFunction(managerFunction));
     */
 
-    // SQS - delayed events throttled to match api thresholds
+    // SQS - delayed events throttled to match remote thresholds
     const deadLetterQueue = new sqs.Queue(this, "DataEntryDeadLetterQueue", {
       queueName: "DataEntryDeadLetterQueue",
       retentionPeriod: Duration.days(7),

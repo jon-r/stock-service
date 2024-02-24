@@ -2,9 +2,9 @@ package queue
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/google/uuid"
 )
@@ -14,7 +14,7 @@ type QueueMessage struct {
 	Delay int
 }
 
-func (queue QueueRepository) InsertDelayedEvents(queueItems []QueueMessage) error {
+func (queue QueueRepository) SendDelayedEvents(queueItems []QueueMessage) error {
 	var err error
 	var queueUrl = os.Getenv("SQS_QUEUE_URL")
 
@@ -25,7 +25,6 @@ func (queue QueueRepository) InsertDelayedEvents(queueItems []QueueMessage) erro
 
 		data, err := json.Marshal(item)
 		if err != nil {
-			log.Printf("could not convert queue item to queue message")
 			break
 		}
 
@@ -52,4 +51,16 @@ func (queue QueueRepository) InsertDelayedEvents(queueItems []QueueMessage) erro
 	_, err = queue.svc.SendMessageBatch(&input)
 
 	return err
+}
+
+func ParseQueueEvent(event events.SQSEvent) (*QueueMessage, error) {
+	var message QueueMessage
+
+	err := json.Unmarshal([]byte(event.Records[0].Body), &message)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &message, nil
 }
