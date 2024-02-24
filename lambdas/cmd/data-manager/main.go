@@ -30,7 +30,7 @@ var fakeJobs = []db.JobInput{
 	{Name: "Bruno", Group: "short"},
 }
 
-// todo have the delay and everything as some sort of config file?
+// todo have the delay and everything as some sort of config file? manager needs a way to get this!
 var fakeQueueEvents = []queue.QueueMessage{
 	{Group: "long", Delay: 5},
 	{Group: "short", Delay: 3},

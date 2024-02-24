@@ -14,7 +14,6 @@ export class DatabaseStack extends Stack {
   constructor(app: Construct, id: string, props?: StackProps) {
     super(app, id, props);
 
-    // todo add schemas - attribute definitions?
     // logs table
     this.#newDynamodbTable(LOGS_MODEL_NAME);
 

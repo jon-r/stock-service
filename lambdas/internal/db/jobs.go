@@ -100,7 +100,9 @@ func (db DatabaseRepository) DeleteJob(job *JobItem) error {
 
 	request := dynamodb.DeleteItemInput{
 		TableName: &jobTableName,
-		Key:       map[string]*dynamodb.AttributeValue{"JobId": {S: aws.String(job.JobId)}},
+		Key: map[string]*dynamodb.AttributeValue{
+			"JobId": {S: aws.String(job.JobId)},
+		},
 	}
 
 	_, err = db.svc.DeleteItem(&request)
