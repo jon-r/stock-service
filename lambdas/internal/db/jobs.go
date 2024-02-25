@@ -71,6 +71,7 @@ func (db DatabaseRepository) FindJobByGroup(group string) (*JobItem, error) {
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.KeyCondition(),
+		Limit:                     aws.Int64(1),
 	}
 
 	result, err := db.svc.Query(&input)

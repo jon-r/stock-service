@@ -26,6 +26,7 @@ module.exports = {
   rules: {
     "import/prefer-default-export": "off",
     "import/extensions": ["error", "always", { ignorePackages: true }],
+    "import/order": "off",
 
     "@typescript-eslint/naming-convention": [
       "error",

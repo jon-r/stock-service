@@ -1,5 +1,6 @@
 import { Stack, type StackProps } from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import type { TablePropsV2 } from "aws-cdk-lib/aws-dynamodb";
 import type { Construct } from "constructs";
 
 import {
@@ -21,7 +22,12 @@ export class DatabaseStack extends Stack {
     this.#newDynamodbTable(USERS_MODEL_NAME);
 
     // stock indexes table
-    this.#newDynamodbTable(STOCK_INDEXES_MODEL_NAME);
+    this.#newDynamodbTable(STOCK_INDEXES_MODEL_NAME, undefined, {
+      sortKey: {
+        name: `UpdatedAt`,
+        type: dynamodb.AttributeType.STRING,
+      },
+    });
 
     // transactions table
     this.#newDynamodbTable(TRANSACTIONS_MODEL_NAME);
@@ -30,7 +36,11 @@ export class DatabaseStack extends Stack {
     this.#newDynamodbTable(JOBS_MODEL_NAME, ["Group"]);
   }
 
-  #newDynamodbTable(modelName: string, secondaryIndexes?: string[]) {
+  #newDynamodbTable(
+    modelName: string,
+    secondaryIndexes?: string[],
+    props?: Partial<TablePropsV2>,
+  ) {
     return new dynamodb.TableV2(this, `${modelName}Table`, {
       partitionKey: {
         name: `${modelName}Id`,
@@ -44,6 +54,7 @@ export class DatabaseStack extends Stack {
         },
       })),
       tableName: `stock-app_${modelName}`,
+      ...props,
     });
   }
 }
