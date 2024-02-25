@@ -7,12 +7,10 @@ import (
 
 	"jon-richards.com/stock-app/db"
 	"jon-richards.com/stock-app/queue"
-	s "jon-richards.com/stock-app/session"
 )
 
-var awsSession = s.NewAwsSession()
-var dbService = db.NewDatabaseService(*awsSession)
-var queueService = queue.NewQueueService(*awsSession)
+var dbService = db.NewDatabaseService()
+var queueService = queue.NewQueueService()
 
 var fakeJobs = []db.JobInput{
 	{Name: "Phoebe", Group: "long"},

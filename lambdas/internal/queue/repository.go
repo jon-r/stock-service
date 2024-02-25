@@ -1,16 +1,25 @@
 package queue
 
 import (
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	"context"
+	"log"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 )
 
 type QueueRepository struct {
-	svc *sqs.SQS
+	svc *sqs.Client
 }
 
-func NewQueueService(session session.Session) *QueueRepository {
+func NewQueueService() *QueueRepository {
+	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
+
+	if err != nil {
+		log.Fatalf("unable to load SDK config, %v", err)
+	}
+
 	return &QueueRepository{
-		svc: sqs.New(&session),
+		svc: sqs.NewFromConfig(sdkConfig),
 	}
 }

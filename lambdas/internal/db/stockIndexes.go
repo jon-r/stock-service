@@ -1,11 +1,12 @@
 package db
 
 import (
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	"context"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/google/uuid"
 
 	"jon-richards.com/stock-app/remote"
@@ -30,19 +31,20 @@ func (db DatabaseRepository) GetItems() ([]StockItem, error) {
 	expr, err := expression.NewBuilder().WithProjection(projEx).Build()
 
 	// todo need to paginate? or loop till all found
+	// https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/gov2/dynamodb/actions/table_basics.go#L248
 	input := dynamodb.QueryInput{
 		TableName:            &stockTableName,
 		ProjectionExpression: expr.Projection(),
 	}
 
-	result, err := db.svc.Query(&input)
+	result, err := db.svc.Query(context.TODO(), &input)
 
 	if err != nil {
 		return nil, err
 	}
 
 	var items []StockItem
-	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, items)
+	err = attributevalue.UnmarshalListOfMaps(result.Items, items)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +63,7 @@ func (db DatabaseRepository) UpsertStockItem(res *remote.DogApiRes, jobItem *Job
 		Image:        res.Message,
 		UpdatedAt:    time.Now().Format(time.RFC3339),
 	}
-	av, err := dynamodbattribute.MarshalMap(stock)
+	av, err := attributevalue.MarshalMap(stock)
 
 	if err != nil {
 		return err
@@ -72,7 +74,7 @@ func (db DatabaseRepository) UpsertStockItem(res *remote.DogApiRes, jobItem *Job
 		Item:      av,
 	}
 
-	_, err = db.svc.PutItem(&input)
+	_, err = db.svc.PutItem(context.TODO(), &input)
 
 	return err
 }

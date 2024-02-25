@@ -1,10 +1,12 @@
 package db
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	"context"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/google/uuid"
 )
 
@@ -24,7 +26,7 @@ type JobItem struct {
 func (db DatabaseRepository) InsertJobs(jobInputs []JobInput) error {
 	var err error
 
-	writeRequests := make([]*dynamodb.WriteRequest, len(jobInputs))
+	writeRequests := make([]types.WriteRequest, len(jobInputs))
 
 	for i, jobInput := range jobInputs {
 		job := JobItem{
@@ -33,12 +35,12 @@ func (db DatabaseRepository) InsertJobs(jobInputs []JobInput) error {
 			Group: jobInput.Group,
 		}
 
-		av, err := dynamodbattribute.MarshalMap(job)
+		av, err := attributevalue.MarshalMap(job)
 		if err != nil {
 			break
 		}
-		writeRequests[i] = &dynamodb.WriteRequest{
-			PutRequest: &dynamodb.PutRequest{Item: av},
+		writeRequests[i] = types.WriteRequest{
+			PutRequest: &types.PutRequest{Item: av},
 		}
 	}
 
@@ -47,11 +49,11 @@ func (db DatabaseRepository) InsertJobs(jobInputs []JobInput) error {
 	}
 
 	input := dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]*dynamodb.WriteRequest{
+		RequestItems: map[string][]types.WriteRequest{
 			jobTableName: writeRequests,
 		},
 	}
-	_, err = db.svc.BatchWriteItem(&input)
+	_, err = db.svc.BatchWriteItem(context.TODO(), &input)
 
 	return err
 }
@@ -71,10 +73,10 @@ func (db DatabaseRepository) FindJobByGroup(group string) (*JobItem, error) {
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.KeyCondition(),
-		Limit:                     aws.Int64(1),
+		Limit:                     aws.Int32(1),
 	}
 
-	result, err := db.svc.Query(&input)
+	result, err := db.svc.Query(context.TODO(), &input)
 
 	if err != nil {
 		return nil, err
@@ -88,7 +90,7 @@ func (db DatabaseRepository) FindJobByGroup(group string) (*JobItem, error) {
 
 	job := new(JobItem)
 
-	err = dynamodbattribute.UnmarshalMap(item, job)
+	err = attributevalue.UnmarshalMap(item, job)
 	if err != nil {
 		return nil, err
 	}
@@ -99,14 +101,20 @@ func (db DatabaseRepository) FindJobByGroup(group string) (*JobItem, error) {
 func (db DatabaseRepository) DeleteJob(job *JobItem) error {
 	var err error
 
+	id, err := attributevalue.Marshal(job.JobId)
+
+	if err != nil {
+		return err
+	}
+
 	request := dynamodb.DeleteItemInput{
 		TableName: &jobTableName,
-		Key: map[string]*dynamodb.AttributeValue{
-			"JobId": {S: aws.String(job.JobId)},
+		Key: map[string]types.AttributeValue{
+			"JobId": id,
 		},
 	}
 
-	_, err = db.svc.DeleteItem(&request)
+	_, err = db.svc.DeleteItem(context.TODO(), &request)
 
 	return err
 }

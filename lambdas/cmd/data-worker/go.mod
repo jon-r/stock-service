@@ -6,7 +6,6 @@ replace (
 	jon-richards.com/stock-app/db => ../../internal/db
 	jon-richards.com/stock-app/queue => ../../internal/queue
 	jon-richards.com/stock-app/remote => ../../internal/remote
-	jon-richards.com/stock-app/session => ../../internal/session
 )
 
 require (
@@ -14,11 +13,9 @@ require (
 	jon-richards.com/stock-app/db v0.0.0-00010101000000-000000000000
 	jon-richards.com/stock-app/queue v0.0.0-00010101000000-000000000000
 	jon-richards.com/stock-app/remote v0.0.0-00010101000000-000000000000
-	jon-richards.com/stock-app/session v0.0.0-00010101000000-000000000000
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.50.25 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 )

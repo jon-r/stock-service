@@ -1,16 +1,25 @@
 package db
 
 import (
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"context"
+	"log"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
 type DatabaseRepository struct {
-	svc *dynamodb.DynamoDB
+	svc *dynamodb.Client
 }
 
-func NewDatabaseService(session session.Session) *DatabaseRepository {
+func NewDatabaseService() *DatabaseRepository {
+	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
+
+	if err != nil {
+		log.Fatalf("unable to load SDK config, %v", err)
+	}
+
 	return &DatabaseRepository{
-		svc: dynamodb.New(&session),
+		svc: dynamodb.NewFromConfig(sdkConfig),
 	}
 }

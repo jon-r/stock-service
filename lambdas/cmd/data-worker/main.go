@@ -10,12 +10,10 @@ import (
 	"jon-richards.com/stock-app/db"
 	"jon-richards.com/stock-app/queue"
 	"jon-richards.com/stock-app/remote"
-	s "jon-richards.com/stock-app/session"
 )
 
-var awsSession = s.NewAwsSession()
-var dbService = db.NewDatabaseService(*awsSession)
-var queueService = queue.NewQueueService(*awsSession)
+var dbService = db.NewDatabaseService()
+var queueService = queue.NewQueueService()
 
 func handleRequest(ctx context.Context, event events.SQSEvent) {
 	var err error
