@@ -2,25 +2,28 @@ package db
 
 import (
 	"context"
+	"github.com/google/uuid"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/google/uuid"
 )
 
 var jobTableName = "stock-app_Job"
 
 type JobInput struct {
-	Name  string
-	Group string
+	QueueGroup string
+	Action     string
+	Payload    JobInputPayload
 }
+
+type JobInputPayload = map[string]string
 
 type JobItem struct {
 	JobId string
-	Name  string
-	Group string
+	JobInput
 }
 
 func (db DatabaseRepository) InsertJobs(jobInputs []JobInput) error {
@@ -30,9 +33,8 @@ func (db DatabaseRepository) InsertJobs(jobInputs []JobInput) error {
 
 	for i, jobInput := range jobInputs {
 		job := JobItem{
-			JobId: uuid.NewString(),
-			Name:  jobInput.Name,
-			Group: jobInput.Group,
+			JobId:    uuid.NewString(),
+			JobInput: jobInput,
 		}
 
 		av, err := attributevalue.MarshalMap(job)

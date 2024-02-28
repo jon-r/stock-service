@@ -23,10 +23,10 @@ func handleRequest(ctx context.Context, event events.SQSEvent) {
 	if err != nil {
 		log.Fatalf("Error parsing queue event: %s", err)
 	} else {
-		log.Printf("Handling event: %s", message.Group)
+		log.Printf("Handling event: %s", message.QueueGroup)
 	}
 
-	job, err := dbService.FindJobByGroup(message.Group)
+	job, err := dbService.FindJobByGroup(message.QueueGroup)
 
 	if err != nil {
 		log.Fatalf("Error getting item: %s", err)
@@ -34,10 +34,17 @@ func handleRequest(ctx context.Context, event events.SQSEvent) {
 		// no more items to fetch
 		return
 	} else {
-		log.Printf("Job: %s", job.Name)
+		log.Printf("Job: %s", job.JobId)
 	}
 
-	res, err := remote.FetchDogItem()
+	settings, ok := queue.GroupSettingsList[job.QueueGroup]
+
+	if !ok {
+		log.Fatalf("No config found for group: %v", job.QueueGroup)
+	}
+
+	// todo a switch would be here to handle different action types
+	res, err := remote.FetchDogItem(settings.Url)
 
 	if err != nil {
 		log.Fatalf("Error calling http.get: %s", err)
@@ -57,7 +64,7 @@ func handleRequest(ctx context.Context, event events.SQSEvent) {
 		log.Fatalf("Error calling dynamodb.DeleteItem: %s", err)
 	}
 
-	err = queueService.SendDelayedEvents([]queue.QueueMessage{*message})
+	err = queueService.SendDelayedEvents([]queue.Message{message.Message})
 
 	if err != nil {
 		log.Fatalf("Error adding item to Queue: %s", err)

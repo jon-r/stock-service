@@ -58,8 +58,8 @@ func (db DatabaseRepository) UpsertStockItem(res *remote.DogApiRes, jobItem *Job
 	// todo need to have the ID as part of the job db item, so it can be updated instead of created new!!
 	stock := StockItem{
 		StockIndexId: uuid.NewString(),
-		Name:         jobItem.Name,
-		Group:        jobItem.Group,
+		Name:         jobItem.Payload["Name"],
+		Group:        jobItem.QueueGroup,
 		Image:        res.Message,
 		UpdatedAt:    time.Now().Format(time.RFC3339),
 	}

@@ -13,25 +13,24 @@ var dbService = db.NewDatabaseService()
 var queueService = queue.NewQueueService()
 
 var fakeJobs = []db.JobInput{
-	{Name: "Phoebe", Group: "long"},
-	{Name: "Harley", Group: "long"},
-	{Name: "Bandit", Group: "long"},
-	{Name: "Delilah", Group: "long"},
-	{Name: "Tiger", Group: "long"},
-	{Name: "Panda", Group: "long"},
+	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Phoebe"}},
+	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Harley"}},
+	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Bandit"}},
+	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Delilah"}},
+	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Tiger"}},
+	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Panda"}},
 
-	{Name: "Whiskey", Group: "short"},
-	{Name: "Jasper", Group: "short"},
-	{Name: "Belle", Group: "short"},
-	{Name: "Shelby", Group: "short"},
-	{Name: "Zara", Group: "short"},
-	{Name: "Bruno", Group: "short"},
+	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Whiskey"}},
+	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Jasper"}},
+	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Belle"}},
+	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Shelby"}},
+	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Zara"}},
+	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Bruno"}},
 }
 
-// todo have the delay and everything as some sort of config file? manager needs a way to get this!
-var fakeQueueEvents = []queue.QueueMessage{
-	{Group: "long", Delay: 5},
-	{Group: "short", Delay: 3},
+var fakeQueueEvents = []queue.Message{
+	{QueueGroup: "long"},
+	{QueueGroup: "short"},
 }
 
 func handleRequest() {

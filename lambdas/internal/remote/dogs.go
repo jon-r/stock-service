@@ -12,14 +12,15 @@ type DogApiRes struct {
 	Message string `json:"message"`
 }
 
-func FetchDogItem() (*DogApiRes, error) {
-	res, err := http.Get("https://dog.ceo/api/breeds/image/random")
+func FetchDogItem(url string) (*DogApiRes, error) {
+	res, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
+		log.Printf("FETCH ERROR %v", err)
 		return nil, err
 	} else {
 		log.Printf("request body: %s", string(body))
