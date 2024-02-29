@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/google/uuid"
 
-	"jon-richards.com/stock-app/remote"
+	"jon-richards.com/stock-app/providers"
 )
 
 var stockTableName = "stock-app_StockIndex"
@@ -17,16 +17,16 @@ var stockTableName = "stock-app_StockIndex"
 type StockItem struct {
 	StockIndexId string
 	Name         string
-	Group        string
+	Provider     providers.ProviderName
 	Image        string
-	UpdatedAt    string
+	UpdatedAt    int64
 }
 
 func (db DatabaseRepository) GetItems() ([]StockItem, error) {
 	var err error
 
 	projEx := expression.NamesList(
-		expression.Name("StockIndexId"), expression.Name("Name"), expression.Name("Group"))
+		expression.Name("StockIndexId"), expression.Name("Name"), expression.Name("Provider"))
 
 	expr, err := expression.NewBuilder().WithProjection(projEx).Build()
 
@@ -52,16 +52,16 @@ func (db DatabaseRepository) GetItems() ([]StockItem, error) {
 	return items, nil
 }
 
-func (db DatabaseRepository) UpsertStockItem(res *remote.DogApiRes, jobItem *JobItem) error {
+func (db DatabaseRepository) UpsertStockItem(res *providers.DogApiRes, jobItem *JobItem) error {
 	var err error
 
-	// todo need to have the ID as part of the job db item, so it can be updated instead of created new!!
+	// todo will need to have the ID as part of the job db item, so it can be updated instead of created new!!
 	stock := StockItem{
 		StockIndexId: uuid.NewString(),
 		Name:         jobItem.Payload["Name"],
-		Group:        jobItem.QueueGroup,
+		Provider:     jobItem.Provider,
 		Image:        res.Message,
-		UpdatedAt:    time.Now().Format(time.RFC3339),
+		UpdatedAt:    time.Now().Unix(),
 	}
 	av, err := attributevalue.MarshalMap(stock)
 

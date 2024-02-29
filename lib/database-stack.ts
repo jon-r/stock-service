@@ -24,8 +24,8 @@ export class DatabaseStack extends Stack {
     // stock indexes table
     this.#newDynamodbTable(STOCK_INDEXES_MODEL_NAME, undefined, {
       sortKey: {
-        name: `UpdatedAt`,
-        type: dynamodb.AttributeType.STRING,
+        name: "UpdatedAt",
+        type: dynamodb.AttributeType.NUMBER,
       },
     });
 
@@ -33,7 +33,7 @@ export class DatabaseStack extends Stack {
     this.#newDynamodbTable(TRANSACTIONS_MODEL_NAME);
 
     // queued remote jobs
-    this.#newDynamodbTable(JOBS_MODEL_NAME, ["Group"]);
+    this.#newDynamodbTable(JOBS_MODEL_NAME, ["Provider"]);
   }
 
   #newDynamodbTable(

@@ -4,8 +4,8 @@ go 1.22.0
 
 replace (
 	jon-richards.com/stock-app/db => ../../internal/db
+	jon-richards.com/stock-app/providers => ../../internal/providers
 	jon-richards.com/stock-app/queue => ../../internal/queue
-	jon-richards.com/stock-app/remote => ../../internal/remote
 )
 
 require (
@@ -36,5 +36,5 @@ require (
 	github.com/aws/smithy-go v1.20.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	jon-richards.com/stock-app/remote v0.0.0-00010101000000-000000000000 // indirect
+	jon-richards.com/stock-app/providers v0.0.0-00010101000000-000000000000 // indirect
 )

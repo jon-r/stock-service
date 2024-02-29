@@ -10,31 +10,33 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/google/uuid"
+
+	"jon-richards.com/stock-app/providers"
 )
 
 type Message struct {
-	QueueGroup string
+	Provider providers.ProviderName
 }
 
 //type QueueMessage struct {
-//	Group string
+//	Provider string
 //	Delay int
 //}
 
-type GroupSettings struct {
-	Delay int32
-	Url   string
-}
+//type Settings struct {
+//	Delay int32
+//	Url   string
+//}
 
 type ParsedMessage struct {
 	Message
-	GroupSettings
+	providers.Settings
 }
 
-var GroupSettingsList = map[string]GroupSettings{
-	"slow": {Delay: 7, Url: "https://dog.ceo/api/breeds/image/random"},
-	"fast": {Delay: 4, Url: "https://dog.ceo/api/breeds/image/random"},
-}
+//var GroupSettingsList = map[string]Settings{
+//	"slow": {Delay: 7, Url: "https://dog.ceo/api/breeds/image/random"},
+//	"fast": {Delay: 4, Url: "https://dog.ceo/api/breeds/image/random"},
+//}
 
 func (queue QueueRepository) SendDelayedEvents(queueMessages []Message) error {
 	var err error
@@ -44,10 +46,7 @@ func (queue QueueRepository) SendDelayedEvents(queueMessages []Message) error {
 	for i, message := range queueMessages {
 		id := uuid.NewString()
 
-		settings, ok := GroupSettingsList[message.QueueGroup]
-		if !ok {
-			err = fmt.Errorf("no settings available for group %v", message.QueueGroup)
-		}
+		settings := providers.GetSettings(message.Provider)
 
 		data, err := json.Marshal(message)
 		if err != nil {
@@ -91,12 +90,7 @@ func ParseQueueEvent(event events.SQSEvent) (*ParsedMessage, error) {
 		return nil, err
 	}
 
-	settings, ok := GroupSettingsList[message.QueueGroup]
-
-	if !ok {
-		err = fmt.Errorf("no settings available for group %v", message.QueueGroup)
-		return nil, err
-	}
+	settings := providers.GetSettings(message.Provider)
 
 	var parsedMessage = ParsedMessage{
 		message,

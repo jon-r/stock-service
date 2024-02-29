@@ -1,4 +1,4 @@
-package remote
+package providers
 
 import (
 	"encoding/json"

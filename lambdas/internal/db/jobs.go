@@ -2,21 +2,23 @@ package db
 
 import (
 	"context"
-	"github.com/google/uuid"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/google/uuid"
+
+	"jon-richards.com/stock-app/providers"
 )
 
 var jobTableName = "stock-app_Job"
 
 type JobInput struct {
-	QueueGroup string
-	Action     string
-	Payload    JobInputPayload
+	Provider providers.ProviderName
+	Action   string
+	Payload  JobInputPayload
 }
 
 type JobInputPayload = map[string]string
@@ -60,8 +62,8 @@ func (db DatabaseRepository) InsertJobs(jobInputs []JobInput) error {
 	return err
 }
 
-func (db DatabaseRepository) FindJobByGroup(group string) (*JobItem, error) {
-	keyEx := expression.Key("Group").Equal(expression.Value(group))
+func (db DatabaseRepository) FindJobByProvider(provider providers.ProviderName) (*JobItem, error) {
+	keyEx := expression.Key("Provider").Equal(expression.Value(provider))
 
 	expr, err := expression.NewBuilder().WithKeyCondition(keyEx).Build()
 
@@ -71,7 +73,7 @@ func (db DatabaseRepository) FindJobByGroup(group string) (*JobItem, error) {
 
 	input := dynamodb.QueryInput{
 		TableName:                 aws.String(jobTableName),
-		IndexName:                 aws.String("GroupIndex"),
+		IndexName:                 aws.String("ProviderIndex"),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.KeyCondition(),

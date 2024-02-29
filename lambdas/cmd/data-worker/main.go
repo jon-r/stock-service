@@ -8,8 +8,8 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"jon-richards.com/stock-app/db"
+	"jon-richards.com/stock-app/providers"
 	"jon-richards.com/stock-app/queue"
-	"jon-richards.com/stock-app/remote"
 )
 
 var dbService = db.NewDatabaseService()
@@ -23,10 +23,10 @@ func handleRequest(ctx context.Context, event events.SQSEvent) {
 	if err != nil {
 		log.Fatalf("Error parsing queue event: %s", err)
 	} else {
-		log.Printf("Handling event: %s", message.QueueGroup)
+		log.Printf("Handling event: %s", message.Provider)
 	}
 
-	job, err := dbService.FindJobByGroup(message.QueueGroup)
+	job, err := dbService.FindJobByProvider(message.Provider)
 
 	if err != nil {
 		log.Fatalf("Error getting item: %s", err)
@@ -37,14 +37,10 @@ func handleRequest(ctx context.Context, event events.SQSEvent) {
 		log.Printf("Job: %s", job.JobId)
 	}
 
-	settings, ok := queue.GroupSettingsList[job.QueueGroup]
-
-	if !ok {
-		log.Fatalf("No config found for group: %v", job.QueueGroup)
-	}
+	settings := providers.GetSettings(message.Provider)
 
 	// todo a switch would be here to handle different action types
-	res, err := remote.FetchDogItem(settings.Url)
+	res, err := providers.FetchDogItem(settings.Url)
 
 	if err != nil {
 		log.Fatalf("Error calling http.get: %s", err)

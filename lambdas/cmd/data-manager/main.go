@@ -1,6 +1,7 @@
 package main
 
 import (
+	"jon-richards.com/stock-app/providers"
 	"log"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -13,24 +14,24 @@ var dbService = db.NewDatabaseService()
 var queueService = queue.NewQueueService()
 
 var fakeJobs = []db.JobInput{
-	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Phoebe"}},
-	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Harley"}},
-	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Bandit"}},
-	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Delilah"}},
-	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Tiger"}},
-	{QueueGroup: "long", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Panda"}},
+	{Provider: providers.Fast, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Phoebe"}},
+	{Provider: providers.Fast, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Harley"}},
+	{Provider: providers.Fast, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Bandit"}},
+	{Provider: providers.Fast, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Delilah"}},
+	{Provider: providers.Fast, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Tiger"}},
+	{Provider: providers.Fast, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Panda"}},
 
-	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Whiskey"}},
-	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Jasper"}},
-	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Belle"}},
-	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Shelby"}},
-	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Zara"}},
-	{QueueGroup: "short", Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Bruno"}},
+	{Provider: providers.Slow, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Whiskey"}},
+	{Provider: providers.Slow, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Jasper"}},
+	{Provider: providers.Slow, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Belle"}},
+	{Provider: providers.Slow, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Shelby"}},
+	{Provider: providers.Slow, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Zara"}},
+	{Provider: providers.Slow, Action: "INSERT_DATA_TEST", Payload: db.JobInputPayload{"Name": "Bruno"}},
 }
 
 var fakeQueueEvents = []queue.Message{
-	{QueueGroup: "long"},
-	{QueueGroup: "short"},
+	{Provider: providers.Fast},
+	{Provider: providers.Slow},
 }
 
 func handleRequest() {

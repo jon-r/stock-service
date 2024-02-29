@@ -2,7 +2,7 @@ module jon-richards.com/stock-app/db
 
 go 1.22.0
 
-replace jon-richards.com/stock-app/remote => ../remote
+replace jon-richards.com/stock-app/providers => ../providers
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.25.2
@@ -11,7 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.7.6
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.30.1
 	github.com/google/uuid v1.6.0
-	jon-richards.com/stock-app/remote v0.0.0-00010101000000-000000000000
+	jon-richards.com/stock-app/providers v0.0.0-00010101000000-000000000000
 )
 
 require (

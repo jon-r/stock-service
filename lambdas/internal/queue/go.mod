@@ -2,11 +2,14 @@ module jon-richards.com/stock-app/queue
 
 go 1.22.0
 
+replace jon-richards.com/stock-app/providers => ../providers
+
 require (
 	github.com/aws/aws-lambda-go v1.46.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.4
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.31.1
 	github.com/google/uuid v1.6.0
+	jon-richards.com/stock-app/providers v0.0.0-00010101000000-000000000000
 )
 
 require (
