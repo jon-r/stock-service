@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import * as cdk from 'aws-cdk-lib';
-import 'source-map-support/register';
+import * as cdk from "aws-cdk-lib";
+import "source-map-support/register";
 
-import { StockAppStack } from '../lib/stock-app-stack.js';
+import { StockAppStack } from "../lib/stock-app-stack.js";
 
 const app = new cdk.App();
-new StockAppStack(app, 'StockAppStack', {
+new StockAppStack(app, "StockAppStack", {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
