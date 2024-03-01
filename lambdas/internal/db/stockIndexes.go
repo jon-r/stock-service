@@ -14,7 +14,7 @@ import (
 
 var stockTableName = "stock-app_StockIndex"
 
-type StockItem struct {
+type StockItem_OLD struct {
 	StockIndexId string
 	Name         string
 	Provider     providers.ProviderName
@@ -22,7 +22,18 @@ type StockItem struct {
 	UpdatedAt    int64
 }
 
-func (db DatabaseRepository) GetItems() ([]StockItem, error) {
+type StockItemProperties struct {
+	Name     string
+	Currency string
+}
+
+type StockItem struct {
+	StockIndexId string
+
+	UpdatedAt int64
+}
+
+func (db DatabaseRepository) GetItems() ([]StockItem_OLD, error) {
 	var err error
 
 	projEx := expression.NamesList(
@@ -43,7 +54,7 @@ func (db DatabaseRepository) GetItems() ([]StockItem, error) {
 		return nil, err
 	}
 
-	var items []StockItem
+	var items []StockItem_OLD
 	err = attributevalue.UnmarshalListOfMaps(result.Items, items)
 	if err != nil {
 		return nil, err
@@ -52,11 +63,16 @@ func (db DatabaseRepository) GetItems() ([]StockItem, error) {
 	return items, nil
 }
 
+func (db DatabaseRepository) CreateStockItem(item) {
+	// todo
+}
+
+// todo this should be renamed to update stock item based
 func (db DatabaseRepository) UpsertStockItem(res *providers.DogApiRes, jobItem *JobItem) error {
 	var err error
 
 	// todo will need to have the ID as part of the job db item, so it can be updated instead of created new!!
-	stock := StockItem{
+	stock := StockItem_OLD{
 		StockIndexId: uuid.NewString(),
 		Name:         jobItem.Payload["Name"],
 		Provider:     jobItem.Provider,

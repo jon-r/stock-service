@@ -47,6 +47,9 @@ export class ApiStack extends Stack {
       "StocksControllerFunction",
       {
         entry: "lambdas/cmd/api-stocks",
+        environment: {
+          POLYGON_API_KEY: import.meta.env.VITE_POLYGON_IO_API_KEY,
+        },
       },
     );
     const stocksIntegration = new apigateway.LambdaIntegration(
@@ -71,6 +74,7 @@ export class ApiStack extends Stack {
 
     const stocksApi = api.root.addResource("stocks").addResource("{path+}");
     stocksApi.addMethod("GET", stocksIntegration);
+    stocksApi.addMethod("POST", stocksIntegration);
     addCorsOptions(stocksApi);
 
     this.apiUrl = api.url;
