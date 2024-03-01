@@ -23,14 +23,26 @@ type StockItem_OLD struct {
 }
 
 type StockItemProperties struct {
-	Name     string
+	FullName string
 	Currency string
+	// Icon string todo
+}
+
+type StockPrices struct {
+	Open      float32
+	Close     float32
+	High      float32
+	Average   float32
+	Low       float32
+	Timestamp int64
 }
 
 type StockItem struct {
 	StockIndexId string
-
-	UpdatedAt int64
+	Provider     providers.ProviderName
+	Properties   StockItemProperties
+	Prices       []StockPrices
+	UpdatedAt    int64
 }
 
 func (db DatabaseRepository) GetItems() ([]StockItem_OLD, error) {
@@ -63,8 +75,30 @@ func (db DatabaseRepository) GetItems() ([]StockItem_OLD, error) {
 	return items, nil
 }
 
-func (db DatabaseRepository) CreateStockItem(item) {
-	// todo
+func (db DatabaseRepository) NewStockItem(provider providers.ProviderName, tickerId string, properties StockItemProperties) error {
+	var err error
+
+	stock := StockItem{
+		StockIndexId: tickerId,
+		Properties:   properties,
+		Provider:     provider,
+		Prices:       nil,
+		UpdatedAt:    time.Now().UnixMilli(),
+	}
+	av, err := attributevalue.MarshalMap(stock)
+
+	if err != nil {
+		return err
+	}
+
+	input := dynamodb.PutItemInput{
+		TableName: &stockTableName,
+		Item:      av,
+	}
+
+	_, err = db.svc.PutItem(context.TODO(), &input)
+
+	return err
 }
 
 // todo this should be renamed to update stock item based

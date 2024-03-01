@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -14,14 +15,24 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	case "POST":
 		return create(request)
 	default:
-		return clientError(http.StatusMethodNotAllowed)
+		return clientError(http.StatusMethodNotAllowed, nil)
 	}
 }
 
-func clientError(status int) (*events.APIGatewayProxyResponse, error) {
+func clientError(status int, err error) (*events.APIGatewayProxyResponse, error) {
+	// todo more detailed error handling?
+	if err != nil {
+		fmt.Printf("request error: %v", err)
+	}
 	return &events.APIGatewayProxyResponse{
 		StatusCode: status,
 		Body:       http.StatusText(status),
+	}, nil
+}
+
+func clientSuccess() (*events.APIGatewayProxyResponse, error) {
+	return &events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
 	}, nil
 }
 

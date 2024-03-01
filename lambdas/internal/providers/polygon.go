@@ -9,9 +9,9 @@ import (
 
 var client = polygon.New(os.Getenv("POLYGON_API_KEY"))
 
-func GetPolygonIndexDetails(ticker string) (error, *IndexDetails) {
+func GetPolygonIndexDetails(tickerId string) (error, *IndexDetails) {
 	params := models.GetTickerDetailsParams{
-		Ticker: ticker,
+		Ticker: tickerId,
 	}
 
 	res, err := client.GetTickerDetails(context.TODO(), &params)
@@ -20,7 +20,6 @@ func GetPolygonIndexDetails(ticker string) (error, *IndexDetails) {
 		return err, nil
 	}
 	details := IndexDetails{
-		TickerId: ticker,
 		Currency: res.Results.CurrencyName,
 		FullName: res.Results.Name,
 	}

@@ -15,10 +15,21 @@ import (
 
 var jobTableName = "stock-app_Job"
 
+type ActionTypes string
+
+const (
+	NewStockItem       ActionTypes = "NEW_STOCK_ITEM"
+	PopulateItemPrices ActionTypes = "POPULATE_ITEM_PRICES"
+	UpdateAllPrices    ActionTypes = "UPDATE_ALL_PRICES"
+	// todo
+	// UpdateDividends
+	// ???
+)
+
 type JobInput struct {
 	Provider providers.ProviderName
-	Action   string
-	Payload  JobInputPayload
+	Type     ActionTypes
+	TickerId string
 }
 
 type JobInputPayload = map[string]string
@@ -26,6 +37,24 @@ type JobInputPayload = map[string]string
 type JobItem struct {
 	JobId string
 	JobInput
+}
+
+func (db DatabaseRepository) InsertJob(jobInput JobInput) error {
+	var err error
+
+	av, err := attributevalue.MarshalMap(jobInput)
+
+	if err != nil {
+		return err
+	}
+	input := dynamodb.PutItemInput{
+		Item:      av,
+		TableName: &jobTableName,
+	}
+
+	_, err = db.svc.PutItem(context.TODO(), &input)
+
+	return err
 }
 
 func (db DatabaseRepository) InsertJobs(jobInputs []JobInput) error {

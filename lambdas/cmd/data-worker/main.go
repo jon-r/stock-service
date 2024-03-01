@@ -37,21 +37,12 @@ func handleRequest(ctx context.Context, event events.SQSEvent) {
 		log.Printf("Job: %s", job.JobId)
 	}
 
-	settings := providers.GetSettings(message.Provider)
-
-	// todo a switch would be here to handle different action types
-	res, err := providers.FetchDogItem(settings.Url)
+	err = handleJobAction(job.JobInput)
 
 	if err != nil {
-		log.Fatalf("Error calling http.get: %s", err)
-	}
-
-	err = dbService.UpsertStockItem(res, job)
-
-	if err != nil {
-		log.Fatalf("Error calling dynamodb.WriteItem: %s", err)
+		log.Fatalf("Error with action '%s': %s", job.JobInput.Type, err)
 	} else {
-		log.Println("Successfully added items to tables")
+		log.Printf("Successfully ran action %v", job.JobInput)
 	}
 
 	err = dbService.DeleteJob(job)
