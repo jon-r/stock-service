@@ -58,6 +58,7 @@ export class DataEntryStack extends Stack {
     // poll lambda - reads the queue in a throttled way to pass the events on to the worker function
     const rule = new events.Rule(this, "DataEntryPoll", {
       schedule: events.Schedule.rate(Duration.minutes(1)),
+        // todo be disabled initially?
     });
     const tickerFunctionRole = newLambdaIamRole(this, "DataEntryTicker", {
       serviceName: "lambda.amazonaws.com",
