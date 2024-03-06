@@ -4,36 +4,40 @@ import type { TablePropsV2 } from "aws-cdk-lib/aws-dynamodb";
 import type { Construct } from "constructs";
 
 import {
-  JOBS_MODEL_NAME,
   LOGS_MODEL_NAME,
-  STOCK_INDEXES_MODEL_NAME,
+  TICKERS_MODEL_NAME,
   TRANSACTIONS_MODEL_NAME,
+  type TableNames,
   USERS_MODEL_NAME,
 } from "./helpers/db.js";
 
 export class DatabaseStack extends Stack {
+  tableNames: TableNames;
+
   constructor(app: Construct, id: string, props?: StackProps) {
     super(app, id, props);
 
     // logs table
-    this.#newDynamodbTable(LOGS_MODEL_NAME);
+    const logsTable = this.#newDynamodbTable(LOGS_MODEL_NAME);
 
     // users table
-    this.#newDynamodbTable(USERS_MODEL_NAME);
+    const usersTable = this.#newDynamodbTable(USERS_MODEL_NAME);
 
-    // stock indexes table
-    this.#newDynamodbTable(STOCK_INDEXES_MODEL_NAME, undefined, {
+    const tickersTable = this.#newDynamodbTable(TICKERS_MODEL_NAME, undefined, {
       sortKey: {
         name: "UpdatedAt",
         type: dynamodb.AttributeType.NUMBER,
       },
     });
 
-    // transactions table
-    this.#newDynamodbTable(TRANSACTIONS_MODEL_NAME);
+    const transactionsTable = this.#newDynamodbTable(TRANSACTIONS_MODEL_NAME);
 
-    // queued remote jobs
-    this.#newDynamodbTable(JOBS_MODEL_NAME, ["Provider"]);
+    this.tableNames = {
+      logs: logsTable.tableName,
+      users: usersTable.tableName,
+      tickers: tickersTable.tableName,
+      transactions: transactionsTable.tableName,
+    };
   }
 
   #newDynamodbTable(
@@ -53,7 +57,6 @@ export class DatabaseStack extends Stack {
           type: dynamodb.AttributeType.STRING,
         },
       })),
-      tableName: `stock-app_${modelName}`,
       ...props,
     });
   }

@@ -1,30 +1,25 @@
 import * as go from "@aws-cdk/aws-lambda-go-alpha";
 import { Duration, Stack, type StackProps } from "aws-cdk-lib";
-// import * as events from 'aws-cdk-lib/aws-events';
-// import * as targets from 'aws-cdk-lib/aws-events-targets';
-import * as lambdaEvents from "aws-cdk-lib/aws-lambda-event-sources";
+import * as events from "aws-cdk-lib/aws-events";
+import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import type { Construct } from "constructs";
 
+import type { TableNames } from "./helpers/db.ts";
 import {
   DB_FULL_ACCESS_POLICY_ARN,
+  LAMBDA_INVOKE_POLICY_ARN,
   SQS_FULL_ACCESS_POLICY_ARN,
   newLambdaIamRole,
 } from "./helpers/iam.ts";
 
+type DataEntryStackProps = StackProps & {
+  tableNames: TableNames;
+};
+
 export class DataEntryStack extends Stack {
-  constructor(app: Construct, id: string, props?: StackProps) {
+  constructor(app: Construct, id: string, props: DataEntryStackProps) {
     super(app, id, props);
-
-    // event trigger - starts the orchestrator to trigger at regular points
-    //   (daily? hourly?) maybe do it overnight so data is ready next day
-    /* FIXME no scheduler for now
-    const rule = new events.Rule(this, 'DataEntryScheduler', {
-      schedule: events.Schedule.rate(Duration.hours(1)),
-    });
-
-    rule.addTarget(new targets.LambdaFunction(managerFunction));
-    */
 
     // SQS - delayed events throttled to match remote thresholds
     const deadLetterQueue = new sqs.Queue(this, "DataEntryDeadLetterQueue", {
@@ -41,40 +36,44 @@ export class DataEntryStack extends Stack {
       },
     });
 
-    // orchestrator lambda - creates the list of things to fetch, sends the first queue item
-    const managerFunctionRole = newLambdaIamRole(this, "DataEntryManager", {
-      serviceName: "lambda.amazonaws.com",
-      policyARNs: [DB_FULL_ACCESS_POLICY_ARN, SQS_FULL_ACCESS_POLICY_ARN],
-    });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const managerFunction = new go.GoFunction(
-      this,
-      "DataEntryManagerFunction",
-      {
-        entry: "lambdas/cmd/data-manager",
-        role: managerFunctionRole,
-        environment: {
-          SQS_QUEUE_URL: queue.queueUrl,
-        },
-      },
-    );
-
-    // worker lambda - reads the list, fetches the data, queues up the next fetch, then parses the fetch result
+    // worker lambda - fetches and compiles third party data
     const workerFunctionRole = newLambdaIamRole(this, "DataEntryWorker", {
       serviceName: "lambda.amazonaws.com",
-      policyARNs: [DB_FULL_ACCESS_POLICY_ARN, SQS_FULL_ACCESS_POLICY_ARN],
+      policyARNs: [DB_FULL_ACCESS_POLICY_ARN],
     });
     const workerFunction = new go.GoFunction(this, "DataEntryWorkerFunction", {
       entry: "lambdas/cmd/data-worker",
       role: workerFunctionRole,
       environment: {
+        DB_LOGS_TABLE_NAME: props.tableNames.logs,
+        DB_TICKERS_TABLE_NAME: props.tableNames.tickers,
+
         SQS_QUEUE_URL: queue.queueUrl,
         // todo add failed items to DL queue
         //  https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/sqs-example-dead-letter-queues.html
         SQS_DL_QUEUE_URL: deadLetterQueue.queueUrl,
       },
     });
-    const invokeEventSource = new lambdaEvents.SqsEventSource(queue);
-    workerFunction.addEventSource(invokeEventSource);
+
+    // poll lambda - reads the queue in a throttled way to pass the events on to the worker function
+    const rule = new events.Rule(this, "DataEntryPoll", {
+      schedule: events.Schedule.rate(Duration.minutes(1)),
+    });
+    const tickerFunctionRole = newLambdaIamRole(this, "DataEntryTicker", {
+      serviceName: "lambda.amazonaws.com",
+      policyARNs: [SQS_FULL_ACCESS_POLICY_ARN, LAMBDA_INVOKE_POLICY_ARN],
+    });
+
+    const tickerFunction = new go.GoFunction(this, "DataEntryPollerFunction", {
+      entry: "lambdas/cmd/data-ticker",
+      role: tickerFunctionRole,
+      timeout: Duration.minutes(5),
+      environment: {
+        SQS_QUEUE_URL: queue.queueUrl,
+        LAMBDA_WORKER_NAME: workerFunction.functionName,
+      },
+    });
+
+    rule.addTarget(new targets.LambdaFunction(tickerFunction));
   }
 }

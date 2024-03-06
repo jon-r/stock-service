@@ -9,9 +9,9 @@ export class StockAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    new DatabaseStack(scope, "DatabaseStack", props);
+    const { tableNames } = new DatabaseStack(scope, "DatabaseStack", props);
 
-    new DataEntryStack(scope, "DataEntryStack", props);
+    new DataEntryStack(scope, "DataEntryStack", { ...props, tableNames });
 
     new ApiStack(scope, "ApiStack", props);
   }
