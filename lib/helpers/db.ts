@@ -2,8 +2,13 @@ export const LOGS_MODEL_NAME = "Log";
 
 export const USERS_MODEL_NAME = "User";
 
-export const STOCK_INDEXES_MODEL_NAME = "StockIndex";
+export const TICKERS_MODEL_NAME = "Ticker";
 
 export const TRANSACTIONS_MODEL_NAME = "Transaction";
 
-export const JOBS_MODEL_NAME = "Job";
+export type TableNames = {
+  logs: string;
+  users: string;
+  tickers: string;
+  transactions: string;
+};

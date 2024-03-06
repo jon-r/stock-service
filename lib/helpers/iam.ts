@@ -15,6 +15,9 @@ export const DB_READ_ONLY_POLICY_ARN =
 export const LAMBDA_BASIC_POLICY_ARN =
   "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole";
 
+export const LAMBDA_INVOKE_POLICY_ARN =
+  "arn:aws:iam::aws:policy/service-role/AWSLambdaRole";
+
 type NewLambdaIamRoleProps = {
   serviceName: string;
   policyARNs: string[];
