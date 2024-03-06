@@ -1,13 +1,13 @@
 package main
 
 import (
-	"jon-richards.com/stock-app/providers"
 	"log"
 
 	"github.com/aws/aws-lambda-go/lambda"
 
-	"jon-richards.com/stock-app/db"
-	"jon-richards.com/stock-app/queue"
+	"jon-richards.com/stock-app/lambdas/internal/db"
+	"jon-richards.com/stock-app/lambdas/internal/providers"
+	"jon-richards.com/stock-app/lambdas/internal/queue"
 )
 
 var dbService = db.NewDatabaseService()
