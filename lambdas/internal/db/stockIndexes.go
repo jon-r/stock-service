@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/google/uuid"
 
-	"jon-richards.com/stock-app/providers"
+	"jon-richards.com/stock-app/lambdas/internal/providers"
 )
 
 var stockTableName = "stock-app_StockIndex"

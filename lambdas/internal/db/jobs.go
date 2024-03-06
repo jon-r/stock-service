@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/google/uuid"
 
-	"jon-richards.com/stock-app/providers"
+	"jon-richards.com/stock-app/lambdas/internal/providers"
 )
 
 var jobTableName = "stock-app_Job"

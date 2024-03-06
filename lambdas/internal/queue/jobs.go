@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/google/uuid"
 
-	"jon-richards.com/stock-app/providers"
+	"jon-richards.com/stock-app/lambdas/internal/providers"
 )
 
 type Message struct {
