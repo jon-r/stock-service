@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -12,7 +13,9 @@ import (
 	"jon-richards.com/stock-app/internal/providers"
 )
 
-var stockTableName = "stock-app_StockIndex"
+// todo this file to be replaced with tickers.go
+
+var stockTableName = os.Getenv("DB_TICKERS_TABLE_NAME")
 
 type StockItem_OLD struct {
 	StockIndexId string

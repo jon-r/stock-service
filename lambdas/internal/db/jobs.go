@@ -1,5 +1,7 @@
 package db
 
+// todo this file to be deleted
+
 import (
 	"context"
 

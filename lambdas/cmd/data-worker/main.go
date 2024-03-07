@@ -14,6 +14,7 @@ import (
 var dbService = db.NewDatabaseService()
 var queueService = queue.NewQueueService()
 
+// todo custom event from data ticker (prob be similar to job table?)
 func handleRequest(ctx context.Context, event events.SQSEvent) {
 	var err error
 
