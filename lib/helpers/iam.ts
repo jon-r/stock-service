@@ -18,6 +18,9 @@ export const LAMBDA_BASIC_POLICY_ARN =
 export const LAMBDA_INVOKE_POLICY_ARN =
   "arn:aws:iam::aws:policy/service-role/AWSLambdaRole";
 
+export const SCHEDULER_FULL_ACCESS_POLICY_ARN =
+  "arn:aws:iam::aws:policy/AmazonEventBridgeSchedulerFullAccess";
+
 type NewLambdaIamRoleProps = {
   serviceName: string;
   policyARNs: string[];
