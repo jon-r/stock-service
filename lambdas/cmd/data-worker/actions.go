@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"jon-richards.com/stock-app/db"
+	"jon-richards.com/stock-app/internal/db"
 )
 
 func handleJobAction(job db.JobInput) error {

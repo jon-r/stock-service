@@ -5,9 +5,9 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 
-	"jon-richards.com/stock-app/lambdas/internal/db"
-	"jon-richards.com/stock-app/lambdas/internal/providers"
-	"jon-richards.com/stock-app/lambdas/internal/queue"
+	"jon-richards.com/stock-app/internal/db"
+	"jon-richards.com/stock-app/internal/providers"
+	"jon-richards.com/stock-app/internal/queue"
 )
 
 var dbService = db.NewDatabaseService()

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"jon-richards.com/stock-app/db"
-	"jon-richards.com/stock-app/providers"
+	"jon-richards.com/stock-app/internal/db"
+	"jon-richards.com/stock-app/internal/providers"
 )
 
 func newStock(provider providers.ProviderName, tickerId string) error {

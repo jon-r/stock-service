@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/aws/aws-lambda-go/events"
 	"net/http"
 
-	"jon-richards.com/stock-app/db"
-	"jon-richards.com/stock-app/providers"
+	"github.com/aws/aws-lambda-go/events"
+
+	"jon-richards.com/stock-app/internal/db"
+	"jon-richards.com/stock-app/internal/providers"
 )
 
 type RequestParams struct {
