@@ -22,7 +22,6 @@ export const SCHEDULER_FULL_ACCESS_POLICY_ARN =
   "arn:aws:iam::aws:policy/AmazonEventBridgeSchedulerFullAccess";
 
 type NewLambdaIamRoleProps = {
-  serviceName: string;
   policyARNs: string[];
 };
 
@@ -41,7 +40,7 @@ export function newLambdaIamRole(
   );
 
   return new iam.Role(scope, `${name}Role`, {
-    assumedBy: new iam.ServicePrincipal(props.serviceName),
+    assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
     managedPolicies: lambdaPolicies,
   });
 }

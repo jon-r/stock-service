@@ -6,6 +6,7 @@ import * as sqs from "aws-cdk-lib/aws-sqs";
 import type { Construct } from "constructs";
 
 import type { TableNames } from "./helpers/db.ts";
+import type { DataTickerProps } from "./helpers/events.ts";
 import {
   DB_FULL_ACCESS_POLICY_ARN,
   LAMBDA_INVOKE_POLICY_ARN,
@@ -19,6 +20,8 @@ type DataEntryStackProps = StackProps & {
 };
 
 export class DataEntryStack extends Stack {
+  dataTickerProps: DataTickerProps;
+
   constructor(app: Construct, id: string, props: DataEntryStackProps) {
     super(app, id, props);
 
@@ -43,7 +46,6 @@ export class DataEntryStack extends Stack {
 
     // worker lambda - fetches and compiles third party data
     const workerFunctionRole = newLambdaIamRole(this, "DataEntryWorker", {
-      serviceName: "lambda.amazonaws.com",
       policyARNs: [
         SQS_FULL_ACCESS_POLICY_ARN,
         DB_FULL_ACCESS_POLICY_ARN,
@@ -54,12 +56,14 @@ export class DataEntryStack extends Stack {
       entry: "lambdas/cmd/data-worker",
       role: workerFunctionRole,
       environment: {
+        POLYGON_API_KEY: import.meta.env.VITE_POLYGON_IO_API_KEY,
+
         DB_LOGS_TABLE_NAME: props.tableNames.logs,
         DB_TICKERS_TABLE_NAME: props.tableNames.tickers,
 
-        SQS_QUEUE_URL: queue.queueUrl,
         // todo add failed items to DL queue
         //  https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/sqs-example-dead-letter-queues.html
+        SQS_QUEUE_URL: queue.queueUrl,
         SQS_DL_QUEUE_URL: deadLetterQueue.queueUrl,
 
         EVENTBRIDGE_RULE_ARN: rule.ruleArn,
@@ -68,7 +72,6 @@ export class DataEntryStack extends Stack {
 
     // poll lambda - reads the queue in a throttled way to pass the events on to the worker function
     const tickerFunctionRole = newLambdaIamRole(this, "DataEntryTicker", {
-      serviceName: "lambda.amazonaws.com",
       policyARNs: [
         SQS_FULL_ACCESS_POLICY_ARN,
         LAMBDA_INVOKE_POLICY_ARN,
@@ -89,5 +92,10 @@ export class DataEntryStack extends Stack {
     });
 
     rule.addTarget(new targets.LambdaFunction(tickerFunction));
+
+    this.dataTickerProps = {
+      eventRuleArn: rule.ruleArn,
+      eventsQueueUrl: queue.queueUrl,
+    };
   }
 }

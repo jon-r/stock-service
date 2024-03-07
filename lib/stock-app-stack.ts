@@ -11,8 +11,11 @@ export class StockAppStack extends cdk.Stack {
 
     const { tableNames } = new DatabaseStack(scope, "DatabaseStack", props);
 
-    new DataEntryStack(scope, "DataEntryStack", { ...props, tableNames });
+    const { dataTickerProps } = new DataEntryStack(scope, "DataEntryStack", {
+      ...props,
+      tableNames,
+    });
 
-    new ApiStack(scope, "ApiStack", props);
+    new ApiStack(scope, "ApiStack", { ...props, dataTickerProps, tableNames });
   }
 }
