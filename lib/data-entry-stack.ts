@@ -31,8 +31,9 @@ export class DataEntryStack extends Stack {
     });
 
     const queue = new sqs.Queue(this, "DataEntryQueue", {
-      queueName: "DataEntryQueue",
+      queueName: "DataEntryQueue.fifo",
       visibilityTimeout: Duration.seconds(30),
+      fifo: true,
       deadLetterQueue: {
         maxReceiveCount: 1,
         queue: deadLetterQueue,
