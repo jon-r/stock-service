@@ -74,6 +74,7 @@ export class ApiStack extends Stack {
         role: stocksControllerFunctionRole,
         environment: {
           EVENTBRIDGE_RULE_ARN: props.dataTickerProps.eventRuleArn,
+          EVENTBRIDGE_RULE_NAME: props.dataTickerProps.eventRuleName,
 
           DB_TICKERS_TABLE_NAME: props.tableNames.tickers,
 

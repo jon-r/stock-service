@@ -67,6 +67,7 @@ export class DataEntryStack extends Stack {
         SQS_DL_QUEUE_URL: deadLetterQueue.queueUrl,
 
         EVENTBRIDGE_RULE_ARN: rule.ruleArn,
+        EVENTBRIDGE_RULE_NAME: rule.ruleName,
       },
     });
 
@@ -88,6 +89,7 @@ export class DataEntryStack extends Stack {
         SQS_QUEUE_URL: queue.queueUrl,
         LAMBDA_WORKER_NAME: workerFunction.functionName,
         EVENTBRIDGE_RULE_ARN: rule.ruleArn,
+        EVENTBRIDGE_RULE_NAME: rule.ruleName,
       },
     });
 
@@ -95,6 +97,7 @@ export class DataEntryStack extends Stack {
 
     this.dataTickerProps = {
       eventRuleArn: rule.ruleArn,
+      eventRuleName: rule.ruleName,
       eventsQueueUrl: queue.queueUrl,
     };
   }
