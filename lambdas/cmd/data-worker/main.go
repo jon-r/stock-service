@@ -18,40 +18,48 @@ var queueService = queue.NewQueueService()
 func handleRequest(ctx context.Context, event events.SQSEvent) {
 	var err error
 
-	message, err := queue.ParseQueueEvent(event)
+	// 1. get event details
+	//message, err := queue.ParseQueueEvent(event)
 
-	if err != nil {
-		log.Fatalf("Error parsing queue event: %s", err)
-	} else {
-		log.Printf("Handling event: %s", message.Provider)
-	}
+	// 2. handle action
 
-	job, err := dbService.FindJobByProvider(message.Provider)
+	// 3. if action failed < 3 times, or new queue actions after last, add to the queue
 
-	if err != nil {
-		log.Fatalf("Error getting item: %s", err)
-	} else if job == nil {
-		// no more items to fetch
-		return
-	} else {
-		log.Printf("Job: %s", job.JobId)
-	}
+	// 4. if action failed 3 times put in DLQ
 
-	err = handleJobAction(job.JobInput)
+	//if err != nil {
+	//	log.Fatalf("Error parsing queue event: %s", err)
+	//} else {
+	//	log.Printf("Handling event: %s", message.Provider)
+	//}
 
-	if err != nil {
-		log.Fatalf("Error with action '%s': %s", job.JobInput.Type, err)
-	} else {
-		log.Printf("Successfully ran action %v", job.JobInput)
-	}
+	//job, err := dbService.FindJobByProvider(message.Provider)
 
-	err = dbService.DeleteJob(job)
+	//if err != nil {
+	//	log.Fatalf("Error getting item: %s", err)
+	//} else if job == nil {
+	//	// no more items to fetch
+	//	return
+	//} else {
+	//	log.Printf("Job: %s", job.JobId)
+	//}
 
-	if err != nil {
-		log.Fatalf("Error calling dynamodb.DeleteItem: %s", err)
-	}
+	//
+	//err = handleJobAction(job.JobInput)
 
-	err = queueService.SendDelayedEvents([]queue.Message{message.Message})
+	//if err != nil {
+	//	log.Fatalf("Error with action '%s': %s", job.JobInput.Type, err)
+	//} else {
+	//	log.Printf("Successfully ran action %v", job.JobInput)
+	//}
+
+	//err = dbService.DeleteJob(job)
+
+	//if err != nil {
+	//	log.Fatalf("Error calling dynamodb.DeleteItem: %s", err)
+	//}
+
+	//err = queueService.SendDelayedEvents([]queue.Message{message.Message})
 
 	if err != nil {
 		log.Fatalf("Error adding item to Queue: %s", err)

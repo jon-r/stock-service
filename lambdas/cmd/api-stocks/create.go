@@ -6,7 +6,6 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 
-	"jon-richards.com/stock-app/internal/db"
 	"jon-richards.com/stock-app/internal/providers"
 )
 
@@ -15,7 +14,7 @@ type RequestParams struct {
 	TickerId string                 `json:"ticker"`
 }
 
-var dbService = db.NewDatabaseService()
+//var dbService = db.NewDatabaseService()
 
 func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var err error
@@ -28,15 +27,17 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 		return clientError(http.StatusInternalServerError, err)
 	}
 
-	// 2. Create new job item
-	err = dbService.InsertJob(db.JobInput{
-		Provider: params.Provider,
-		TickerId: params.TickerId,
-	})
+	// 2. Create new job queue item
+	//err = dbService.InsertJob(db.JobInput{
+	//	Provider: params.Provider,
+	//	TickerId: params.TickerId,
+	//})
 
 	if err != nil {
 		return clientError(http.StatusInternalServerError, err)
 	}
+
+	// 3. enable the event timer
 
 	return clientSuccess()
 }
