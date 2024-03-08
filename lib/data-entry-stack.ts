@@ -49,7 +49,7 @@ export class DataEntryStack extends Stack {
       policyARNs: [
         SQS_FULL_ACCESS_POLICY_ARN,
         DB_FULL_ACCESS_POLICY_ARN,
-        SCHEDULER_FULL_ACCESS_POLICY_ARN,
+        // SCHEDULER_FULL_ACCESS_POLICY_ARN,
       ],
     });
     const workerFunction = new go.GoFunction(this, "DataEntryWorkerFunction", {
@@ -61,13 +61,11 @@ export class DataEntryStack extends Stack {
         DB_LOGS_TABLE_NAME: props.tableNames.logs,
         DB_TICKERS_TABLE_NAME: props.tableNames.tickers,
 
-        // todo add failed items to DL queue
-        //  https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/sqs-example-dead-letter-queues.html
         SQS_QUEUE_URL: queue.queueUrl,
         SQS_DL_QUEUE_URL: deadLetterQueue.queueUrl,
 
-        EVENTBRIDGE_RULE_ARN: rule.ruleArn,
-        EVENTBRIDGE_RULE_NAME: rule.ruleName,
+        // todo worker maybe cant invoke the ticker? how to do recursion?
+        // EVENTBRIDGE_RULE_NAME: rule.ruleName,
       },
     });
 
@@ -88,7 +86,6 @@ export class DataEntryStack extends Stack {
       environment: {
         SQS_QUEUE_URL: queue.queueUrl,
         LAMBDA_WORKER_NAME: workerFunction.functionName,
-        EVENTBRIDGE_RULE_ARN: rule.ruleArn,
         EVENTBRIDGE_RULE_NAME: rule.ruleName,
       },
     });
@@ -96,9 +93,9 @@ export class DataEntryStack extends Stack {
     rule.addTarget(new targets.LambdaFunction(tickerFunction));
 
     this.dataTickerProps = {
-      eventRuleArn: rule.ruleArn,
       eventRuleName: rule.ruleName,
       eventsQueueUrl: queue.queueUrl,
+      eventPollerFunctionName: tickerFunction.functionName,
     };
   }
 }

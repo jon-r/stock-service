@@ -8,6 +8,7 @@ import type { TableNames } from "./helpers/db.ts";
 import type { DataTickerProps } from "./helpers/events.ts";
 import {
   DB_FULL_ACCESS_POLICY_ARN,
+  LAMBDA_INVOKE_POLICY_ARN,
   SCHEDULER_FULL_ACCESS_POLICY_ARN,
   SQS_FULL_ACCESS_POLICY_ARN,
   newLambdaIamRole,
@@ -63,6 +64,7 @@ export class ApiStack extends Stack {
           SQS_FULL_ACCESS_POLICY_ARN,
           DB_FULL_ACCESS_POLICY_ARN,
           SCHEDULER_FULL_ACCESS_POLICY_ARN,
+          LAMBDA_INVOKE_POLICY_ARN,
         ],
       },
     );
@@ -73,8 +75,8 @@ export class ApiStack extends Stack {
         entry: "lambdas/cmd/api-stocks",
         role: stocksControllerFunctionRole,
         environment: {
-          EVENTBRIDGE_RULE_ARN: props.dataTickerProps.eventRuleArn,
           EVENTBRIDGE_RULE_NAME: props.dataTickerProps.eventRuleName,
+          LAMBDA_POLLER_NAME: props.dataTickerProps.eventPollerFunctionName,
 
           DB_TICKERS_TABLE_NAME: props.tableNames.tickers,
 

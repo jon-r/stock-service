@@ -8,11 +8,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
-	//"github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
+	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
 )
 
 type EventsRepository struct {
-	svc *eventbridge.Client
+	svc    *eventbridge.Client
+	lambda *lambda.Client
 }
 
 func NewEventsService() *EventsRepository {
@@ -23,34 +25,47 @@ func NewEventsService() *EventsRepository {
 	}
 
 	return &EventsRepository{
-		svc: eventbridge.NewFromConfig(sdkConfig),
+		svc:    eventbridge.NewFromConfig(sdkConfig),
+		lambda: lambda.NewFromConfig(sdkConfig),
 	}
 }
 
-func (events EventsRepository) startTickerScheduler() error {
+func (events EventsRepository) StartTickerScheduler() error {
 	var err error
 
-	ruleArn := os.Getenv("EVENTBRIDGE_RULE_ARN")
 	ruleName := os.Getenv("EVENTBRIDGE_RULE_NAME")
+	functionName := os.Getenv("LAMBDA_POLLER_NAME")
 
 	request := eventbridge.EnableRuleInput{
-		Name:         aws.String(ruleName),
-		EventBusName: aws.String(ruleArn),
+		Name: aws.String(ruleName),
 	}
 
 	_, err = events.svc.EnableRule(context.TODO(), &request)
 
+	if err != nil {
+		return err
+	}
+
+	lambdaReq := lambda.InvokeInput{
+		FunctionName:   aws.String(functionName),
+		InvocationType: types.InvocationTypeEvent,
+	}
+
+	_, lambdaErr := events.lambda.Invoke(context.TODO(), &lambdaReq)
+
+	if lambdaErr != nil {
+		log.Printf("Failed to manually trigger poller but continuing anyway: %v", lambdaErr)
+	}
+
 	return err
 }
-func (events EventsRepository) stopTickerScheduler() error {
+func (events EventsRepository) StopTickerScheduler() error {
 	var err error
 
-	ruleArn := os.Getenv("EVENTBRIDGE_RULE_ARN")
 	ruleName := os.Getenv("EVENTBRIDGE_RULE_NAME")
 
 	request := eventbridge.DisableRuleInput{
-		Name:         aws.String(ruleName),
-		EventBusName: aws.String(ruleArn),
+		Name: aws.String(ruleName),
 	}
 
 	_, err = events.svc.DisableRule(context.TODO(), &request)

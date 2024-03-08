@@ -16,6 +16,7 @@ type RequestParams struct {
 
 // var dbService = db.NewDatabaseService()
 var queueService = jobs.NewQueueService()
+var eventsService = jobs.NewEventsService()
 
 func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var err error
@@ -30,8 +31,8 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 
 	// 2. Create new job queue item
 	job := jobs.JobAction{
-		Provider: params.Provider,
 		Type:     jobs.NewTickerItem,
+		Provider: params.Provider,
 		TickerId: params.TickerId,
 	}
 
@@ -42,6 +43,11 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 	}
 
 	// 3. enable the event timer
+	err = eventsService.StartTickerScheduler()
+
+	if err != nil {
+		return clientError(http.StatusInternalServerError, err)
+	}
 
 	return clientSuccess()
 }
