@@ -30,7 +30,7 @@ var SettingsList = map[ProviderName]Settings{
 	Slow: {Delay: 7, Url: "https://dog.ceo/api/breeds/image/random"},
 	Fast: {Delay: 4, Url: "https://dog.ceo/api/breeds/image/random"},
 
-	PolygonIo: {Delay: 7, Url: "https://api.polygon.io/v2/"},
+	PolygonIo: {Delay: 12, Url: "https://api.polygon.io/v2/"},
 	// todo url may not be needed for the settings.
 	//  - config in general may be skippable since all providers are going to work differently anyway
 }

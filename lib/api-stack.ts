@@ -4,8 +4,7 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import type { Construct } from "constructs";
 
 import { addCorsOptions } from "./helpers/api.ts";
-import type { TableNames } from "./helpers/db.ts";
-import type { DataTickerProps } from "./helpers/events.ts";
+import { type TableNames, getDatabaseTableEnvVariables } from "./helpers/db.ts";
 import {
   DB_FULL_ACCESS_POLICY_ARN,
   LAMBDA_INVOKE_POLICY_ARN,
@@ -13,6 +12,10 @@ import {
   SQS_FULL_ACCESS_POLICY_ARN,
   newLambdaIamRole,
 } from "./helpers/iam.ts";
+import {
+  type DataTickerProps,
+  getTickerEnvVariables,
+} from "./helpers/ticker.ts";
 
 type ApiStackProps = StackProps & {
   dataTickerProps: DataTickerProps;
@@ -35,6 +38,9 @@ export class ApiStack extends Stack {
       "UsersControllerFunction",
       {
         entry: "lambdas/cmd/api-users",
+        environment: {
+          ...getDatabaseTableEnvVariables(props.tableNames),
+        },
       },
     );
     const usersIntegration = new apigateway.LambdaIntegration(
@@ -48,6 +54,9 @@ export class ApiStack extends Stack {
       "LogsControllerFunction",
       {
         entry: "lambdas/cmd/api-logs",
+        environment: {
+          ...getDatabaseTableEnvVariables(props.tableNames),
+        },
       },
     );
     const logsIntegration = new apigateway.LambdaIntegration(
@@ -75,12 +84,8 @@ export class ApiStack extends Stack {
         entry: "lambdas/cmd/api-stocks",
         role: stocksControllerFunctionRole,
         environment: {
-          EVENTBRIDGE_RULE_NAME: props.dataTickerProps.eventRuleName,
-          LAMBDA_POLLER_NAME: props.dataTickerProps.eventPollerFunctionName,
-
-          DB_TICKERS_TABLE_NAME: props.tableNames.tickers,
-
-          SQS_QUEUE_URL: props.dataTickerProps.eventsQueueUrl,
+          ...getTickerEnvVariables(props.dataTickerProps),
+          ...getDatabaseTableEnvVariables(props.tableNames),
         },
       },
     );

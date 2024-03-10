@@ -1,12 +1,11 @@
 import * as go from "@aws-cdk/aws-lambda-go-alpha";
-import { Duration, Stack, type StackProps } from "aws-cdk-lib";
+import { Duration, Lazy, Stack, type StackProps } from "aws-cdk-lib";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import type { Construct } from "constructs";
 
-import type { TableNames } from "./helpers/db.ts";
-import type { DataTickerProps } from "./helpers/events.ts";
+import { type TableNames, getDatabaseTableEnvVariables } from "./helpers/db.ts";
 import {
   DB_FULL_ACCESS_POLICY_ARN,
   LAMBDA_INVOKE_POLICY_ARN,
@@ -14,6 +13,10 @@ import {
   SQS_FULL_ACCESS_POLICY_ARN,
   newLambdaIamRole,
 } from "./helpers/iam.ts";
+import {
+  type DataTickerProps,
+  getTickerEnvVariables,
+} from "./helpers/ticker.ts";
 
 type DataEntryStackProps = StackProps & {
   tableNames: TableNames;
@@ -50,23 +53,27 @@ export class DataEntryStack extends Stack {
       policyARNs: [
         SQS_FULL_ACCESS_POLICY_ARN,
         DB_FULL_ACCESS_POLICY_ARN,
-        // SCHEDULER_FULL_ACCESS_POLICY_ARN,
+        LAMBDA_INVOKE_POLICY_ARN,
+        SCHEDULER_FULL_ACCESS_POLICY_ARN,
       ],
     });
     const workerFunction = new go.GoFunction(this, "DataEntryWorkerFunction", {
       entry: "lambdas/cmd/data-worker",
       role: workerFunctionRole,
       environment: {
+        ...getDatabaseTableEnvVariables(props.tableNames),
+        ...getTickerEnvVariables({
+          eventRuleName: rule.ruleName,
+          eventsQueueUrl: queue.queueUrl,
+          eventPollerFunctionName: Lazy.string({
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            produce: () => tickerFunction.functionName,
+          }),
+        }),
+
         POLYGON_API_KEY: import.meta.env.VITE_POLYGON_IO_API_KEY,
 
-        DB_LOGS_TABLE_NAME: props.tableNames.logs,
-        DB_TICKERS_TABLE_NAME: props.tableNames.tickers,
-
-        SQS_QUEUE_URL: queue.queueUrl,
         SQS_DL_QUEUE_URL: deadLetterQueue.queueUrl,
-
-        // todo worker maybe cant invoke the ticker? how to do recursion?
-        // EVENTBRIDGE_RULE_NAME: rule.ruleName,
       },
     });
 
@@ -78,18 +85,26 @@ export class DataEntryStack extends Stack {
         SCHEDULER_FULL_ACCESS_POLICY_ARN,
       ],
     });
-    const tickerFunction = new go.GoFunction(this, "DataEntryPollerFunction", {
-      entry: "lambdas/cmd/data-ticker",
-      role: tickerFunctionRole,
-      // long timeout, single concurrent function only
-      timeout: Duration.minutes(5),
-      reservedConcurrentExecutions: 1,
-      environment: {
-        SQS_QUEUE_URL: queue.queueUrl,
-        LAMBDA_WORKER_NAME: workerFunction.functionName,
-        EVENTBRIDGE_RULE_NAME: rule.ruleName,
+    const tickerFunction: go.GoFunction = new go.GoFunction(
+      this,
+      "DataEntryPollerFunction",
+      {
+        entry: "lambdas/cmd/data-ticker",
+        role: tickerFunctionRole,
+        // long timeout, single concurrent function only
+        timeout: Duration.minutes(5),
+        reservedConcurrentExecutions: 1,
+        environment: {
+          ...getTickerEnvVariables({
+            eventRuleName: rule.ruleName,
+            eventsQueueUrl: queue.queueUrl,
+            eventPollerFunctionName: "", // wont self invoke
+          }),
+
+          LAMBDA_WORKER_NAME: workerFunction.functionName,
+        },
       },
-    });
+    );
 
     rule.addTarget(new targets.LambdaFunction(tickerFunction));
 
