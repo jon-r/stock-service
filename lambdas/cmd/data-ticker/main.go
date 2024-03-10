@@ -2,19 +2,35 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"jon-richards.com/stock-app/internal/jobs"
+	"jon-richards.com/stock-app/internal/providers"
 )
 
 var eventsService = jobs.NewEventsService()
+var queueService = jobs.NewQueueService()
 
-func handleRequest() {
+func pollProvider(provider providers.ProviderName, interval time.Duration) {
+	tk := time.NewTicker(interval)
+
+	for range tk.C {
+
+	}
+}
+
+func pollSqsQueue() {
 	var err error
+
+	//for provider, timer := range providers.SettingsTimers {
+	//	go pollProvider(provider, time.Duration(timer) * time.Second)
+	//}
 
 	log.Println("Hello world")
 
-	// 1. get all items in queue
+	// 1. poll to get all items in queue
+	jobs, err := queueService.GetJobsFromQueue()
 
 	// 2. if queue is empty, disable the event rule and end the function
 	err = eventsService.StopTickerScheduler()
@@ -31,5 +47,5 @@ func handleRequest() {
 }
 
 func main() {
-	lambda.Start(handleRequest)
+	lambda.Start(pollSqsQueue)
 }

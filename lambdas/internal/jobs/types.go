@@ -16,4 +16,5 @@ type JobAction struct {
 	Provider providers.ProviderName
 	Type     JobTypes
 	TickerId string
+	Attempts int
 }

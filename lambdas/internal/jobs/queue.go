@@ -13,7 +13,8 @@ import (
 )
 
 type QueueRepository struct {
-	svc *sqs.Client
+	svc      *sqs.Client
+	queueUrl string
 }
 
 func NewQueueService() *QueueRepository {
@@ -24,14 +25,13 @@ func NewQueueService() *QueueRepository {
 	}
 
 	return &QueueRepository{
-		svc: sqs.NewFromConfig(sdkConfig),
+		svc:      sqs.NewFromConfig(sdkConfig),
+		queueUrl: os.Getenv("SQS_QUEUE_URL"),
 	}
 }
 
 func (queue QueueRepository) AddJobsToQueue(jobs []JobAction) error {
 	var err error
-
-	queueUrl := os.Getenv("SQS_QUEUE_URL")
 
 	messageRequests := make([]types.SendMessageBatchRequestEntry, len(jobs))
 	for i, message := range jobs {
@@ -57,11 +57,33 @@ func (queue QueueRepository) AddJobsToQueue(jobs []JobAction) error {
 	}
 
 	input := sqs.SendMessageBatchInput{
-		QueueUrl: &queueUrl,
+		QueueUrl: &queue.queueUrl,
 		Entries:  messageRequests,
 	}
 
 	_, err = queue.svc.SendMessageBatch(context.TODO(), &input)
 
 	return err
+}
+
+func (queue QueueRepository) GetJobsFromQueue() (*[]JobAction, error) {
+	input := sqs.ReceiveMessageInput{
+		QueueUrl:            &queue.queueUrl,
+		MaxNumberOfMessages: 10,
+		WaitTimeSeconds:     10,
+	}
+
+	result, err := queue.svc.ReceiveMessage(context.TODO(), &input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make([]JobAction, len(result.Messages))
+
+	for i, message := range result.Messages {
+		err = json.Unmarshal([]byte(*message.Body), &jobs[i])
+	}
+
+	return &jobs, nil
 }

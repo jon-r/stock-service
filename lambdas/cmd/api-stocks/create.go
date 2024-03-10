@@ -34,6 +34,7 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 		Type:     jobs.NewTickerItem,
 		Provider: params.Provider,
 		TickerId: params.TickerId,
+		Attempts: 0,
 	}
 
 	err = queueService.AddJobsToQueue([]jobs.JobAction{job})
