@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
@@ -14,7 +15,7 @@ import (
 
 type QueueRepository struct {
 	svc      *sqs.Client
-	queueUrl string
+	QueueUrl string
 }
 
 func NewQueueService() *QueueRepository {
@@ -26,11 +27,11 @@ func NewQueueService() *QueueRepository {
 
 	return &QueueRepository{
 		svc:      sqs.NewFromConfig(sdkConfig),
-		queueUrl: os.Getenv("SQS_QUEUE_URL"),
+		QueueUrl: os.Getenv("SQS_QUEUE_URL"),
 	}
 }
 
-func (queue QueueRepository) AddJobsToQueue(jobs []JobAction) error {
+func (queue QueueRepository) AddJobs(jobs []JobAction) error {
 	var err error
 
 	messageRequests := make([]types.SendMessageBatchRequestEntry, len(jobs))
@@ -57,7 +58,7 @@ func (queue QueueRepository) AddJobsToQueue(jobs []JobAction) error {
 	}
 
 	input := sqs.SendMessageBatchInput{
-		QueueUrl: &queue.queueUrl,
+		QueueUrl: &queue.QueueUrl,
 		Entries:  messageRequests,
 	}
 
@@ -66,11 +67,12 @@ func (queue QueueRepository) AddJobsToQueue(jobs []JobAction) error {
 	return err
 }
 
-func (queue QueueRepository) GetJobsFromQueue() (*[]JobAction, error) {
+func (queue QueueRepository) ReceiveJobs() (*[]JobQueueItem, error) {
 	input := sqs.ReceiveMessageInput{
-		QueueUrl:            &queue.queueUrl,
+		QueueUrl:            &queue.QueueUrl,
 		MaxNumberOfMessages: 10,
-		WaitTimeSeconds:     10,
+		WaitTimeSeconds:     5,
+		VisibilityTimeout:   4 * 60,
 	}
 
 	result, err := queue.svc.ReceiveMessage(context.TODO(), &input)
@@ -79,11 +81,26 @@ func (queue QueueRepository) GetJobsFromQueue() (*[]JobAction, error) {
 		return nil, err
 	}
 
-	jobs := make([]JobAction, len(result.Messages))
+	jobs := make([]JobQueueItem, len(result.Messages))
 
 	for i, message := range result.Messages {
-		err = json.Unmarshal([]byte(*message.Body), &jobs[i])
+		queueItem := JobQueueItem{
+			RecieptHandle: *message.ReceiptHandle,
+		}
+		err = json.Unmarshal([]byte(*message.Body), &queueItem.Action)
+		jobs[i] = queueItem
 	}
 
 	return &jobs, nil
+}
+
+func (queue QueueRepository) DeleteJob(receiptHandle string) error {
+	input := sqs.DeleteMessageInput{
+		QueueUrl:      &queue.QueueUrl,
+		ReceiptHandle: aws.String(receiptHandle),
+	}
+
+	_, err := queue.svc.DeleteMessage(context.TODO(), &input)
+
+	return err
 }

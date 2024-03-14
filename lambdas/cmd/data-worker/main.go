@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"jon-richards.com/stock-app/internal/db"
@@ -15,8 +15,11 @@ var dbService = db.NewDatabaseService()
 var queueService = queue.NewQueueService()
 
 // todo custom event from data ticker (prob be similar to job table?)
-func handleRequest(ctx context.Context, event events.SQSEvent) {
+func handleRequest(ctx context.Context, event any) {
 	var err error
+
+	output, err := json.MarshalIndent(event, "", "  ")
+	log.Println(string(output))
 
 	// 1. get event details
 	//message, err := queue.ParseQueueEvent(event)

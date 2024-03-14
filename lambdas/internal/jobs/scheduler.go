@@ -34,7 +34,6 @@ func (events EventsRepository) StartTickerScheduler() error {
 	var err error
 
 	ruleName := os.Getenv("EVENTBRIDGE_RULE_NAME")
-	functionName := os.Getenv("LAMBDA_POLLER_NAME")
 
 	request := eventbridge.EnableRuleInput{
 		Name: aws.String(ruleName),
@@ -46,12 +45,7 @@ func (events EventsRepository) StartTickerScheduler() error {
 		return err
 	}
 
-	lambdaReq := lambda.InvokeInput{
-		FunctionName:   aws.String(functionName),
-		InvocationType: types.InvocationTypeEvent,
-	}
-
-	_, lambdaErr := events.lambda.Invoke(context.TODO(), &lambdaReq)
+	lambdaErr := events.InvokePoller()
 
 	if lambdaErr != nil {
 		log.Printf("Failed to manually trigger poller but continuing anyway: %v", lambdaErr)
@@ -59,6 +53,19 @@ func (events EventsRepository) StartTickerScheduler() error {
 
 	return err
 }
+
+func (events EventsRepository) InvokePoller() error {
+	functionName := os.Getenv("LAMBDA_POLLER_NAME")
+	lambdaReq := lambda.InvokeInput{
+		FunctionName:   aws.String(functionName),
+		InvocationType: types.InvocationTypeEvent,
+	}
+
+	_, err := events.lambda.Invoke(context.TODO(), &lambdaReq)
+
+	return err
+}
+
 func (events EventsRepository) StopTickerScheduler() error {
 	var err error
 

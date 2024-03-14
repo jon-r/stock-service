@@ -16,7 +16,7 @@ func GetSettings(provider ProviderName) Settings {
 	settings, ok := SettingsList[provider]
 
 	if !ok {
-		log.Printf("Missing settings for provider = %v", provider)
+		log.Fatalf("Missing settings for provider = %v", provider)
 	}
 
 	return settings

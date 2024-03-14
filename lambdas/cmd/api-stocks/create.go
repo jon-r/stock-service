@@ -37,7 +37,7 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 		Attempts: 0,
 	}
 
-	err = queueService.AddJobsToQueue([]jobs.JobAction{job})
+	err = queueService.AddJobs([]jobs.JobAction{job})
 
 	if err != nil {
 		return clientError(http.StatusInternalServerError, err)

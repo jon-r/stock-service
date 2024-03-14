@@ -12,38 +12,36 @@ import (
 var eventsService = jobs.NewEventsService()
 var queueService = jobs.NewQueueService()
 
-func pollProvider(provider providers.ProviderName, interval time.Duration) {
-	tk := time.NewTicker(interval)
-
-	for range tk.C {
-
-	}
-}
-
 func pollSqsQueue() {
-	var err error
+	queueTicker := time.NewTicker(10 * time.Second)
 
-	//for provider, timer := range providers.SettingsTimers {
-	//	go pollProvider(provider, time.Duration(timer) * time.Second)
-	//}
+	jobList := checkForNewJobs()
+	sortJobs(jobList)
 
-	log.Println("Hello world")
+	go func() {
+		for {
+			select {
+			case <-done:
+				log.Println("Finished polling")
+				return
+			case <-queueTicker.C:
+				// 1. poll to get all items in queue
+				jobList = checkForNewJobs()
 
-	// 1. poll to get all items in queue
-	jobs, err := queueService.GetJobsFromQueue()
+				// 2. if queue is empty, disable the event rule and end the function
+				shutDownWhenEmpty(jobList)
 
-	// 2. if queue is empty, disable the event rule and end the function
-	err = eventsService.StopTickerScheduler()
+				// 3. group queue jobs by provider
+				sortJobs(jobList)
+			}
+		}
+	}()
 
-	if err != nil {
-		log.Fatalf("Failed to stop event ticker, %v", err)
-	} else {
-		log.Println("Stopped event ticker")
-	}
+	// 4. for each provider have a ticker function that invokes event provider/ticker/type to the worker fn
+	go invokeWorkerTicker(providers.PolygonIo, providers.PolygonIoDelay)
 
-	// 3. group queue jobs by provider
-
-	// 4 for each provider have a ticker function that invokes event provider/ticker/type to the worker fn
+	// 5. Switch off after 5min
+	time.Sleep(5 * time.Minute)
 }
 
 func main() {

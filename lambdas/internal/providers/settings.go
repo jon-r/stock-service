@@ -23,6 +23,8 @@ var SettingsList = map[ProviderName]Settings{
 	//  - config in general may be skippable since all providers are going to work differently anyway
 }
 
-var SettingsTimers = map[ProviderName]int{
-	PolygonIo: 12,
-}
+type SettingsDelay int
+
+const (
+	PolygonIoDelay SettingsDelay = 12
+)
