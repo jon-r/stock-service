@@ -8,12 +8,18 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"jon-richards.com/stock-app/internal/db"
+	"jon-richards.com/stock-app/internal/jobs"
 )
 
 type ResponseBody struct {
 	Message string `json:"message"`
 	Status  int    `json:"status"`
 }
+
+var queueService = jobs.NewQueueService()
+var eventsService = jobs.NewEventsService()
+var dbService = db.NewDatabaseService()
 
 func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	// todo return different error statuses and look at the error

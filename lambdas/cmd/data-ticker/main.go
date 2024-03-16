@@ -22,10 +22,13 @@ func pollSqsQueue() {
 		tickerTimeout = 5
 	}
 
-	jobList := checkForNewJobs()
+	jobList, attempts := checkForNewJobs(0)
 	sortJobs(jobList)
 
 	go func() {
+		log.Println("Started polling...")
+		emptyResponses := 0
+
 		for {
 			select {
 			case <-done:
@@ -33,10 +36,10 @@ func pollSqsQueue() {
 				return
 			case <-queueTicker.C:
 				// 1. poll to get all items in queue
-				jobList = checkForNewJobs()
+				jobList, attempts = checkForNewJobs(attempts)
 
 				// 2. if queue is empty, disable the event rule and end the function
-				shutDownWhenEmpty(jobList)
+				emptyResponses = shutDownWhenEmpty(jobList, emptyResponses)
 
 				// 3. group queue jobs by provider
 				sortJobs(jobList)
@@ -49,6 +52,7 @@ func pollSqsQueue() {
 
 	// 5. Switch off after 5min
 	time.Sleep(time.Duration(tickerTimeout) * time.Minute)
+	log.Println("Done")
 }
 
 func main() {

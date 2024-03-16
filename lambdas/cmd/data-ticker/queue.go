@@ -9,13 +9,12 @@ import (
 
 var done = make(chan bool)
 
-func checkForNewJobs() *[]jobs.JobQueueItem {
-	attempts := 0
+func checkForNewJobs(attempts int) (*[]jobs.JobQueueItem, int) {
 	jobList, err := queueService.ReceiveJobs()
 
 	if err != nil {
 		attempts += 1
-		log.Printf("Failed to get queue items = %v", err)
+		log.Printf("Failed to get queue items = %v, attempts made = %v\n", err, attempts)
 	} else {
 		attempts = 0
 	}
@@ -23,16 +22,15 @@ func checkForNewJobs() *[]jobs.JobQueueItem {
 	if attempts >= 6 {
 		err = eventsService.StopTickerScheduler()
 		if err != nil {
-			log.Printf("Failed to stop scheduler = %v", err)
+			log.Printf("Failed to stop scheduler = %v\n", err)
 		}
 		log.Fatalf("Aborting after too many failed attempts")
 	}
 
-	return jobList
+	return jobList, attempts
 }
 
-func shutDownWhenEmpty(jobList *[]jobs.JobQueueItem) {
-	emptyResponses := 0
+func shutDownWhenEmpty(jobList *[]jobs.JobQueueItem, emptyResponses int) int {
 	if len(*jobList) == 0 {
 		emptyResponses += 1
 	} else {
@@ -43,11 +41,13 @@ func shutDownWhenEmpty(jobList *[]jobs.JobQueueItem) {
 		log.Println("No new jobs received in 60 seconds, disabling scheduler")
 		err := eventsService.StopTickerScheduler()
 		if err != nil {
-			log.Printf("Failed to get stop scheduler = %v", err)
+			log.Printf("Failed to stop scheduler = %v", err)
 		}
 	}
 	if emptyResponses == 12 {
-		log.Printf("No new jobs in 120seconds shutting down")
+		log.Println("No new jobs in 120seconds shutting down")
 		os.Exit(0)
 	}
+
+	return emptyResponses
 }

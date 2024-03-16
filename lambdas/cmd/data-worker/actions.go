@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 
-	"jon-richards.com/stock-app/internal/db"
+	"jon-richards.com/stock-app/internal/jobs"
 )
 
-func handleJobAction(job db.JobInput) error {
+func handleJobAction(job jobs.JobAction) error {
 	switch job.Type {
-	case db.NewStockItem:
-		return newStock(job.Provider, job.TickerId)
+	case jobs.NewTickerItem:
+		return setTickerDescription(job.Provider, job.TickerId)
 	default:
 		return fmt.Errorf("invalid action type = %v", job.Type)
 	}

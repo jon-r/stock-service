@@ -1,0 +1,6 @@
+POST https://5q7aiyzn31.execute-api.eu-west-2.amazonaws.com/prod/stocks/test
+
+{
+  "provider" : "POLYGON_IO",
+  "ticker": "AAPL"
+}

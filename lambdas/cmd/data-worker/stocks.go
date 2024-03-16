@@ -4,7 +4,7 @@ import (
 	"jon-richards.com/stock-app/internal/providers"
 )
 
-func newStock(provider providers.ProviderName, tickerId string) error {
+func setTickerDescription(provider providers.ProviderName, tickerId string) error {
 	var err error
 
 	// 1. fetch the ticker details (based on the above)

@@ -7,8 +7,8 @@ import { addCorsOptions } from "./helpers/api.ts";
 import { type TableNames, getDatabaseTableEnvVariables } from "./helpers/db.ts";
 import {
   DB_FULL_ACCESS_POLICY_ARN,
+  EVENTS_FULL_ACCESS_POLICY_ARN,
   LAMBDA_INVOKE_POLICY_ARN,
-  SCHEDULER_FULL_ACCESS_POLICY_ARN,
   SQS_FULL_ACCESS_POLICY_ARN,
   newLambdaIamRole,
 } from "./helpers/iam.ts";
@@ -72,7 +72,7 @@ export class ApiStack extends Stack {
         policyARNs: [
           SQS_FULL_ACCESS_POLICY_ARN,
           DB_FULL_ACCESS_POLICY_ARN,
-          SCHEDULER_FULL_ACCESS_POLICY_ARN,
+          EVENTS_FULL_ACCESS_POLICY_ARN,
           LAMBDA_INVOKE_POLICY_ARN,
         ],
       },

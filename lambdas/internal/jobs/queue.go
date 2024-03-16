@@ -57,23 +57,29 @@ func (queue QueueRepository) AddJobs(jobs []JobAction) error {
 		return err
 	}
 
+	log.Printf("Queue url: %v\n", queue.QueueUrl)
+	log.Printf("attempt to add items %v\n", messageRequests)
+
 	input := sqs.SendMessageBatchInput{
-		QueueUrl: &queue.QueueUrl,
+		QueueUrl: aws.String(queue.QueueUrl),
 		Entries:  messageRequests,
 	}
 
-	_, err = queue.svc.SendMessageBatch(context.TODO(), &input)
+	res, err := queue.svc.SendMessageBatch(context.TODO(), &input)
+
+	log.Printf("queue res: %+v\n", res)
 
 	return err
 }
 
 func (queue QueueRepository) ReceiveJobs() (*[]JobQueueItem, error) {
 	input := sqs.ReceiveMessageInput{
-		QueueUrl:            &queue.QueueUrl,
+		QueueUrl:            aws.String(queue.QueueUrl),
 		MaxNumberOfMessages: 10,
 		WaitTimeSeconds:     5,
-		VisibilityTimeout:   4 * 60,
 	}
+
+	log.Println("attempt to receive items...")
 
 	result, err := queue.svc.ReceiveMessage(context.TODO(), &input)
 
@@ -96,7 +102,7 @@ func (queue QueueRepository) ReceiveJobs() (*[]JobQueueItem, error) {
 
 func (queue QueueRepository) DeleteJob(receiptHandle string) error {
 	input := sqs.DeleteMessageInput{
-		QueueUrl:      &queue.QueueUrl,
+		QueueUrl:      aws.String(queue.QueueUrl),
 		ReceiptHandle: aws.String(receiptHandle),
 	}
 

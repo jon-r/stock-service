@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -16,9 +17,6 @@ type RequestParams struct {
 	TickerId string                 `json:"ticker"`
 }
 
-var queueService = jobs.NewQueueService()
-var eventsService = jobs.NewEventsService()
-
 func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var err error
 
@@ -30,7 +28,14 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 		return clientError(http.StatusBadRequest, err)
 	}
 
-	// 2. Create new job queue item
+	// 4. enter basic content to the database
+	err = dbService.NewTickerItem(params.Provider, params.TickerId)
+
+	if err != nil {
+		return clientError(http.StatusInternalServerError, err)
+	}
+
+	// 3. Create new job queue item
 	jobId := uuid.NewString()
 	job := jobs.JobAction{
 		JobId:    jobId,
@@ -44,9 +49,11 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 
 	if err != nil {
 		return clientError(http.StatusInternalServerError, err)
+	} else {
+		log.Printf("Added Job '%s' to queue", jobId)
 	}
 
-	// 3. enable the event timer
+	// 4. enable the event timer
 	err = eventsService.StartTickerScheduler()
 
 	if err != nil {
