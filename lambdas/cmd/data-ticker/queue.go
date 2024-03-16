@@ -40,14 +40,14 @@ func shutDownWhenEmpty(jobList *[]jobs.JobQueueItem) {
 	}
 
 	if emptyResponses == 6 {
-		log.Println("No jobs received in 60 seconds, disabling scheduler")
+		log.Println("No new jobs received in 60 seconds, disabling scheduler")
 		err := eventsService.StopTickerScheduler()
 		if err != nil {
 			log.Printf("Failed to get stop scheduler = %v", err)
 		}
 	}
 	if emptyResponses == 12 {
-		log.Printf("No jobs in 120seconds shutting down")
+		log.Printf("No new jobs in 120seconds shutting down")
 		os.Exit(0)
 	}
 }

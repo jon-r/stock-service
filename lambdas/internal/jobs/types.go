@@ -13,6 +13,7 @@ const (
 )
 
 type JobAction struct {
+	JobId    string
 	Provider providers.ProviderName
 	Type     JobTypes
 	TickerId string

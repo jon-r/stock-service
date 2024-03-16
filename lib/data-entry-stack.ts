@@ -85,6 +85,7 @@ export class DataEntryStack extends Stack {
         SCHEDULER_FULL_ACCESS_POLICY_ARN,
       ],
     });
+    const tickerTimeout = 5;
     const tickerFunction: go.GoFunction = new go.GoFunction(
       this,
       "DataEntryPollerFunction",
@@ -92,7 +93,7 @@ export class DataEntryStack extends Stack {
         entry: "lambdas/cmd/data-ticker",
         role: tickerFunctionRole,
         // long timeout, single concurrent function only
-        timeout: Duration.minutes(5),
+        timeout: Duration.minutes(tickerTimeout + 0.1),
         reservedConcurrentExecutions: 1,
         environment: {
           ...getTickerEnvVariables({
@@ -101,6 +102,7 @@ export class DataEntryStack extends Stack {
             eventPollerFunctionName: "", // wont self invoke
           }),
 
+          TICKER_TIMEOUT: String(tickerTimeout),
           LAMBDA_WORKER_NAME: workerFunction.functionName,
         },
       },

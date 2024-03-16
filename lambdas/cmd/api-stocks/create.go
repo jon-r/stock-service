@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/google/uuid"
 	"jon-richards.com/stock-app/internal/jobs"
 	"jon-richards.com/stock-app/internal/providers"
 )
@@ -14,7 +16,6 @@ type RequestParams struct {
 	TickerId string                 `json:"ticker"`
 }
 
-// var dbService = db.NewDatabaseService()
 var queueService = jobs.NewQueueService()
 var eventsService = jobs.NewEventsService()
 
@@ -30,7 +31,9 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 	}
 
 	// 2. Create new job queue item
+	jobId := uuid.NewString()
 	job := jobs.JobAction{
+		JobId:    jobId,
 		Type:     jobs.NewTickerItem,
 		Provider: params.Provider,
 		TickerId: params.TickerId,
@@ -50,7 +53,7 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 		return clientError(http.StatusInternalServerError, err)
 	}
 
-	return clientSuccess()
+	return clientSuccess(fmt.Sprintf("Success: Job '%s' queued", jobId))
 }
 
 func create(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {

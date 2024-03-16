@@ -45,7 +45,7 @@ func (events EventsRepository) StartTickerScheduler() error {
 		return err
 	}
 
-	lambdaErr := events.InvokePoller()
+	lambdaErr := events.InvokeTicker()
 
 	if lambdaErr != nil {
 		log.Printf("Failed to manually trigger poller but continuing anyway: %v", lambdaErr)
@@ -54,8 +54,8 @@ func (events EventsRepository) StartTickerScheduler() error {
 	return err
 }
 
-func (events EventsRepository) InvokePoller() error {
-	functionName := os.Getenv("LAMBDA_POLLER_NAME")
+func (events EventsRepository) InvokeTicker() error {
+	functionName := os.Getenv("LAMBDA_TICKER_NAME")
 	lambdaReq := lambda.InvokeInput{
 		FunctionName:   aws.String(functionName),
 		InvocationType: types.InvocationTypeEvent,

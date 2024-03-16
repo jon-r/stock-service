@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -14,6 +16,11 @@ var queueService = jobs.NewQueueService()
 
 func pollSqsQueue() {
 	queueTicker := time.NewTicker(10 * time.Second)
+	tickerTimeout, err := strconv.Atoi(os.Getenv("TICKER_TIMEOUT"))
+
+	if err != nil {
+		tickerTimeout = 5
+	}
 
 	jobList := checkForNewJobs()
 	sortJobs(jobList)
@@ -41,7 +48,7 @@ func pollSqsQueue() {
 	go invokeWorkerTicker(providers.PolygonIo, providers.PolygonIoDelay)
 
 	// 5. Switch off after 5min
-	time.Sleep(5 * time.Minute)
+	time.Sleep(time.Duration(tickerTimeout) * time.Minute)
 }
 
 func main() {
