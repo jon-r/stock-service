@@ -8,7 +8,7 @@ func setTickerDescription(provider providers.ProviderName, tickerId string) erro
 	var err error
 
 	// 1. fetch the ticker details (based on the above)
-	//err, details := providers.GetStockIndexDetails(provider, tickerId)
+	err, details := providers.FetchTickerDescription(provider, tickerId)
 
 	if err != nil {
 		return err

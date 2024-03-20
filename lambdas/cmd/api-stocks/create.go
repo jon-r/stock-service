@@ -17,6 +17,29 @@ type RequestParams struct {
 	TickerId string                 `json:"ticker"`
 }
 
+func newStockTickerJobs(provider providers.ProviderName, tickerId string) *[]jobs.JobAction {
+	newItemActions := []jobs.JobTypes{
+		jobs.LoadTickerDescription,
+		jobs.LoadHistoricalPrices,
+		jobs.LoadHistoricalDividends,
+		jobs.LoadTickerIcon,
+	}
+
+	jobActions := make([]jobs.JobAction, len(newItemActions))
+	for i, jobType := range newItemActions {
+		job := jobs.JobAction{
+			JobId:    uuid.NewString(),
+			Provider: provider,
+			Type:     jobType,
+			TickerId: tickerId,
+			Attempts: 0,
+		}
+		jobActions[i] = job
+	}
+
+	return &jobActions
+}
+
 func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var err error
 
@@ -36,21 +59,14 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 	}
 
 	// 3. Create new job queue item
-	jobId := uuid.NewString()
-	job := jobs.JobAction{
-		JobId:    jobId,
-		Type:     jobs.NewTickerItem,
-		Provider: params.Provider,
-		TickerId: params.TickerId,
-		Attempts: 0,
-	}
+	newItemJobs := newStockTickerJobs(params.Provider, params.TickerId)
 
-	err = queueService.AddJobs([]jobs.JobAction{job})
+	err = queueService.AddJobs(*newItemJobs)
 
 	if err != nil {
 		return clientError(http.StatusInternalServerError, err)
 	} else {
-		log.Printf("Added Job '%s' to queue", jobId)
+		log.Printf("Added New ticker '%s' to queue", params.TickerId)
 	}
 
 	// 4. enable the event timer
@@ -60,7 +76,7 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 		return clientError(http.StatusInternalServerError, err)
 	}
 
-	return clientSuccess(fmt.Sprintf("Success: Job '%s' queued", jobId))
+	return clientSuccess(fmt.Sprintf("Success: ticker '%s' queued", params.TickerId))
 }
 
 func create(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {

@@ -69,7 +69,7 @@ export class DataEntryStack extends Stack {
 
         POLYGON_API_KEY: import.meta.env.VITE_POLYGON_IO_API_KEY,
 
-        SQS_DL_QUEUE_URL: deadLetterQueue.queueUrl,
+        SQS_DLQ_URL: deadLetterQueue.queueUrl,
       },
     });
 

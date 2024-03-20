@@ -46,6 +46,7 @@ func shutDownWhenEmpty(jobList *[]jobs.JobQueueItem, emptyResponses int) int {
 	}
 	if emptyResponses == 12 {
 		log.Println("No new jobs in 120seconds shutting down")
+		// todo dont exit here, instead wait for all the tickers to run out of jobs (maybe just never exit? few empty sqs queries are negligible)
 		os.Exit(0)
 	}
 

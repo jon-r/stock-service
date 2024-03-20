@@ -22,10 +22,10 @@ func GetSettings(provider ProviderName) Settings {
 	return settings
 }
 
-func GetStockIndexDetails(provider ProviderName, ticker string) (error, *IndexDetails) {
+func FetchTickerDescription(provider ProviderName, ticker string) (error, *IndexDetails) {
 	switch provider {
 	case PolygonIo:
-		return GetPolygonIndexDetails(ticker)
+		return FetchPolygonTickerDescription(ticker)
 	default:
 		return fmt.Errorf("incorrect provider name: %v", provider), nil
 	}

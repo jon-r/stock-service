@@ -2,72 +2,53 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 
 	"github.com/aws/aws-lambda-go/lambda"
-
 	"jon-richards.com/stock-app/internal/db"
-	"jon-richards.com/stock-app/internal/queue"
+	"jon-richards.com/stock-app/internal/jobs"
 )
 
 var dbService = db.NewDatabaseService()
-var queueService = queue.NewQueueService()
+
+var queueService = jobs.NewQueueService()
 
 // todo custom event from data ticker (prob be similar to job table?)
-func handleRequest(ctx context.Context, event any) {
+func handleRequest(ctx context.Context, event jobs.JobAction) {
 	var err error
 
-	output, err := json.MarshalIndent(event, "", "  ")
-	log.Println(string(output))
+	// 1. handle action
+	err = handleJobAction(event)
 
-	// 1. get event details
-	//message, err := queue.ParseQueueEvent(event)
+	if err == nil {
+		log.Printf("Job %v completed", event.JobId)
+		return // job done
+	}
 
-	// 2. handle action
+	var queueErr error
+	// 2. if action failed <= 3 times, or new queue actions after last, add to the queue
+	if event.Attempts <= 3 {
+		log.Printf("failed to process event %v, readding it to queue: %v\n", event.JobId, err)
+		queueErr = retryFailedJob(event)
 
-	// 3. if action failed < 3 times, or new queue actions after last, add to the queue
+		if queueErr == nil {
+			return
+		}
+	}
 
-	// 4. if action failed 3 times put in DLQ
-
-	//if err != nil {
-	//	log.Fatalf("Error parsing queue event: %s", err)
-	//} else {
-	//	log.Printf("Handling event: %s", message.Provider)
-	//}
-
-	//job, err := dbService.FindJobByProvider(message.Provider)
-
-	//if err != nil {
-	//	log.Fatalf("Error getting item: %s", err)
-	//} else if job == nil {
-	//	// no more items to fetch
-	//	return
-	//} else {
-	//	log.Printf("Job: %s", job.JobId)
-	//}
-
-	//
-	//err = handleJobAction(job.JobInput)
-
-	//if err != nil {
-	//	log.Fatalf("Error with action '%s': %s", job.JobInput.Type, err)
-	//} else {
-	//	log.Printf("Successfully ran action %v", job.JobInput)
-	//}
-
-	//err = dbService.DeleteJob(job)
-
-	//if err != nil {
-	//	log.Fatalf("Error calling dynamodb.DeleteItem: %s", err)
-	//}
-
-	//err = queueService.SendDelayedEvents([]queue.Message{message.Message})
-
-	if err != nil {
-		log.Fatalf("Error adding item to Queue: %s", err)
+	var failReason error
+	if queueErr != nil {
+		failReason = queueErr
 	} else {
-		log.Println("Successfully added item to Queue")
+		failReason = err
+	}
+
+	// 3. if action failed 3 times, or was not able to relist it, put in DLQ
+	log.Printf("Job %v failed %d times, adding to DQL", event.JobId, event.Attempts)
+	queueErr = queueService.AddJobToDLQ(event, failReason)
+
+	if queueErr != nil {
+		log.Fatalf("Failed to add item to DLQ: %v", err)
 	}
 }
 

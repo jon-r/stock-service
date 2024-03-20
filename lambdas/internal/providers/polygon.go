@@ -2,14 +2,15 @@ package providers
 
 import (
 	"context"
+	"os"
+
 	polygon "github.com/polygon-io/client-go/rest"
 	"github.com/polygon-io/client-go/rest/models"
-	"os"
 )
 
 var client = polygon.New(os.Getenv("POLYGON_API_KEY"))
 
-func GetPolygonIndexDetails(tickerId string) (error, *IndexDetails) {
+func FetchPolygonTickerDescription(tickerId string) (error, *IndexDetails) {
 	params := models.GetTickerDetailsParams{
 		Ticker: tickerId,
 	}

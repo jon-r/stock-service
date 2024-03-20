@@ -5,10 +5,13 @@ import "jon-richards.com/stock-app/internal/providers"
 type JobTypes string
 
 const (
-	NewTickerItem     JobTypes = "NEW_TICKER_ITEM"
-	LoadTickerHistory JobTypes = "LOAD_TICKER_HISTORY"
-	UpdatePrices      JobTypes = "UPDATE_PRICES"
-	UpdateDividends   JobTypes = "UPDATE_DIVIDENDS"
+	LoadTickerDescription   JobTypes = "LOAD_TICKER_DESCRIPTION"
+	LoadHistoricalPrices    JobTypes = "LOAD_HISTORICAL_PRICES"
+	LoadHistoricalDividends JobTypes = "LOAD_HISTORICAL_DIVIDENDS"
+
+	LoadTickerIcon  JobTypes = "LOAD_TICKER_ICON"
+	UpdatePrices    JobTypes = "UPDATE_PRICES"
+	UpdateDividends JobTypes = "UPDATE_DIVIDENDS"
 	// ???
 )
 
@@ -18,6 +21,11 @@ type JobAction struct {
 	Type     JobTypes
 	TickerId string
 	Attempts int
+}
+
+type JobErrorItem struct {
+	JobAction
+	ErrorReason error
 }
 
 type JobQueueItem struct {

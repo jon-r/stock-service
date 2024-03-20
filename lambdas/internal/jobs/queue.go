@@ -16,6 +16,7 @@ import (
 type QueueRepository struct {
 	svc      *sqs.Client
 	QueueUrl string
+	DLQUrl   string
 }
 
 func NewQueueService() *QueueRepository {
@@ -28,6 +29,7 @@ func NewQueueService() *QueueRepository {
 	return &QueueRepository{
 		svc:      sqs.NewFromConfig(sdkConfig),
 		QueueUrl: os.Getenv("SQS_QUEUE_URL"),
+		DLQUrl:   os.Getenv("SQS_DLQ_URL"),
 	}
 }
 
@@ -107,6 +109,29 @@ func (queue QueueRepository) DeleteJob(receiptHandle string) error {
 	}
 
 	_, err := queue.svc.DeleteMessage(context.TODO(), &input)
+
+	return err
+}
+
+func (queue QueueRepository) AddJobToDLQ(job JobAction, failReason error) error {
+	var err error
+
+	data, err := json.Marshal(JobErrorItem{
+		JobAction:   job,
+		ErrorReason: failReason,
+	})
+	if err != nil {
+		return err
+	}
+
+	body := string(data)
+
+	input := sqs.SendMessageInput{
+		QueueUrl:    aws.String(queue.DLQUrl),
+		MessageBody: &body,
+	}
+
+	_, err = queue.svc.SendMessage(context.TODO(), &input)
 
 	return err
 }
