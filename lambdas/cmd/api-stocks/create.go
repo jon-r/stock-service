@@ -21,8 +21,8 @@ func newStockTickerJobs(provider providers.ProviderName, tickerId string) *[]job
 	newItemActions := []jobs.JobTypes{
 		jobs.LoadTickerDescription,
 		jobs.LoadHistoricalPrices,
-		jobs.LoadHistoricalDividends,
-		jobs.LoadTickerIcon,
+		// TODO jobs.LoadHistoricalDividends,
+		// TODO jobs.LoadTickerIcon,
 	}
 
 	jobActions := make([]jobs.JobAction, len(newItemActions))
@@ -51,7 +51,7 @@ func createStockIndex(request events.APIGatewayProxyRequest) (*events.APIGateway
 		return clientError(http.StatusBadRequest, err)
 	}
 
-	// 4. enter basic content to the database
+	// 2. enter basic content to the database
 	err = dbService.NewTickerItem(params.Provider, params.TickerId)
 
 	if err != nil {

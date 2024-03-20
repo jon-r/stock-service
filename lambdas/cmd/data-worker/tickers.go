@@ -8,24 +8,28 @@ func setTickerDescription(provider providers.ProviderName, tickerId string) erro
 	var err error
 
 	// 1. fetch the ticker details (based on the above)
-	err, details := providers.FetchTickerDescription(provider, tickerId)
+	err, description := providers.FetchTickerDescription(provider, tickerId)
 
 	if err != nil {
 		return err
 	}
 
 	// 2. insert this ^ data into the ticker table
-	//err = dbService.NewStockItem(provider, tickerId, db.StockItemProperties{
-	//	FullName: details.FullName,
-	//	Currency: details.Currency,
-	//})
+	err = dbService.SetTickerDescription(tickerId, description)
+
+	return err
+}
+
+func setTickerHistoricalPrices(provider providers.ProviderName, tickerId string) error {
+	var err error
+
+	err, prices := providers.FetchTickerHistoricalPrices(provider, tickerId)
 
 	if err != nil {
 		return err
 	}
 
-	// 3. return any new actions to the jobs queue, OR return a 'reattempt' OR a dead-letter-queue
-	// todo
+	err = dbService.SetTickerHistoricalPrices(tickerId, prices)
 
 	return err
 }

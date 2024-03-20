@@ -13,7 +13,6 @@ var dbService = db.NewDatabaseService()
 
 var queueService = jobs.NewQueueService()
 
-// todo custom event from data ticker (prob be similar to job table?)
 func handleRequest(ctx context.Context, event jobs.JobAction) {
 	var err error
 

@@ -2,7 +2,8 @@ package providers
 
 import (
 	"fmt"
-	"log"
+
+	"jon-richards.com/stock-app/internal/db"
 )
 
 type IndexDetails struct {
@@ -12,20 +13,19 @@ type IndexDetails struct {
 	// icon
 }
 
-func GetSettings(provider ProviderName) Settings {
-	settings, ok := SettingsList[provider]
-
-	if !ok {
-		log.Fatalf("Missing settings for provider = %v", provider)
-	}
-
-	return settings
-}
-
-func FetchTickerDescription(provider ProviderName, ticker string) (error, *IndexDetails) {
+func FetchTickerDescription(provider ProviderName, tickerId string) (error, *db.TickerDescription) {
 	switch provider {
 	case PolygonIo:
-		return FetchPolygonTickerDescription(ticker)
+		return FetchPolygonTickerDescription(tickerId)
+	default:
+		return fmt.Errorf("incorrect provider name: %v", provider), nil
+	}
+}
+
+func FetchTickerHistoricalPrices(provider ProviderName, tickerId string) (error, *[]db.TickerPrices) {
+	switch provider {
+	case PolygonIo:
+		return FetchPolygonTickerPrices(tickerId)
 	default:
 		return fmt.Errorf("incorrect provider name: %v", provider), nil
 	}

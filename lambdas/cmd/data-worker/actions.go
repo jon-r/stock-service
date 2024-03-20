@@ -10,6 +10,9 @@ func handleJobAction(job jobs.JobAction) error {
 	switch job.Type {
 	case jobs.LoadTickerDescription:
 		return setTickerDescription(job.Provider, job.TickerId)
+	case jobs.LoadHistoricalPrices:
+		return setTickerHistoricalPrices(job.Provider, job.TickerId)
+
 	default:
 		return fmt.Errorf("invalid action type = %v", job.Type)
 	}
