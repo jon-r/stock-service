@@ -1,9 +1,10 @@
 package main
 
 import (
-	"log"
+	"context"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"jon-richards.com/stock-app/internal/logging"
 )
 
 //var dbService = db.NewDatabaseService()
@@ -30,25 +31,28 @@ import (
 //	{Provider: providers.Slow},
 //}
 
-func handleRequest() {
-	log.Println("Hello world")
+func handleRequest(ctx context.Context) {
+	log := logging.NewLogger(ctx)
+	defer log.Sync()
+
+	log.Infoln("Hello world")
 
 	//var err error
 	//
 	//err = dbService.InsertJobs(fakeJobs)
 	//
 	//if err != nil {
-	//	log.Fatalf("Error adding data to DB: %s", err)
+	//	logging.Fatalf("Error adding data to DB: %s", err)
 	//} else {
-	//	log.Println("Successfully added items to DB")
+	//	logging.Println("Successfully added items to DB")
 	//}
 	//
 	//err = queueService.SendDelayedEvents(fakeQueueEvents)
 	//
 	//if err != nil {
-	//	log.Fatalf("Error adding items to Queue: %s", err)
+	//	logging.Fatalf("Error adding items to Queue: %s", err)
 	//} else {
-	//	log.Println("Successfully added items to Queue")
+	//	logging.Println("Successfully added items to Queue")
 	//}
 }
 

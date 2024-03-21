@@ -21,7 +21,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	}
 	body, err := json.Marshal(resp)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: string("Error parsing payload"), StatusCode: 400}, err
+		return events.APIGatewayProxyResponse{Body: "Error parsing payload", StatusCode: 400}, err
 	}
 	return events.APIGatewayProxyResponse{Body: string(body), StatusCode: 200}, nil
 }

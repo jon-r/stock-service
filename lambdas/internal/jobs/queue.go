@@ -59,17 +59,12 @@ func (queue QueueRepository) AddJobs(jobs []JobAction) error {
 		return err
 	}
 
-	log.Printf("Queue url: %v\n", queue.QueueUrl)
-	log.Printf("attempt to add items %v\n", messageRequests)
-
 	input := sqs.SendMessageBatchInput{
 		QueueUrl: aws.String(queue.QueueUrl),
 		Entries:  messageRequests,
 	}
 
-	res, err := queue.svc.SendMessageBatch(context.TODO(), &input)
-
-	log.Printf("queue res: %+v\n", res)
+	_, err = queue.svc.SendMessageBatch(context.TODO(), &input)
 
 	return err
 }
@@ -80,8 +75,6 @@ func (queue QueueRepository) ReceiveJobs() (*[]JobQueueItem, error) {
 		MaxNumberOfMessages: 10,
 		WaitTimeSeconds:     5,
 	}
-
-	log.Println("attempt to receive items...")
 
 	result, err := queue.svc.ReceiveMessage(context.TODO(), &input)
 

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"log"
+	"context"
 	"time"
 
 	"jon-richards.com/stock-app/internal/jobs"
+	"jon-richards.com/stock-app/internal/logging"
 	"jon-richards.com/stock-app/internal/providers"
 )
 
@@ -18,7 +19,10 @@ func sortJobs(jobList *[]jobs.JobQueueItem) {
 	}
 }
 
-func invokeWorkerTicker(provider providers.ProviderName, delay providers.SettingsDelay) {
+func invokeWorkerTicker(ctx context.Context, provider providers.ProviderName, delay providers.SettingsDelay) {
+	log := logging.NewLogger(ctx)
+	defer log.Sync()
+
 	var err error
 
 	duration := time.Duration(delay) * time.Second
@@ -34,7 +38,9 @@ func invokeWorkerTicker(provider providers.ProviderName, delay providers.Setting
 				if ok {
 					err = eventsService.InvokeWorker(job.Action)
 					if err != nil {
-						log.Printf("Failed to Invoke Worker = %v", err)
+						log.Warnw("Failed to Invoke Worker",
+							"error", err,
+						)
 
 						updatedJob := job.Action
 						updatedJob.Attempts += 1
@@ -45,7 +51,9 @@ func invokeWorkerTicker(provider providers.ProviderName, delay providers.Setting
 
 					err = queueService.DeleteJob(job.RecieptHandle)
 					if err != nil {
-						log.Printf("Failed to delete Job from queue = %v", err)
+						log.Warnw("Failed to delete Job from queue",
+							"error", err,
+						)
 					}
 				}
 			default:
