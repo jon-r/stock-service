@@ -1,6 +1,5 @@
-import { Stack, type StackProps } from "aws-cdk-lib";
+import { RemovalPolicy, Stack, type StackProps } from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
-import type { TablePropsV2 } from "aws-cdk-lib/aws-dynamodb";
 import type { Construct } from "constructs";
 
 import {
@@ -23,12 +22,7 @@ export class DatabaseStack extends Stack {
     // users table
     const usersTable = this.#newDynamodbTable(USERS_MODEL_NAME);
 
-    const tickersTable = this.#newDynamodbTable(TICKERS_MODEL_NAME, undefined, {
-      sortKey: {
-        name: "UpdatedAt",
-        type: dynamodb.AttributeType.NUMBER,
-      },
-    });
+    const tickersTable = this.#newDynamodbTable(TICKERS_MODEL_NAME);
 
     const transactionsTable = this.#newDynamodbTable(TRANSACTIONS_MODEL_NAME);
 
@@ -40,23 +34,15 @@ export class DatabaseStack extends Stack {
     };
   }
 
-  #newDynamodbTable(
-    modelName: string,
-    secondaryIndexes?: string[],
-    props?: Partial<TablePropsV2>,
-  ) {
+  #newDynamodbTable(modelName: string, props?: Partial<dynamodb.TablePropsV2>) {
     return new dynamodb.TableV2(this, `${modelName}Table`, {
       partitionKey: {
         name: `${modelName}Id`,
         type: dynamodb.AttributeType.STRING,
       },
-      globalSecondaryIndexes: secondaryIndexes?.map((indexName) => ({
-        indexName: `${indexName}Index`,
-        partitionKey: {
-          name: indexName,
-          type: dynamodb.AttributeType.STRING,
-        },
-      })),
+
+      removalPolicy: RemovalPolicy.DESTROY,
+
       ...props,
     });
   }

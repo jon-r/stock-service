@@ -1,7 +1,6 @@
 *.js
 !*rc.js
 !jest.config.js
-*.d.ts
 node_modules
 pkg/
 

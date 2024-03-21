@@ -3,27 +3,65 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"jon-richards.com/stock-app/internal/db"
+	"jon-richards.com/stock-app/internal/jobs"
 )
 
-type response struct {
-	Message string                        `json:"greeting"`
-	Event   events.APIGatewayProxyRequest `json:"request"`
+type ResponseBody struct {
+	Message string `json:"message"`
+	Status  int    `json:"status"`
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+var queueService = jobs.NewQueueService()
+var eventsService = jobs.NewEventsService()
+var dbService = db.NewDatabaseService()
 
-	resp := &response{
-		Message: "hello STOCKS world!",
-		Event:   request,
+func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	// todo return different error statuses and look at the error
+	switch request.HTTPMethod {
+	case "POST":
+		return create(request)
+	default:
+		return clientError(http.StatusMethodNotAllowed, nil)
 	}
-	body, err := json.Marshal(resp)
+}
+
+func clientError(status int, err error) (*events.APIGatewayProxyResponse, error) {
+	// todo more detailed error handling?
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: string("Error parsing payload"), StatusCode: 400}, err
+		fmt.Printf("request error: %v", err)
 	}
-	return events.APIGatewayProxyResponse{Body: string(body), StatusCode: 200}, nil
+
+	body, _ := json.Marshal(ResponseBody{
+		Message: http.StatusText(status),
+		Status:  status,
+	})
+
+	return &events.APIGatewayProxyResponse{
+		StatusCode: status,
+		Body:       string(body),
+	}, nil
+}
+
+func clientSuccess(message string) (*events.APIGatewayProxyResponse, error) {
+	if message == "" {
+		message = "Success"
+	}
+
+	body, _ := json.Marshal(ResponseBody{
+		Message: message,
+		Status:  http.StatusOK,
+	})
+
+	return &events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Body:       string(body),
+	}, nil
 }
 
 func main() {

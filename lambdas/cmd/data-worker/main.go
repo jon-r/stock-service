@@ -4,68 +4,50 @@ import (
 	"context"
 	"log"
 
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-
-	"jon-richards.com/stock-app/lambdas/internal/db"
-	"jon-richards.com/stock-app/lambdas/internal/providers"
-	"jon-richards.com/stock-app/lambdas/internal/queue"
+	"jon-richards.com/stock-app/internal/db"
+	"jon-richards.com/stock-app/internal/jobs"
 )
 
 var dbService = db.NewDatabaseService()
-var queueService = queue.NewQueueService()
 
-func handleRequest(ctx context.Context, event events.SQSEvent) {
+var queueService = jobs.NewQueueService()
+
+func handleRequest(ctx context.Context, event jobs.JobAction) {
 	var err error
 
-	message, err := queue.ParseQueueEvent(event)
+	// 1. handle action
+	err = handleJobAction(event)
 
-	if err != nil {
-		log.Fatalf("Error parsing queue event: %s", err)
+	if err == nil {
+		log.Printf("Job %v completed", event.JobId)
+		return // job done
+	}
+
+	var queueErr error
+	// 2. if action failed <= 3 times, or new queue actions after last, add to the queue
+	if event.Attempts <= 3 {
+		log.Printf("failed to process event %v, readding it to queue: %v\n", event.JobId, err)
+		queueErr = retryFailedJob(event)
+
+		if queueErr == nil {
+			return
+		}
+	}
+
+	var failReason error
+	if queueErr != nil {
+		failReason = queueErr
 	} else {
-		log.Printf("Handling event: %s", message.Provider)
+		failReason = err
 	}
 
-	job, err := dbService.FindJobByProvider(message.Provider)
+	// 3. if action failed 3 times, or was not able to relist it, put in DLQ
+	log.Printf("Job %v failed %d times, adding to DQL", event.JobId, event.Attempts)
+	queueErr = queueService.AddJobToDLQ(event, failReason)
 
-	if err != nil {
-		log.Fatalf("Error getting item: %s", err)
-	} else if job == nil {
-		// no more items to fetch
-		return
-	} else {
-		log.Printf("Job: %s", job.JobId)
-	}
-
-	settings := providers.GetSettings(message.Provider)
-
-	// todo a switch would be here to handle different action types
-	res, err := providers.FetchDogItem(settings.Url)
-
-	if err != nil {
-		log.Fatalf("Error calling http.get: %s", err)
-	}
-
-	err = dbService.UpsertStockItem(res, job)
-
-	if err != nil {
-		log.Fatalf("Error calling dynamodb.WriteItem: %s", err)
-	} else {
-		log.Println("Successfully added items to tables")
-	}
-
-	err = dbService.DeleteJob(job)
-
-	if err != nil {
-		log.Fatalf("Error calling dynamodb.DeleteItem: %s", err)
-	}
-
-	err = queueService.SendDelayedEvents([]queue.Message{message.Message})
-
-	if err != nil {
-		log.Fatalf("Error adding item to Queue: %s", err)
-	} else {
-		log.Println("Successfully added item to Queue")
+	if queueErr != nil {
+		log.Fatalf("Failed to add item to DLQ: %v", err)
 	}
 }
 

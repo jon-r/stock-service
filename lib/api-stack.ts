@@ -4,11 +4,28 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import type { Construct } from "constructs";
 
 import { addCorsOptions } from "./helpers/api.ts";
+import { type TableNames, getDatabaseTableEnvVariables } from "./helpers/db.ts";
+import {
+  DB_FULL_ACCESS_POLICY_ARN,
+  EVENTS_FULL_ACCESS_POLICY_ARN,
+  LAMBDA_INVOKE_POLICY_ARN,
+  SQS_FULL_ACCESS_POLICY_ARN,
+  newLambdaIamRole,
+} from "./helpers/iam.ts";
+import {
+  type DataTickerProps,
+  getTickerEnvVariables,
+} from "./helpers/ticker.ts";
+
+type ApiStackProps = StackProps & {
+  dataTickerProps: DataTickerProps;
+  tableNames: TableNames;
+};
 
 export class ApiStack extends Stack {
   apiUrl: string;
 
-  constructor(app: Construct, id: string, props?: StackProps) {
+  constructor(app: Construct, id: string, props: ApiStackProps) {
     super(app, id, props);
 
     // auth middleware
@@ -21,6 +38,9 @@ export class ApiStack extends Stack {
       "UsersControllerFunction",
       {
         entry: "lambdas/cmd/api-users",
+        environment: {
+          ...getDatabaseTableEnvVariables(props.tableNames),
+        },
       },
     );
     const usersIntegration = new apigateway.LambdaIntegration(
@@ -34,6 +54,9 @@ export class ApiStack extends Stack {
       "LogsControllerFunction",
       {
         entry: "lambdas/cmd/api-logs",
+        environment: {
+          ...getDatabaseTableEnvVariables(props.tableNames),
+        },
       },
     );
     const logsIntegration = new apigateway.LambdaIntegration(
@@ -42,17 +65,33 @@ export class ApiStack extends Stack {
     // TODO roles
 
     // stock indexes controller
+    const stocksControllerFunctionRole = newLambdaIamRole(
+      this,
+      "DataEntryWorker",
+      {
+        policyARNs: [
+          SQS_FULL_ACCESS_POLICY_ARN,
+          DB_FULL_ACCESS_POLICY_ARN,
+          EVENTS_FULL_ACCESS_POLICY_ARN,
+          LAMBDA_INVOKE_POLICY_ARN,
+        ],
+      },
+    );
     const stocksControllerFunction = new go.GoFunction(
       this,
       "StocksControllerFunction",
       {
         entry: "lambdas/cmd/api-stocks",
+        role: stocksControllerFunctionRole,
+        environment: {
+          ...getTickerEnvVariables(props.dataTickerProps),
+          ...getDatabaseTableEnvVariables(props.tableNames),
+        },
       },
     );
     const stocksIntegration = new apigateway.LambdaIntegration(
       stocksControllerFunction,
     );
-    // TODO roles
 
     const api = new apigateway.RestApi(this, "stockAppApi", {
       restApiName: "Stock App API",
@@ -71,6 +110,7 @@ export class ApiStack extends Stack {
 
     const stocksApi = api.root.addResource("stocks").addResource("{path+}");
     stocksApi.addMethod("GET", stocksIntegration);
+    stocksApi.addMethod("POST", stocksIntegration);
     addCorsOptions(stocksApi);
 
     this.apiUrl = api.url;
