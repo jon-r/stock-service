@@ -2,8 +2,6 @@ package providers
 
 import (
 	"fmt"
-
-	"jon-richards.com/stock-app/internal/db"
 )
 
 type IndexDetails struct {
@@ -13,7 +11,7 @@ type IndexDetails struct {
 	// icon
 }
 
-func FetchTickerDescription(provider ProviderName, tickerId string) (error, *db.TickerDescription) {
+func FetchTickerDescription(provider ProviderName, tickerId string) (error, *TickerDescription) {
 	switch provider {
 	case PolygonIo:
 		return FetchPolygonTickerDescription(tickerId)
@@ -22,7 +20,7 @@ func FetchTickerDescription(provider ProviderName, tickerId string) (error, *db.
 	}
 }
 
-func FetchTickerHistoricalPrices(provider ProviderName, tickerId string) (error, *[]db.TickerPrices) {
+func FetchTickerHistoricalPrices(provider ProviderName, tickerId string) (error, *[]TickerPrices) {
 	switch provider {
 	case PolygonIo:
 		return FetchPolygonTickerPrices(tickerId)

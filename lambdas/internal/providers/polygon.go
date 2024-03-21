@@ -7,12 +7,11 @@ import (
 
 	polygon "github.com/polygon-io/client-go/rest"
 	"github.com/polygon-io/client-go/rest/models"
-	"jon-richards.com/stock-app/internal/db"
 )
 
 var client = polygon.New(os.Getenv("POLYGON_API_KEY"))
 
-func FetchPolygonTickerDescription(tickerId string) (error, *db.TickerDescription) {
+func FetchPolygonTickerDescription(tickerId string) (error, *TickerDescription) {
 	params := models.GetTickerDetailsParams{
 		Ticker: tickerId,
 	}
@@ -22,7 +21,7 @@ func FetchPolygonTickerDescription(tickerId string) (error, *db.TickerDescriptio
 	if err != nil {
 		return err, nil
 	}
-	details := db.TickerDescription{
+	details := TickerDescription{
 		Currency: res.Results.CurrencyName,
 		FullName: res.Results.Name,
 		Icon:     res.Results.Branding.IconURL,
@@ -33,7 +32,7 @@ func FetchPolygonTickerDescription(tickerId string) (error, *db.TickerDescriptio
 
 var oldestHistoricalPoint = models.Millis(time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC))
 
-func FetchPolygonTickerPrices(tickerId string) (error, *[]db.TickerPrices) {
+func FetchPolygonTickerPrices(tickerId string) (error, *[]TickerPrices) {
 	params := models.ListAggsParams{
 		Ticker:     tickerId,
 		Multiplier: 1,
@@ -44,12 +43,12 @@ func FetchPolygonTickerPrices(tickerId string) (error, *[]db.TickerPrices) {
 
 	iter := client.ListAggs(context.TODO(), params)
 
-	var prices []db.TickerPrices
+	var prices []TickerPrices
 
 	for iter.Next() {
 		item := iter.Item()
 
-		prices = append(prices, db.TickerPrices{
+		prices = append(prices, TickerPrices{
 			Open:      item.Open,
 			Close:     item.Close,
 			High:      item.High,

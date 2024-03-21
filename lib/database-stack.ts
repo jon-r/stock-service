@@ -1,6 +1,5 @@
-import { Stack, type StackProps } from "aws-cdk-lib";
+import { RemovalPolicy, Stack, type StackProps } from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
-import type { TablePropsV2 } from "aws-cdk-lib/aws-dynamodb";
 import type { Construct } from "constructs";
 
 import {
@@ -35,12 +34,15 @@ export class DatabaseStack extends Stack {
     };
   }
 
-  #newDynamodbTable(modelName: string, props?: Partial<TablePropsV2>) {
+  #newDynamodbTable(modelName: string, props?: Partial<dynamodb.TablePropsV2>) {
     return new dynamodb.TableV2(this, `${modelName}Table`, {
       partitionKey: {
         name: `${modelName}Id`,
         type: dynamodb.AttributeType.STRING,
       },
+
+      removalPolicy: RemovalPolicy.DESTROY,
+
       ...props,
     });
   }

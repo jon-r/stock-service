@@ -8,40 +8,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/polygon-io/client-go/rest/models"
 	"jon-richards.com/stock-app/internal/providers"
 )
-
-type TickerDescription struct {
-	FullName string
-	Currency string
-	Icon     string
-}
-
-type TickerPrices struct {
-	Open      float64
-	Close     float64
-	High      float64
-	Average   float64
-	Low       float64
-	Timestamp models.Millis
-}
-
-type TickerItem struct {
-	TickerId    string
-	Provider    providers.ProviderName
-	Description TickerDescription
-	Prices      []TickerPrices
-
-	UpdatedAt int64
-}
 
 var tableName = os.Getenv("DB_TICKERS_TABLE_NAME")
 
 func (db DatabaseRepository) NewTickerItem(provider providers.ProviderName, tickerId string) error {
 	var err error
 
-	ticker := TickerItem{
+	ticker := providers.TickerItem{
 		TickerId:  tickerId,
 		Provider:  provider,
 		UpdatedAt: time.Now().UnixMilli(),
@@ -91,10 +66,10 @@ func (db DatabaseRepository) UpdateTickerItem(tickerId string, name string, valu
 	return err
 }
 
-func (db DatabaseRepository) SetTickerDescription(tickerId string, description *TickerDescription) error {
+func (db DatabaseRepository) SetTickerDescription(tickerId string, description *providers.TickerDescription) error {
 	return db.UpdateTickerItem(tickerId, "Description", *description)
 }
 
-func (db DatabaseRepository) SetTickerHistoricalPrices(tickerId string, prices *[]TickerPrices) error {
+func (db DatabaseRepository) SetTickerHistoricalPrices(tickerId string, prices *[]providers.TickerPrices) error {
 	return db.UpdateTickerItem(tickerId, "Prices", *prices)
 }
