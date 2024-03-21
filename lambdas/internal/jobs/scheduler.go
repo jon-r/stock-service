@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
+	"jon-richards.com/stock-app/internal/logging"
 )
 
 type EventsRepository struct {
@@ -30,7 +31,10 @@ func NewEventsService() *EventsRepository {
 	}
 }
 
-func (events EventsRepository) StartTickerScheduler() error {
+func (events EventsRepository) StartTickerScheduler(ctx context.Context) error {
+	log := logging.NewLogger(ctx)
+	defer log.Sync()
+
 	var err error
 
 	ruleName := os.Getenv("EVENTBRIDGE_RULE_NAME")
@@ -48,7 +52,9 @@ func (events EventsRepository) StartTickerScheduler() error {
 	lambdaErr := events.InvokeTicker()
 
 	if lambdaErr != nil {
-		log.Printf("Failed to manually trigger poller but continuing anyway: %v", lambdaErr)
+		log.Warnw("Failed to manually trigger poller but continuing anyway",
+			"err", lambdaErr,
+		)
 	}
 
 	return err

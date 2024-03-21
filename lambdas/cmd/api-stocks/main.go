@@ -8,8 +8,10 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"go.uber.org/zap"
 	"jon-richards.com/stock-app/internal/db"
 	"jon-richards.com/stock-app/internal/jobs"
+	"jon-richards.com/stock-app/internal/logging"
 )
 
 type ResponseBody struct {
@@ -21,21 +23,27 @@ var queueService = jobs.NewQueueService()
 var eventsService = jobs.NewEventsService()
 var dbService = db.NewDatabaseService()
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	// todo return different error statuses and look at the error
+func init() {
+	zap.ReplaceGlobals(zap.Must(zap.NewProduction()))
+}
+
+func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) *events.APIGatewayProxyResponse {
 	switch request.HTTPMethod {
 	case "POST":
-		return create(request)
+		return create(ctx, request)
 	default:
-		return clientError(http.StatusMethodNotAllowed, nil)
+		return clientError(ctx, http.StatusMethodNotAllowed, fmt.Errorf("request method %s not supported", request.HTTPMethod))
 	}
 }
 
-func clientError(status int, err error) (*events.APIGatewayProxyResponse, error) {
-	// todo more detailed error handling?
-	if err != nil {
-		fmt.Printf("request error: %v", err)
-	}
+func clientError(ctx context.Context, status int, err error) *events.APIGatewayProxyResponse {
+	log := logging.NewLogger(ctx)
+	defer log.Sync()
+
+	log.Errorw("Request error",
+		"status", status,
+		"message", err,
+	)
 
 	body, _ := json.Marshal(ResponseBody{
 		Message: http.StatusText(status),
@@ -45,10 +53,10 @@ func clientError(status int, err error) (*events.APIGatewayProxyResponse, error)
 	return &events.APIGatewayProxyResponse{
 		StatusCode: status,
 		Body:       string(body),
-	}, nil
+	}
 }
 
-func clientSuccess(message string) (*events.APIGatewayProxyResponse, error) {
+func clientSuccess(message string) *events.APIGatewayProxyResponse {
 	if message == "" {
 		message = "Success"
 	}
@@ -61,7 +69,7 @@ func clientSuccess(message string) (*events.APIGatewayProxyResponse, error) {
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Body:       string(body),
-	}, nil
+	}
 }
 
 func main() {

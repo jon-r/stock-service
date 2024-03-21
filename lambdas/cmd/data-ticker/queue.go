@@ -1,20 +1,26 @@
 package main
 
 import (
-	"log"
-	"os"
+	"context"
 
 	"jon-richards.com/stock-app/internal/jobs"
+	"jon-richards.com/stock-app/internal/logging"
 )
 
 var done = make(chan bool)
 
-func checkForNewJobs(attempts int) (*[]jobs.JobQueueItem, int) {
+func checkForNewJobs(ctx context.Context, attempts int) (*[]jobs.JobQueueItem, int) {
+	log := logging.NewLogger(ctx)
+	defer log.Sync()
+
+	log.Infoln("attempt to receive jobs...")
 	jobList, err := queueService.ReceiveJobs()
 
 	if err != nil {
 		attempts += 1
-		log.Printf("Failed to get queue items = %v, attempts made = %v\n", err, attempts)
+		log.Warnw("Failed to get queue items",
+			"attempts", attempts,
+		)
 	} else {
 		attempts = 0
 	}
@@ -22,15 +28,20 @@ func checkForNewJobs(attempts int) (*[]jobs.JobQueueItem, int) {
 	if attempts >= 6 {
 		err = eventsService.StopTickerScheduler()
 		if err != nil {
-			log.Printf("Failed to stop scheduler = %v\n", err)
+			log.Errorw("Failed to stop scheduler",
+				"error", err,
+			)
 		}
-		log.Fatalf("Aborting after too many failed attempts")
+		log.Fatalln("Aborting after too many failed attempts")
 	}
 
 	return jobList, attempts
 }
 
-func shutDownWhenEmpty(jobList *[]jobs.JobQueueItem, emptyResponses int) int {
+func shutDownWhenEmpty(ctx context.Context, jobList *[]jobs.JobQueueItem, emptyResponses int) int {
+	log := logging.NewLogger(ctx)
+	defer log.Sync()
+
 	if len(*jobList) == 0 {
 		emptyResponses += 1
 	} else {
@@ -38,16 +49,13 @@ func shutDownWhenEmpty(jobList *[]jobs.JobQueueItem, emptyResponses int) int {
 	}
 
 	if emptyResponses == 6 {
-		log.Println("No new jobs received in 60 seconds, disabling scheduler")
+		log.Infoln("No new jobs received in 60 seconds, disabling scheduler")
 		err := eventsService.StopTickerScheduler()
 		if err != nil {
-			log.Printf("Failed to stop scheduler = %v", err)
+			log.Errorw("Failed to stop scheduler",
+				"error", err,
+			)
 		}
-	}
-	if emptyResponses == 12 {
-		log.Println("No new jobs in 120seconds shutting down")
-		// todo dont exit here, instead wait for all the tickers to run out of jobs (maybe just never exit? few empty sqs queries are negligible)
-		os.Exit(0)
 	}
 
 	return emptyResponses
