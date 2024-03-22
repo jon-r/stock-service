@@ -14,7 +14,6 @@ type response struct {
 }
 
 func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-
 	resp := &response{
 		Message: "hello USERS world!",
 		Event:   request,

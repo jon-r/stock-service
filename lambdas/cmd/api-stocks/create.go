@@ -51,7 +51,7 @@ func createTicker(ctx context.Context, request events.APIGatewayProxyRequest) *e
 	}
 
 	// 4. enable the event timer
-	err = eventsService.StartTickerScheduler(ctx)
+	err = eventsService.StartTickerScheduler()
 
 	if err != nil {
 		return clientError(ctx, http.StatusInternalServerError, err)

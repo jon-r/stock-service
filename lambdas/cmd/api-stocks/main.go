@@ -12,6 +12,7 @@ import (
 	"jon-richards.com/stock-app/internal/db"
 	"jon-richards.com/stock-app/internal/jobs"
 	"jon-richards.com/stock-app/internal/logging"
+	"jon-richards.com/stock-app/internal/scheduler"
 )
 
 type ResponseBody struct {
@@ -20,7 +21,7 @@ type ResponseBody struct {
 }
 
 var queueService = jobs.NewQueueService()
-var eventsService = jobs.NewEventsService()
+var eventsService = scheduler.NewEventsService()
 var dbService = db.NewDatabaseService()
 
 func init() {

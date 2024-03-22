@@ -21,6 +21,16 @@ func handleJobAction(job jobs.JobAction) error {
 	case jobs.LoadHistoricalPrices:
 		return setTickerHistoricalPrices(job.Provider, job.TickerId)
 
+		// TODO STK-81
+		// jobs.UpdatePrices
+
+		// TODO STK-86
+		// jobs.LoadTickerIcon
+
+		// TODO STK-88
+		// jobs.UpdateDividends
+		// jobs.LoadHistoricalDividends
+
 	default:
 		return fmt.Errorf("invalid action type = %v", job.Type)
 	}

@@ -7,13 +7,14 @@ import (
 	"jon-richards.com/stock-app/internal/db"
 	"jon-richards.com/stock-app/internal/jobs"
 	"jon-richards.com/stock-app/internal/logging"
+	"jon-richards.com/stock-app/internal/scheduler"
 )
 
 var dbService = db.NewDatabaseService()
 var queueService = jobs.NewQueueService()
-var eventsService = jobs.NewEventsService()
+var eventsService = scheduler.NewEventsService()
 
-func handleRequest(ctx context.Context) {
+func updateAllTickers(ctx context.Context) {
 	var err error
 
 	log := logging.NewLogger(ctx)
@@ -43,7 +44,7 @@ func handleRequest(ctx context.Context) {
 	}
 
 	// 4. enable the ticker
-	err = eventsService.StartTickerScheduler(ctx)
+	err = eventsService.StartTickerScheduler()
 
 	if err != nil {
 		log.Fatalw("Failed to start the ticker",
@@ -55,5 +56,5 @@ func handleRequest(ctx context.Context) {
 }
 
 func main() {
-	lambda.Start(handleRequest)
+	lambda.Start(updateAllTickers)
 }
