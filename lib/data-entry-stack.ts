@@ -15,7 +15,8 @@ import {
 } from "./helpers/iam.ts";
 import {
   type DataTickerProps,
-  getTickerEnvVariables, TICKER_RULE_NAME,
+  TICKER_RULE_NAME,
+  getTickerEnvVariables,
 } from "./helpers/ticker.ts";
 
 type DataEntryStackProps = StackProps & {
@@ -82,29 +83,25 @@ export class DataEntryStack extends Stack {
       ],
     });
     const tickerTimeout = 5;
-    const tickerFunction: go.GoFunction = new go.GoFunction(
-      this,
-      "DataEntryPollerFunction",
-      {
-        entry: "lambdas/cmd/data-ticker",
-        role: tickerFunctionRole,
-        // long timeout, single concurrent function only
-        timeout: Duration.minutes(tickerTimeout + 0.1),
-        reservedConcurrentExecutions: 1,
-        // dont reattempt
-        retryAttempts: 0,
-        environment: {
-          ...getTickerEnvVariables({
-            eventRuleName: TICKER_RULE_NAME,
-            eventsQueueUrl: queue.queueUrl,
-            eventPollerFunctionName: "", // wont self invoke
-          }),
+    const tickerFunction = new go.GoFunction(this, "DataEntryPollerFunction", {
+      entry: "lambdas/cmd/data-ticker",
+      role: tickerFunctionRole,
+      // long timeout, single concurrent function only
+      timeout: Duration.minutes(tickerTimeout + 0.1),
+      reservedConcurrentExecutions: 1,
+      // dont reattempt
+      retryAttempts: 0,
+      environment: {
+        ...getTickerEnvVariables({
+          eventRuleName: TICKER_RULE_NAME,
+          eventsQueueUrl: queue.queueUrl,
+          eventPollerFunctionName: "", // wont self invoke
+        }),
 
-          TICKER_TIMEOUT: String(tickerTimeout),
-          LAMBDA_WORKER_NAME: workerFunction.functionName,
-        },
+        TICKER_TIMEOUT: String(tickerTimeout),
+        LAMBDA_WORKER_NAME: workerFunction.functionName,
       },
-    );
+    });
 
     rule.addTarget(new targets.LambdaFunction(tickerFunction));
 
