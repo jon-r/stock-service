@@ -15,7 +15,7 @@ import {
 } from "./helpers/iam.ts";
 import {
   type DataTickerProps,
-  getTickerEnvVariables,
+  getTickerEnvVariables, TICKER_RULE_NAME,
 } from "./helpers/ticker.ts";
 
 type DataEntryStackProps = StackProps & {
@@ -44,7 +44,7 @@ export class DataEntryStack extends Stack {
 
     const rule = new events.Rule(this, "DataEntryPoll", {
       schedule: events.Schedule.rate(Duration.minutes(1)),
-      ruleName: "DataEntryTickerPoll", // todo make this a constant
+      ruleName: TICKER_RULE_NAME,
       enabled: false,
     });
 
@@ -62,7 +62,7 @@ export class DataEntryStack extends Stack {
       environment: {
         ...getDatabaseTableEnvVariables(props.tableNames),
         ...getTickerEnvVariables({
-          eventRuleName: "DataEntryTickerPoll",
+          eventRuleName: TICKER_RULE_NAME,
           eventsQueueUrl: queue.queueUrl,
           eventPollerFunctionName: "",
         }),
@@ -95,7 +95,7 @@ export class DataEntryStack extends Stack {
         retryAttempts: 0,
         environment: {
           ...getTickerEnvVariables({
-            eventRuleName: "DataEntryTickerPoll",
+            eventRuleName: TICKER_RULE_NAME,
             eventsQueueUrl: queue.queueUrl,
             eventPollerFunctionName: "", // wont self invoke
           }),
@@ -109,7 +109,7 @@ export class DataEntryStack extends Stack {
     rule.addTarget(new targets.LambdaFunction(tickerFunction));
 
     this.dataTickerProps = {
-      eventRuleName: "DataEntryTickerPoll",
+      eventRuleName: TICKER_RULE_NAME,
       eventsQueueUrl: queue.queueUrl,
       eventPollerFunctionName: tickerFunction.functionName,
     };
