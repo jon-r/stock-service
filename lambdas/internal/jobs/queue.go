@@ -69,6 +69,21 @@ func (queue QueueRepository) AddJobs(jobs []JobAction) error {
 	return err
 }
 
+func (queue QueueRepository) RetryJob(job JobAction, retryReason error) error {
+	var err error
+	updatedJob := job
+	updatedJob.Attempts += 1
+
+	if updatedJob.Attempts > 3 {
+		err = queue.AddJobToDLQ(updatedJob, retryReason)
+	} else {
+		// put the failed item back into the queue
+		err = queue.AddJobs([]JobAction{updatedJob})
+	}
+
+	return err
+}
+
 func (queue QueueRepository) ReceiveJobs() (*[]JobQueueItem, error) {
 	input := sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(queue.QueueUrl),

@@ -42,11 +42,7 @@ func invokeWorkerTicker(ctx context.Context, provider providers.ProviderName, de
 							"error", err,
 						)
 
-						updatedJob := job.Action
-						updatedJob.Attempts += 1
-
-						// put the failed item back into the queue
-						err = queueService.AddJobs([]jobs.JobAction{updatedJob})
+						err = queueService.RetryJob(job.Action)
 					}
 
 					err = queueService.DeleteJob(job.RecieptHandle)

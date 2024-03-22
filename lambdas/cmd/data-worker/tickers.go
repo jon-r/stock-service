@@ -8,7 +8,7 @@ func setTickerDescription(provider providers.ProviderName, tickerId string) erro
 	var err error
 
 	// 1. fetch the ticker details (based on the above)
-	err, description := providers.FetchTickerDescription(provider, tickerId)
+	description, err := providers.FetchTickerDescription(provider, tickerId)
 
 	if err != nil {
 		return err
@@ -23,7 +23,7 @@ func setTickerDescription(provider providers.ProviderName, tickerId string) erro
 func setTickerHistoricalPrices(provider providers.ProviderName, tickerId string) error {
 	var err error
 
-	err, prices := providers.FetchTickerHistoricalPrices(provider, tickerId)
+	prices, err := providers.FetchTickerHistoricalPrices(provider, tickerId)
 
 	if err != nil {
 		return err

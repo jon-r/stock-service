@@ -30,3 +30,8 @@ type TickerItem struct {
 	Prices      []TickerPrices
 	UpdatedAt   int64
 }
+
+type TickerItemStub struct {
+	TickerId string
+	Provider ProviderName
+}
