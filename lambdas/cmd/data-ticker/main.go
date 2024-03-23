@@ -10,9 +10,10 @@ import (
 	"jon-richards.com/stock-app/internal/jobs"
 	"jon-richards.com/stock-app/internal/logging"
 	"jon-richards.com/stock-app/internal/providers"
+	"jon-richards.com/stock-app/internal/scheduler"
 )
 
-var eventsService = jobs.NewEventsService()
+var eventsService = scheduler.NewEventsService()
 var queueService = jobs.NewQueueService()
 
 func pollSqsQueue(ctx context.Context) {

@@ -5,13 +5,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"jon-richards.com/stock-app/internal/providers"
 )
 
-var tableName = os.Getenv("DB_TICKERS_TABLE_NAME")
+var tableName = aws.String(os.Getenv("DB_TICKERS_TABLE_NAME"))
 
 func (db DatabaseRepository) NewTickerItem(provider providers.ProviderName, tickerId string) error {
 	var err error
@@ -28,7 +29,7 @@ func (db DatabaseRepository) NewTickerItem(provider providers.ProviderName, tick
 	}
 
 	input := dynamodb.PutItemInput{
-		TableName: &tableName,
+		TableName: tableName,
 		Item:      av,
 	}
 
@@ -55,7 +56,7 @@ func (db DatabaseRepository) UpdateTickerItem(tickerId string, name string, valu
 	}
 
 	input := dynamodb.UpdateItemInput{
-		TableName:                 &tableName,
+		TableName:                 tableName,
 		Key:                       key,
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
@@ -72,4 +73,44 @@ func (db DatabaseRepository) SetTickerDescription(tickerId string, description *
 
 func (db DatabaseRepository) SetTickerHistoricalPrices(tickerId string, prices *[]providers.TickerPrices) error {
 	return db.UpdateTickerItem(tickerId, "Prices", *prices)
+}
+
+func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {
+	var tickers []providers.TickerItemStub
+	var err error
+	var response *dynamodb.ScanOutput
+
+	projEx := expression.NamesList(
+		expression.Name("TickerId"), expression.Name("Provider"),
+	)
+	expr, err := expression.NewBuilder().WithProjection(projEx).Build()
+
+	if err != nil {
+		return nil, err
+	}
+
+	scanPaginator := dynamodb.NewScanPaginator(db.svc, &dynamodb.ScanInput{
+		TableName:                 tableName,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
+	})
+	for scanPaginator.HasMorePages() {
+		response, err = scanPaginator.NextPage(context.TODO())
+		if err != nil {
+			break
+		} else {
+			var tickerPage []providers.TickerItemStub
+			err = attributevalue.UnmarshalListOfMaps(response.Items, &tickerPage)
+
+			if err != nil {
+				break
+			} else {
+				tickers = append(tickers, tickerPage...)
+			}
+		}
+	}
+
+	return tickers, err
 }

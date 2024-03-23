@@ -11,20 +11,20 @@ type IndexDetails struct {
 	// icon
 }
 
-func FetchTickerDescription(provider ProviderName, tickerId string) (error, *TickerDescription) {
+func FetchTickerDescription(provider ProviderName, tickerId string) (*TickerDescription, error) {
 	switch provider {
 	case PolygonIo:
 		return FetchPolygonTickerDescription(tickerId)
 	default:
-		return fmt.Errorf("incorrect provider name: %v", provider), nil
+		return nil, fmt.Errorf("incorrect provider name: %v", provider)
 	}
 }
 
-func FetchTickerHistoricalPrices(provider ProviderName, tickerId string) (error, *[]TickerPrices) {
+func FetchTickerHistoricalPrices(provider ProviderName, tickerId string) (*[]TickerPrices, error) {
 	switch provider {
 	case PolygonIo:
 		return FetchPolygonTickerPrices(tickerId)
 	default:
-		return fmt.Errorf("incorrect provider name: %v", provider), nil
+		return nil, fmt.Errorf("incorrect provider name: %v", provider)
 	}
 }

@@ -11,7 +11,7 @@ import (
 
 var client = polygon.New(os.Getenv("POLYGON_API_KEY"))
 
-func FetchPolygonTickerDescription(tickerId string) (error, *TickerDescription) {
+func FetchPolygonTickerDescription(tickerId string) (*TickerDescription, error) {
 	params := models.GetTickerDetailsParams{
 		Ticker: tickerId,
 	}
@@ -19,7 +19,7 @@ func FetchPolygonTickerDescription(tickerId string) (error, *TickerDescription) 
 	res, err := client.GetTickerDetails(context.TODO(), &params)
 
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	details := TickerDescription{
 		Currency: res.Results.CurrencyName,
@@ -27,12 +27,12 @@ func FetchPolygonTickerDescription(tickerId string) (error, *TickerDescription) 
 		Icon:     res.Results.Branding.IconURL,
 	}
 
-	return nil, &details
+	return &details, nil
 }
 
 var oldestHistoricalPoint = models.Millis(time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC))
 
-func FetchPolygonTickerPrices(tickerId string) (error, *[]TickerPrices) {
+func FetchPolygonTickerPrices(tickerId string) (*[]TickerPrices, error) {
 	params := models.ListAggsParams{
 		Ticker:     tickerId,
 		Multiplier: 1,
@@ -58,10 +58,10 @@ func FetchPolygonTickerPrices(tickerId string) (error, *[]TickerPrices) {
 	}
 
 	if iter.Err() != nil {
-		return iter.Err(), nil
+		return nil, iter.Err()
 	}
 
-	return nil, &prices
+	return &prices, nil
 }
 
 // https://github.com/polygon-io/client-go/blob/master/rest/example/stocks/ticker-details/main.go

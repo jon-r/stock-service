@@ -1,3 +1,5 @@
+export const TICKER_RULE_NAME = "DataEntryTickerPoll";
+
 export type DataTickerProps = {
   eventRuleName: string;
   eventsQueueUrl: string;
