@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 	"jon-richards.com/stock-app/internal/providers"
 )
 
@@ -53,12 +54,13 @@ func MakeUpdateJobs(tickers []providers.TickerItemStub) *[]JobAction {
 		// TODO jobs.UpdateDividends,
 	}
 
+	tickerLimit := 10
 	groupedTickerIds := groupByProvider(tickers)
 
-	jobCount := len(updateItemActions) * ((len(tickers) / 20) + 1)
+	jobCount := len(updateItemActions) * ((len(tickers) / tickerLimit) + 1)
 	jobActions := make([]JobAction, jobCount)
 	for provider, tickerGroup := range groupedTickerIds {
-		chunkedTickers := chunkIds(tickerGroup, 20)
+		chunkedTickers := lo.Chunk(tickerGroup, tickerLimit)
 
 		for _, chunk := range chunkedTickers {
 

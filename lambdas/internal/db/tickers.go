@@ -38,7 +38,7 @@ func (db DatabaseRepository) NewTickerItem(provider providers.ProviderName, tick
 	return err
 }
 
-func (db DatabaseRepository) UpdateTickerItem(tickerId string, name string, value interface{}) error {
+func (db DatabaseRepository) SetTickerItemValue(tickerId string, name string, value interface{}) error {
 	var err error
 
 	key, err := attributevalue.MarshalMap(map[string]string{"TickerId": tickerId})
@@ -67,12 +67,45 @@ func (db DatabaseRepository) UpdateTickerItem(tickerId string, name string, valu
 	return err
 }
 
+func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, value interface{}) error {
+	var err error
+
+	key, err := attributevalue.MarshalMap(map[string]string{"TickerId": tickerId})
+
+	if err != nil {
+		return err
+	}
+
+	update := expression.Add(expression.Name(name), expression.Value(value))
+	update.Set(expression.Name("UpdatedAt"), expression.Value(time.Now().UnixMilli()))
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+
+	if err != nil {
+		return err
+	}
+
+	input := dynamodb.UpdateItemInput{
+		TableName:                 tableName,
+		Key:                       key,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		UpdateExpression:          expr.Update(),
+	}
+	_, err = db.svc.UpdateItem(context.TODO(), &input)
+
+	return err
+}
+
 func (db DatabaseRepository) SetTickerDescription(tickerId string, description *providers.TickerDescription) error {
-	return db.UpdateTickerItem(tickerId, "Description", *description)
+	return db.SetTickerItemValue(tickerId, "Description", *description)
 }
 
 func (db DatabaseRepository) SetTickerHistoricalPrices(tickerId string, prices *[]providers.TickerPrices) error {
-	return db.UpdateTickerItem(tickerId, "Prices", *prices)
+	return db.SetTickerItemValue(tickerId, "Prices", *prices)
+}
+
+func (db DatabaseRepository) UpdateTickerDailyPrices(tickerId string, prices *providers.TickerPrices) error {
+	return db.AddTickerItemValue(tickerId, "Prices", *prices)
 }
 
 func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {
