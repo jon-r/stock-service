@@ -1,20 +1,11 @@
 package providers
 
-import (
-	"fmt"
-)
-
-type IndexDetails struct {
-	TickerId string
-	Currency string
-	FullName string
-	// icon
-}
+import "fmt"
 
 func FetchTickerDescription(provider ProviderName, tickerId string) (*TickerDescription, error) {
 	switch provider {
 	case PolygonIo:
-		return FetchPolygonTickerDescription(tickerId)
+		return fetchPolygonTickerDescription(tickerId)
 	default:
 		return nil, fmt.Errorf("incorrect provider name: %v", provider)
 	}
@@ -23,7 +14,16 @@ func FetchTickerDescription(provider ProviderName, tickerId string) (*TickerDesc
 func FetchTickerHistoricalPrices(provider ProviderName, tickerId string) (*[]TickerPrices, error) {
 	switch provider {
 	case PolygonIo:
-		return FetchPolygonTickerPrices(tickerId)
+		return fetchPolygonTickerPrices(tickerId)
+	default:
+		return nil, fmt.Errorf("incorrect provider name: %v", provider)
+	}
+}
+
+func FetchTickerDailyPrices(provider ProviderName, tickerIds []string) (*map[string]TickerPrices, error) {
+	switch provider {
+	case PolygonIo:
+		return fetchPolygonDailyPrices(tickerIds)
 	default:
 		return nil, fmt.Errorf("incorrect provider name: %v", provider)
 	}

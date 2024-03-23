@@ -14,6 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.31.1
 	github.com/google/uuid v1.6.0
 	github.com/polygon-io/client-go v1.16.4
+	github.com/samber/lo v1.39.0
 	go.uber.org/zap v1.27.0
 )
 
@@ -43,6 +44,7 @@ require (
 	github.com/leodido/go-urn v1.2.4 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/exp v0.0.0-20220414153411-bcd21879b8fd // indirect
 	golang.org/x/net v0.22.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

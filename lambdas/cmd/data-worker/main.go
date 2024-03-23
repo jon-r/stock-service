@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"jon-richards.com/stock-app/internal/db"
@@ -21,8 +22,8 @@ func handleJobAction(job jobs.JobAction) error {
 	case jobs.LoadHistoricalPrices:
 		return setTickerHistoricalPrices(job.Provider, job.TickerId)
 
-		// TODO STK-81
-		// jobs.UpdatePrices
+	case jobs.UpdatePrices:
+		return updateTickerPrices(job.Provider, strings.Split(job.TickerId, ","))
 
 		// TODO STK-86
 		// jobs.LoadTickerIcon
