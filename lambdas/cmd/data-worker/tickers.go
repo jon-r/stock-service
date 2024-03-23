@@ -33,3 +33,22 @@ func setTickerHistoricalPrices(provider providers.ProviderName, tickerId string)
 
 	return err
 }
+
+func updateTickerPrices(provider providers.ProviderName, tickerIds []string) error {
+	var err error
+
+	prices, err := providers.FetchTickerDailyPrices(provider, tickerIds)
+
+	if err != nil {
+		return err
+	}
+
+	for tickerId, price := range *prices {
+		err = dbService.UpdateTickerDailyPrices(tickerId, &price)
+		if err != nil {
+			break
+		}
+	}
+
+	return err
+}
