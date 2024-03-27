@@ -27,11 +27,7 @@ export class DataManagerStack extends Stack {
     super(app, id, props);
 
     // nightly rule
-    const daily1AM: events.CronOptions = {
-      hour: "1",
-      minute: "0",
-      day: "?",
-    };
+    const daily1AM: events.CronOptions = { hour: "1", minute: "0" };
     const rule = new events.Rule(this, "DataManagerPoll", {
       schedule: events.Schedule.cron(daily1AM),
     });

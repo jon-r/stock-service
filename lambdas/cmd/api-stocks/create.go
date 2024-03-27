@@ -17,7 +17,7 @@ type RequestParams struct {
 	TickerId string                 `json:"ticker"`
 }
 
-func createTicker(ctx context.Context, request events.APIGatewayProxyRequest) *events.APIGatewayProxyResponse {
+func createTicker(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	log := logging.NewLogger(ctx)
 	defer log.Sync()
 
@@ -57,10 +57,10 @@ func createTicker(ctx context.Context, request events.APIGatewayProxyRequest) *e
 		return clientError(ctx, http.StatusInternalServerError, err)
 	}
 
-	return clientSuccess(fmt.Sprintf("Success: ticker '%s' queued", params.TickerId))
+	return clientSuccess(fmt.Sprintf("Success: ticker '%s' queued", params.TickerId)), nil
 }
 
-func create(ctx context.Context, request events.APIGatewayProxyRequest) *events.APIGatewayProxyResponse {
+func create(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	// todo would be switch if multiple endpoints
 	return createTicker(ctx, request)
 }

@@ -20,8 +20,6 @@ func updateAllTickers(ctx context.Context) {
 	log := logging.NewLogger(ctx)
 	defer log.Sync()
 
-	log.Infoln("Hello world")
-
 	// 1. get all tickers
 	tickers, queueErr := dbService.GetAllTickers()
 
@@ -35,11 +33,17 @@ func updateAllTickers(ctx context.Context) {
 	jobActions := jobs.MakeUpdateJobs(tickers)
 
 	// 3. add queue jobs for ticker prices + dividends
+	// todo compare jobs here to the jobs made by api controller.
+	//   also check the bulk tool if the jobs are valid
 	err = queueService.AddJobs(*jobActions)
 
 	if err != nil {
 		log.Fatalw("Failed to add jobs",
 			"error", err,
+		)
+	} else {
+		log.Infow("Added Jobs for tickers",
+			"tickers", tickers,
 		)
 	}
 
@@ -50,8 +54,6 @@ func updateAllTickers(ctx context.Context) {
 		log.Fatalw("Failed to start the ticker",
 			"error", err,
 		)
-	} else {
-		log.Infoln("Added jobs to queue")
 	}
 }
 
