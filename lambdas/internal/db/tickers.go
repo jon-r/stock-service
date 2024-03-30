@@ -67,21 +67,22 @@ func (db DatabaseRepository) SetTickerItemValue(tickerId string, name string, va
 	return err
 }
 
-func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, value interface{}) error {
+// todo return error only
+func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, value interface{}) (error, dynamodb.UpdateItemInput) {
 	var err error
 
 	key, err := attributevalue.MarshalMap(map[string]string{"TickerId": tickerId})
 
 	if err != nil {
-		return err
+		return err, dynamodb.UpdateItemInput{}
 	}
 
 	update := expression.Add(expression.Name(name), expression.Value(value))
-	update.Set(expression.Name("UpdatedAt"), expression.Value(time.Now().UnixMilli()))
+	// update.Set(expression.Name("UpdatedAt"), expression.Value(time.Now().UnixMilli()))
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 
 	if err != nil {
-		return err
+		return err, dynamodb.UpdateItemInput{}
 	}
 
 	input := dynamodb.UpdateItemInput{
@@ -93,19 +94,24 @@ func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, va
 	}
 	_, err = db.svc.UpdateItem(context.TODO(), &input)
 
-	return err
+	return err, input
 }
 
-func (db DatabaseRepository) SetTickerDescription(tickerId string, description *providers.TickerDescription) error {
-	return db.SetTickerItemValue(tickerId, "Description", *description)
+func (db DatabaseRepository) SetTickerDescription(tickerId string, description providers.TickerDescription) error {
+	return db.SetTickerItemValue(tickerId, "Description", description)
 }
 
-func (db DatabaseRepository) SetTickerHistoricalPrices(tickerId string, prices *[]providers.TickerPrices) error {
-	return db.SetTickerItemValue(tickerId, "Prices", *prices)
+func (db DatabaseRepository) SetTickerHistoricalPrices(tickerId string, prices []providers.TickerPrices) error {
+	// todo cant ADD to map :(
+	//  redo this with binary set instead of map (this feels like best option) <- [][]byte will cnvert to binary set
+	//     https://www.golinuxcloud.com/golang-base64-encode/
+	//  alternatively read, then set?
+	//  OR whole new table for prices?
+	return db.SetTickerItemValue(tickerId, "Prices", prices)
 }
 
-func (db DatabaseRepository) UpdateTickerDailyPrices(tickerId string, prices *providers.TickerPrices) error {
-	return db.AddTickerItemValue(tickerId, "Prices", *prices)
+func (db DatabaseRepository) UpdateTickerDailyPrices(tickerId string, prices []providers.TickerPrices) (error, dynamodb.UpdateItemInput) {
+	return db.AddTickerItemValue(tickerId, "Prices", prices)
 }
 
 func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {

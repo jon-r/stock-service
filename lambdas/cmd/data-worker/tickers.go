@@ -18,7 +18,7 @@ func setTickerDescription(provider providers.ProviderName, tickerId string) erro
 	}
 
 	// 2. insert this ^ data into the ticker table
-	err = dbService.SetTickerDescription(tickerId, description)
+	err = dbService.SetTickerDescription(tickerId, *description)
 
 	return err
 }
@@ -32,7 +32,7 @@ func setTickerHistoricalPrices(provider providers.ProviderName, tickerId string)
 		return err
 	}
 
-	err = dbService.SetTickerHistoricalPrices(tickerId, prices)
+	err = dbService.SetTickerHistoricalPrices(tickerId, *prices)
 
 	return err
 }
@@ -50,8 +50,27 @@ func updateTickerPrices(ctx context.Context, provider providers.ProviderName, ti
 		return err
 	}
 
+	if prices == nil {
+		log.Warnw("No prices for today",
+			"provider", provider,
+		)
+		return nil
+	}
+
+	// todo delete
+	log.Infow("Have prices",
+		"prices", prices,
+	)
+
 	for tickerId, price := range *prices {
-		err = dbService.UpdateTickerDailyPrices(tickerId, &price)
+		var input interface{}
+		err, input = dbService.UpdateTickerDailyPrices(tickerId, []providers.TickerPrices{price})
+
+		// todo delete
+		log.Infow("Input Check",
+			"input", input,
+		)
+
 		if err != nil {
 			break
 		}

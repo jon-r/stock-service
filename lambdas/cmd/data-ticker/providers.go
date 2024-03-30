@@ -45,7 +45,7 @@ func invokeWorkerTicker(ctx context.Context, provider providers.ProviderName, de
 							"error", err,
 						)
 
-						err = queueService.RetryJob(job.Action, err)
+						err = queueService.RetryJob(job.Action, err.Error())
 					}
 
 					err = queueService.DeleteJob(job.RecieptHandle)

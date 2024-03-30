@@ -18,7 +18,7 @@ type TickerPrices struct {
 	Open      float64
 	Close     float64
 	High      float64
-	Average   float64
+	Average   float64 // todo remove average
 	Low       float64
 	Timestamp models.Millis
 }

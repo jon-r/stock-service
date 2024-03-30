@@ -62,7 +62,7 @@ func handleRequest(ctx context.Context, event jobs.JobAction) {
 	)
 
 	// 2. if action failed or new queue actions after last, try again
-	queueErr := queueService.RetryJob(event, err)
+	queueErr := queueService.RetryJob(event, err.Error())
 
 	if queueErr != nil {
 		log.Fatalw("Failed to add item to DLQ",
