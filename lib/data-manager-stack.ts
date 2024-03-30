@@ -2,6 +2,7 @@ import * as go from "@aws-cdk/aws-lambda-go-alpha";
 import { Stack, type StackProps } from "aws-cdk-lib";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
+import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 
 import { type TableNames, getDatabaseTableEnvVariables } from "./helpers/db.ts";
@@ -49,6 +50,7 @@ export class DataManagerStack extends Stack {
         ...getDatabaseTableEnvVariables(props.tableNames),
         ...getTickerEnvVariables(props.dataTickerProps),
       },
+      logRetention: RetentionDays.SIX_MONTHS,
     });
 
     rule.addTarget(new targets.LambdaFunction(managerFunction));

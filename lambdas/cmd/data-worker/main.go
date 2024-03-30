@@ -15,7 +15,7 @@ var dbService = db.NewDatabaseService()
 
 var queueService = jobs.NewQueueService()
 
-func handleJobAction(job jobs.JobAction) error {
+func handleJobAction(ctx context.Context, job jobs.JobAction) error {
 	switch job.Type {
 	case jobs.LoadTickerDescription:
 		return setTickerDescription(job.Provider, job.TickerId)
@@ -23,7 +23,7 @@ func handleJobAction(job jobs.JobAction) error {
 		return setTickerHistoricalPrices(job.Provider, job.TickerId)
 
 	case jobs.UpdatePrices:
-		return updateTickerPrices(job.Provider, strings.Split(job.TickerId, ","))
+		return updateTickerPrices(ctx, job.Provider, strings.Split(job.TickerId, ","))
 
 		// TODO STK-86
 		// jobs.LoadTickerIcon
@@ -44,7 +44,10 @@ func handleRequest(ctx context.Context, event jobs.JobAction) {
 	var err error
 
 	// 1. handle action
-	err = handleJobAction(event)
+	log.Infow("Attempt to do job",
+		"job", event,
+	)
+	err = handleJobAction(ctx, event)
 
 	if err == nil {
 		log.Infoln("Job completed",
@@ -64,7 +67,7 @@ func handleRequest(ctx context.Context, event jobs.JobAction) {
 	if queueErr != nil {
 		log.Fatalw("Failed to add item to DLQ",
 			"jobId", event.JobId,
-			"error", err,
+			"error", queueErr,
 		)
 	}
 }

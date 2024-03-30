@@ -25,7 +25,7 @@ type JobAction struct {
 
 type JobErrorItem struct {
 	JobAction
-	ErrorReason error
+	ErrorReason string
 }
 
 type JobQueueItem struct {

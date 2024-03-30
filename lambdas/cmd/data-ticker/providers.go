@@ -36,7 +36,7 @@ func invokeWorkerTicker(ctx context.Context, provider providers.ProviderName, de
 			select {
 			case job, ok := <-providerQueues[provider]:
 				if ok {
-					log.Infow("invoking job",
+					log.Infow("Invoking Job",
 						"job", job,
 					)
 					err = eventsService.InvokeWorker(job.Action)

@@ -1,6 +1,9 @@
 package main
 
 import (
+	"context"
+
+	"jon-richards.com/stock-app/internal/logging"
 	"jon-richards.com/stock-app/internal/providers"
 )
 
@@ -34,7 +37,11 @@ func setTickerHistoricalPrices(provider providers.ProviderName, tickerId string)
 	return err
 }
 
-func updateTickerPrices(provider providers.ProviderName, tickerIds []string) error {
+func updateTickerPrices(ctx context.Context, provider providers.ProviderName, tickerIds []string) error {
+	// todo add logger to all these worker functions. maybe pass logger around instead of context?
+	log := logging.NewLogger(ctx)
+	defer log.Sync()
+
 	var err error
 
 	prices, err := providers.FetchTickerDailyPrices(provider, tickerIds)

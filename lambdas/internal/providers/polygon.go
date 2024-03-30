@@ -83,7 +83,7 @@ func fetchPolygonDailyPrices(tickerIds []string) (*map[string]TickerPrices, erro
 		return nil, err
 	}
 
-	if res.Count == 0 {
+	if res.ResultsCount == 0 {
 		return nil, nil
 	}
 
