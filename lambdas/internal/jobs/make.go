@@ -33,7 +33,7 @@ func MakeBulkJob(provider providers.ProviderName, tickerIds []string, jobType Jo
 func MakeCreateJobs(provider providers.ProviderName, tickerId string) *[]JobAction {
 	newItemActions := []JobTypes{
 		LoadTickerDescription,
-		LoadHistoricalPrices,
+		// TODO LoadHistoricalPrices,
 		// TODO jobs.LoadHistoricalDividends,
 		// TODO jobs.LoadTickerIcon,
 	}

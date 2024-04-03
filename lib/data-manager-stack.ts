@@ -31,6 +31,7 @@ export class DataManagerStack extends Stack {
     const daily1AM: events.CronOptions = { hour: "1", minute: "0" };
     const rule = new events.Rule(this, "DataManagerPoll", {
       schedule: events.Schedule.cron(daily1AM),
+      enabled: false, // FIXME - STK-112 update tickers, keep disabled for now
     });
 
     // manager lambda - batches tickers to fetch latest data

@@ -12,11 +12,6 @@ import (
 	"jon-richards.com/stock-app/internal/providers"
 )
 
-type RequestParams struct {
-	Provider providers.ProviderName `json:"provider"`
-	TickerId string                 `json:"ticker"`
-}
-
 func createTicker(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	log := logging.NewLogger(ctx)
 	defer log.Sync()
@@ -24,7 +19,7 @@ func createTicker(ctx context.Context, request events.APIGatewayProxyRequest) (*
 	var err error
 
 	// 1. get ticket and provider from post request body
-	var params RequestParams
+	var params providers.NewTickerParams
 	err = json.Unmarshal([]byte(request.Body), &params)
 
 	if err != nil {
@@ -32,7 +27,7 @@ func createTicker(ctx context.Context, request events.APIGatewayProxyRequest) (*
 	}
 
 	// 2. enter basic content to the database
-	err = dbService.NewTickerItem(params.Provider, params.TickerId)
+	err = dbService.NewTickerItem(params)
 
 	if err != nil {
 		return clientError(ctx, http.StatusInternalServerError, err)

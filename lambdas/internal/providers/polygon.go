@@ -3,6 +3,7 @@ package providers
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	polygon "github.com/polygon-io/client-go/rest"
@@ -32,13 +33,14 @@ func fetchPolygonTickerDescription(tickerId string) (*TickerDescription, error) 
 	if err != nil {
 		return nil, err
 	}
-	details := TickerDescription{
-		Currency: res.Results.CurrencyName,
-		FullName: res.Results.Name,
-		Icon:     res.Results.Branding.IconURL,
+	description := TickerDescription{
+		Currency:   res.Results.CurrencyName,
+		FullName:   res.Results.Name,
+		FullTicker: strings.Join([]string{res.Results.PrimaryExchange, res.Results.Ticker}, ":"),
+		Icon:       res.Results.Branding.IconURL,
 	}
 
-	return &details, nil
+	return &description, nil
 }
 
 // free polygon account won't be older than 2 years, so wont get all this

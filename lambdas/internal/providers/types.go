@@ -9,9 +9,11 @@ const (
 )
 
 type TickerDescription struct {
-	FullName string
-	Currency string
-	Icon     string
+	FullName    string
+	FullTicker  string
+	Currency    string
+	Icon        string
+	Description string
 }
 
 type TickerPrices struct {
@@ -23,12 +25,9 @@ type TickerPrices struct {
 	Timestamp models.Millis
 }
 
-type TickerItem struct {
-	TickerId    string
-	Provider    ProviderName
-	Description TickerDescription
-	Prices      []TickerPrices
-	UpdatedAt   int64
+type NewTickerParams struct {
+	Provider ProviderName `json:"provider"`
+	TickerId string       `json:"ticker"`
 }
 
 type TickerItemStub struct {
