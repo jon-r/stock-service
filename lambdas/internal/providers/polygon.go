@@ -71,10 +71,12 @@ func fetchPolygonTickerPrices(tickerId string) (*[]TickerPrices, error) {
 }
 
 func fetchPolygonDailyPrices(tickerIds []string) (*map[string]TickerPrices, error) {
+	yesterday := models.Date(time.Now().AddDate(0, 0, -1))
+
 	params := models.GetGroupedDailyAggsParams{
 		Locale:     models.US,
 		MarketType: models.Stocks,
-		Date:       models.Date(time.Now()),
+		Date:       yesterday,
 	}.WithAdjusted(true)
 
 	res, err := client.GetGroupedDailyAggs(context.TODO(), params)
@@ -83,7 +85,7 @@ func fetchPolygonDailyPrices(tickerIds []string) (*map[string]TickerPrices, erro
 		return nil, err
 	}
 
-	if res.Count == 0 {
+	if res.ResultsCount == 0 {
 		return nil, nil
 	}
 

@@ -77,7 +77,7 @@ func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, va
 	}
 
 	update := expression.Add(expression.Name(name), expression.Value(value))
-	update.Set(expression.Name("UpdatedAt"), expression.Value(time.Now().UnixMilli()))
+	// update.Set(expression.Name("UpdatedAt"), expression.Value(time.Now().UnixMilli()))
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 
 	if err != nil {
@@ -96,16 +96,21 @@ func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, va
 	return err
 }
 
-func (db DatabaseRepository) SetTickerDescription(tickerId string, description *providers.TickerDescription) error {
-	return db.SetTickerItemValue(tickerId, "Description", *description)
+func (db DatabaseRepository) SetTickerDescription(tickerId string, description providers.TickerDescription) error {
+	return db.SetTickerItemValue(tickerId, "Description", description)
 }
 
-func (db DatabaseRepository) SetTickerHistoricalPrices(tickerId string, prices *[]providers.TickerPrices) error {
-	return db.SetTickerItemValue(tickerId, "Prices", *prices)
+func (db DatabaseRepository) SetTickerHistoricalPrices(tickerId string, prices []providers.TickerPrices) error {
+	// todo STK-96 cant ADD to map :(
+	//  redo this with binary set instead of map (this feels like best option) <- [][]byte will cnvert to binary set
+	//     https://www.golinuxcloud.com/golang-base64-encode/
+	//  alternatively read, then set?
+	//  OR whole new table for prices?
+	return db.SetTickerItemValue(tickerId, "Prices", prices)
 }
 
-func (db DatabaseRepository) UpdateTickerDailyPrices(tickerId string, prices *providers.TickerPrices) error {
-	return db.AddTickerItemValue(tickerId, "Prices", *prices)
+func (db DatabaseRepository) UpdateTickerDailyPrices(tickerId string, prices []providers.TickerPrices) error {
+	return db.AddTickerItemValue(tickerId, "Prices", prices)
 }
 
 func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {

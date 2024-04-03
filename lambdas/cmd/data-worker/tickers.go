@@ -1,6 +1,9 @@
 package main
 
 import (
+	"context"
+
+	"jon-richards.com/stock-app/internal/logging"
 	"jon-richards.com/stock-app/internal/providers"
 )
 
@@ -15,7 +18,7 @@ func setTickerDescription(provider providers.ProviderName, tickerId string) erro
 	}
 
 	// 2. insert this ^ data into the ticker table
-	err = dbService.SetTickerDescription(tickerId, description)
+	err = dbService.SetTickerDescription(tickerId, *description)
 
 	return err
 }
@@ -29,12 +32,16 @@ func setTickerHistoricalPrices(provider providers.ProviderName, tickerId string)
 		return err
 	}
 
-	err = dbService.SetTickerHistoricalPrices(tickerId, prices)
+	err = dbService.SetTickerHistoricalPrices(tickerId, *prices)
 
 	return err
 }
 
-func updateTickerPrices(provider providers.ProviderName, tickerIds []string) error {
+func updateTickerPrices(ctx context.Context, provider providers.ProviderName, tickerIds []string) error {
+	// todo CPT-95 add logger to all these worker functions. maybe pass logger around instead of context?
+	log := logging.NewLogger(ctx)
+	defer log.Sync()
+
 	var err error
 
 	prices, err := providers.FetchTickerDailyPrices(provider, tickerIds)
@@ -43,8 +50,16 @@ func updateTickerPrices(provider providers.ProviderName, tickerIds []string) err
 		return err
 	}
 
+	if prices == nil {
+		log.Warnw("No prices for today",
+			"provider", provider,
+		)
+		return nil
+	}
+
 	for tickerId, price := range *prices {
-		err = dbService.UpdateTickerDailyPrices(tickerId, &price)
+		err = dbService.UpdateTickerDailyPrices(tickerId, []providers.TickerPrices{price})
+
 		if err != nil {
 			break
 		}

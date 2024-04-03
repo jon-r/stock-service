@@ -69,13 +69,13 @@ func (queue QueueRepository) AddJobs(jobs []JobAction) error {
 	return err
 }
 
-func (queue QueueRepository) RetryJob(job JobAction, retryReason error) error {
+func (queue QueueRepository) RetryJob(job JobAction, failReason string) error {
 	var err error
 	updatedJob := job
 	updatedJob.Attempts += 1
 
 	if updatedJob.Attempts > 3 {
-		err = queue.AddJobToDLQ(updatedJob, retryReason)
+		err = queue.AddJobToDLQ(updatedJob, failReason)
 	} else {
 		// put the failed item back into the queue
 		err = queue.AddJobs([]JobAction{updatedJob})
@@ -121,7 +121,7 @@ func (queue QueueRepository) DeleteJob(receiptHandle string) error {
 	return err
 }
 
-func (queue QueueRepository) AddJobToDLQ(job JobAction, failReason error) error {
+func (queue QueueRepository) AddJobToDLQ(job JobAction, failReason string) error {
 	var err error
 
 	data, err := json.Marshal(JobErrorItem{

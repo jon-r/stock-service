@@ -20,8 +20,6 @@ func updateAllTickers(ctx context.Context) {
 	log := logging.NewLogger(ctx)
 	defer log.Sync()
 
-	log.Infoln("Hello world")
-
 	// 1. get all tickers
 	tickers, queueErr := dbService.GetAllTickers()
 
@@ -41,6 +39,10 @@ func updateAllTickers(ctx context.Context) {
 		log.Fatalw("Failed to add jobs",
 			"error", err,
 		)
+	} else {
+		log.Infow("Added Jobs for tickers",
+			"tickers", tickers,
+		)
 	}
 
 	// 4. enable the ticker
@@ -50,8 +52,6 @@ func updateAllTickers(ctx context.Context) {
 		log.Fatalw("Failed to start the ticker",
 			"error", err,
 		)
-	} else {
-		log.Infoln("Added jobs to queue")
 	}
 }
 

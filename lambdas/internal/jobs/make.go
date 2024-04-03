@@ -57,9 +57,9 @@ func MakeUpdateJobs(tickers []providers.TickerItemStub) *[]JobAction {
 	tickerLimit := 10
 	groupedTickerIds := groupByProvider(tickers)
 
-	jobCount := len(updateItemActions) * ((len(tickers) / tickerLimit) + 1)
-	jobActions := make([]JobAction, jobCount)
+	var jobActions []JobAction
 	for provider, tickerGroup := range groupedTickerIds {
+		// todo STK-90 no need to chunk for prices, just dividends
 		chunkedTickers := lo.Chunk(tickerGroup, tickerLimit)
 
 		for _, chunk := range chunkedTickers {

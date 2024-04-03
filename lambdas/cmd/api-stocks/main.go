@@ -28,7 +28,7 @@ func init() {
 	zap.ReplaceGlobals(zap.Must(zap.NewProduction()))
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) *events.APIGatewayProxyResponse {
+func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	switch request.HTTPMethod {
 	case "POST":
 		return create(ctx, request)
@@ -37,7 +37,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) *
 	}
 }
 
-func clientError(ctx context.Context, status int, err error) *events.APIGatewayProxyResponse {
+func clientError(ctx context.Context, status int, err error) (*events.APIGatewayProxyResponse, error) {
 	log := logging.NewLogger(ctx)
 	defer log.Sync()
 
@@ -54,7 +54,7 @@ func clientError(ctx context.Context, status int, err error) *events.APIGatewayP
 	return &events.APIGatewayProxyResponse{
 		StatusCode: status,
 		Body:       string(body),
-	}
+	}, err
 }
 
 func clientSuccess(message string) *events.APIGatewayProxyResponse {

@@ -1,6 +1,7 @@
 import * as go from "@aws-cdk/aws-lambda-go-alpha";
 import { CfnOutput, Stack, type StackProps } from "aws-cdk-lib";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 
 import { addCorsOptions } from "./helpers/api.ts";
@@ -41,6 +42,7 @@ export class ApiStack extends Stack {
         environment: {
           ...getDatabaseTableEnvVariables(props.tableNames),
         },
+        logRetention: RetentionDays.THREE_MONTHS,
       },
     );
     const usersIntegration = new apigateway.LambdaIntegration(
@@ -57,6 +59,7 @@ export class ApiStack extends Stack {
         environment: {
           ...getDatabaseTableEnvVariables(props.tableNames),
         },
+        logRetention: RetentionDays.THREE_MONTHS,
       },
     );
     const logsIntegration = new apigateway.LambdaIntegration(
@@ -87,6 +90,7 @@ export class ApiStack extends Stack {
           ...getTickerEnvVariables(props.dataTickerProps),
           ...getDatabaseTableEnvVariables(props.tableNames),
         },
+        logRetention: RetentionDays.THREE_MONTHS,
       },
     );
     const stocksIntegration = new apigateway.LambdaIntegration(
