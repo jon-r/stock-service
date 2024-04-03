@@ -1,9 +1,9 @@
 import { RemovalPolicy, Stack, type StackProps } from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import { AttributeType } from "aws-cdk-lib/aws-dynamodb";
 import type { Construct } from "constructs";
 
 import {
-  LOGS_MODEL_NAME,
   TICKERS_MODEL_NAME,
   TRANSACTIONS_MODEL_NAME,
   type TableNames,
@@ -16,25 +16,32 @@ export class DatabaseStack extends Stack {
   constructor(app: Construct, id: string, props?: StackProps) {
     super(app, id, props);
 
-    // logs table
-    const logsTable = this.#newDynamodbTable(LOGS_MODEL_NAME);
+    const stockTable = this.#newDynamoDBTable("Stock");
 
-    // users table
-    const usersTable = this.#newDynamodbTable(USERS_MODEL_NAME);
+    const logsTable = this.#newDynamoDBTable("Log");
 
-    const tickersTable = this.#newDynamodbTable(TICKERS_MODEL_NAME);
-
-    const transactionsTable = this.#newDynamodbTable(TRANSACTIONS_MODEL_NAME);
+    // OLD
+    const usersTable = this.#legacyDynamodbTable(USERS_MODEL_NAME);
+    const tickersTable = this.#legacyDynamodbTable(TICKERS_MODEL_NAME);
+    const transactionsTable = this.#legacyDynamodbTable(
+      TRANSACTIONS_MODEL_NAME,
+    );
 
     this.tableNames = {
+      stocks: stockTable.tableName,
       logs: logsTable.tableName,
+
+      // OLD
       users: usersTable.tableName,
       tickers: tickersTable.tableName,
       transactions: transactionsTable.tableName,
     };
   }
 
-  #newDynamodbTable(modelName: string, props?: Partial<dynamodb.TablePropsV2>) {
+  #legacyDynamodbTable(
+    modelName: string,
+    props?: Partial<dynamodb.TablePropsV2>,
+  ) {
     return new dynamodb.TableV2(this, `${modelName}Table`, {
       partitionKey: {
         name: `${modelName}Id`,
@@ -44,6 +51,22 @@ export class DatabaseStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY,
 
       ...props,
+    });
+  }
+
+  #newDynamoDBTable(modelName: string) {
+    return new dynamodb.TableV2(this, `${modelName}Table`, {
+      partitionKey: { type: AttributeType.STRING, name: "PK" },
+      sortKey: { type: AttributeType.STRING, name: "SK" },
+      globalSecondaryIndexes: [
+        {
+          indexName: "GSI",
+          partitionKey: { type: AttributeType.STRING, name: "PK" },
+          sortKey: { type: AttributeType.STRING, name: "DT" },
+        },
+      ],
+
+      removalPolicy: RemovalPolicy.DESTROY,
     });
   }
 }
