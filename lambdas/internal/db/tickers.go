@@ -67,14 +67,13 @@ func (db DatabaseRepository) SetTickerItemValue(tickerId string, name string, va
 	return err
 }
 
-// todo return error only
-func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, value interface{}) (error, dynamodb.UpdateItemInput) {
+func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, value interface{}) error {
 	var err error
 
 	key, err := attributevalue.MarshalMap(map[string]string{"TickerId": tickerId})
 
 	if err != nil {
-		return err, dynamodb.UpdateItemInput{}
+		return err
 	}
 
 	update := expression.Add(expression.Name(name), expression.Value(value))
@@ -82,7 +81,7 @@ func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, va
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 
 	if err != nil {
-		return err, dynamodb.UpdateItemInput{}
+		return err
 	}
 
 	input := dynamodb.UpdateItemInput{
@@ -94,7 +93,7 @@ func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, va
 	}
 	_, err = db.svc.UpdateItem(context.TODO(), &input)
 
-	return err, input
+	return err
 }
 
 func (db DatabaseRepository) SetTickerDescription(tickerId string, description providers.TickerDescription) error {
@@ -102,7 +101,7 @@ func (db DatabaseRepository) SetTickerDescription(tickerId string, description p
 }
 
 func (db DatabaseRepository) SetTickerHistoricalPrices(tickerId string, prices []providers.TickerPrices) error {
-	// todo cant ADD to map :(
+	// todo STK-96 cant ADD to map :(
 	//  redo this with binary set instead of map (this feels like best option) <- [][]byte will cnvert to binary set
 	//     https://www.golinuxcloud.com/golang-base64-encode/
 	//  alternatively read, then set?
@@ -110,7 +109,7 @@ func (db DatabaseRepository) SetTickerHistoricalPrices(tickerId string, prices [
 	return db.SetTickerItemValue(tickerId, "Prices", prices)
 }
 
-func (db DatabaseRepository) UpdateTickerDailyPrices(tickerId string, prices []providers.TickerPrices) (error, dynamodb.UpdateItemInput) {
+func (db DatabaseRepository) UpdateTickerDailyPrices(tickerId string, prices []providers.TickerPrices) error {
 	return db.AddTickerItemValue(tickerId, "Prices", prices)
 }
 

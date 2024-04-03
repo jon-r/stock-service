@@ -38,7 +38,7 @@ func setTickerHistoricalPrices(provider providers.ProviderName, tickerId string)
 }
 
 func updateTickerPrices(ctx context.Context, provider providers.ProviderName, tickerIds []string) error {
-	// todo add logger to all these worker functions. maybe pass logger around instead of context?
+	// todo CPT-95 add logger to all these worker functions. maybe pass logger around instead of context?
 	log := logging.NewLogger(ctx)
 	defer log.Sync()
 
@@ -57,19 +57,8 @@ func updateTickerPrices(ctx context.Context, provider providers.ProviderName, ti
 		return nil
 	}
 
-	// todo delete
-	log.Infow("Have prices",
-		"prices", prices,
-	)
-
 	for tickerId, price := range *prices {
-		var input interface{}
-		err, input = dbService.UpdateTickerDailyPrices(tickerId, []providers.TickerPrices{price})
-
-		// todo delete
-		log.Infow("Input Check",
-			"input", input,
-		)
+		err = dbService.UpdateTickerDailyPrices(tickerId, []providers.TickerPrices{price})
 
 		if err != nil {
 			break

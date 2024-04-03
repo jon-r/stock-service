@@ -32,13 +32,7 @@ func updateAllTickers(ctx context.Context) {
 	// 2. convert the jobs into update actions
 	jobActions := jobs.MakeUpdateJobs(tickers)
 
-	log.Infow("Jobs to add",
-		"jobs", jobActions,
-	)
-
 	// 3. add queue jobs for ticker prices + dividends
-	// todo compare jobs here to the jobs made by api controller.
-	//   also check the bulk tool if the jobs are valid
 	err = queueService.AddJobs(*jobActions)
 
 	if err != nil {

@@ -71,7 +71,7 @@ func fetchPolygonTickerPrices(tickerId string) (*[]TickerPrices, error) {
 }
 
 func fetchPolygonDailyPrices(tickerIds []string) (*map[string]TickerPrices, error) {
-	yesterday := models.Date(time.Now().AddDate(0, 0, -3)) // fixme should be -1
+	yesterday := models.Date(time.Now().AddDate(0, 0, -1))
 
 	params := models.GetGroupedDailyAggsParams{
 		Locale:     models.US,

@@ -42,7 +42,7 @@ export class ApiStack extends Stack {
         environment: {
           ...getDatabaseTableEnvVariables(props.tableNames),
         },
-        logRetention: RetentionDays.SIX_MONTHS,
+        logRetention: RetentionDays.THREE_MONTHS,
       },
     );
     const usersIntegration = new apigateway.LambdaIntegration(
@@ -59,7 +59,7 @@ export class ApiStack extends Stack {
         environment: {
           ...getDatabaseTableEnvVariables(props.tableNames),
         },
-        logRetention: RetentionDays.SIX_MONTHS,
+        logRetention: RetentionDays.THREE_MONTHS,
       },
     );
     const logsIntegration = new apigateway.LambdaIntegration(
@@ -90,7 +90,7 @@ export class ApiStack extends Stack {
           ...getTickerEnvVariables(props.dataTickerProps),
           ...getDatabaseTableEnvVariables(props.tableNames),
         },
-        logRetention: RetentionDays.SIX_MONTHS,
+        logRetention: RetentionDays.THREE_MONTHS,
       },
     );
     const stocksIntegration = new apigateway.LambdaIntegration(

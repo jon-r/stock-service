@@ -73,7 +73,7 @@ export class DataEntryStack extends Stack {
 
         SQS_DLQ_URL: deadLetterQueue.queueUrl,
       },
-      logRetention: RetentionDays.SIX_MONTHS,
+      logRetention: RetentionDays.THREE_MONTHS,
     });
 
     // poll lambda - reads the queue in a throttled way to pass the events on to the worker function
@@ -103,7 +103,7 @@ export class DataEntryStack extends Stack {
         TICKER_TIMEOUT: String(tickerTimeout),
         LAMBDA_WORKER_NAME: workerFunction.functionName,
       },
-      logRetention: RetentionDays.SIX_MONTHS,
+      logRetention: RetentionDays.THREE_MONTHS,
     });
 
     rule.addTarget(new targets.LambdaFunction(tickerFunction));

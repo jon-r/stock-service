@@ -85,8 +85,6 @@ func (queue QueueRepository) RetryJob(job JobAction, failReason string) error {
 }
 
 func (queue QueueRepository) ReceiveJobs() (*[]JobQueueItem, error) {
-	// todo remove this
-	log.Printf("Queue url: %v", queue.QueueUrl)
 	input := sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(queue.QueueUrl),
 		MaxNumberOfMessages: 10,
@@ -96,12 +94,7 @@ func (queue QueueRepository) ReceiveJobs() (*[]JobQueueItem, error) {
 	result, err := queue.svc.ReceiveMessage(context.TODO(), &input)
 
 	if err != nil {
-		// todo remove this
-		log.Printf("ERROR: %v", err)
 		return nil, err
-	} else {
-		// todo remove this
-		log.Printf("JOBS: %v", result.Messages)
 	}
 
 	jobs := make([]JobQueueItem, len(result.Messages))

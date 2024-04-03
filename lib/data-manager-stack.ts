@@ -50,7 +50,7 @@ export class DataManagerStack extends Stack {
         ...getDatabaseTableEnvVariables(props.tableNames),
         ...getTickerEnvVariables(props.dataTickerProps),
       },
-      logRetention: RetentionDays.SIX_MONTHS,
+      logRetention: RetentionDays.THREE_MONTHS,
     });
 
     rule.addTarget(new targets.LambdaFunction(managerFunction));
