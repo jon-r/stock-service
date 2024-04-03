@@ -11,10 +11,12 @@ export type TableNames = {
   users: string;
   tickers: string;
   transactions: string;
+  stocks: string;
 };
 
 export function getDatabaseTableEnvVariables(tableNames: TableNames) {
   return {
+    DB_STOCKS_TABLE_NAME: tableNames.stocks,
     DB_LOGS_TABLE_NAME: tableNames.logs,
     DB_TICKERS_TABLE_NAME: tableNames.tickers,
     DB_USERS_TABLE_NAME: tableNames.users,
