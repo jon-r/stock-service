@@ -8,20 +8,26 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"go.uber.org/zap"
 	"jon-richards.com/stock-app/internal/providers"
 )
 
 var tableName = aws.String(os.Getenv("DB_TICKERS_TABLE_NAME"))
 
-func (db DatabaseRepository) NewTickerItem(params providers.NewTickerParams) error {
+func (db DatabaseRepository) NewTickerItem(log *zap.SugaredLogger, params providers.NewTickerParams) error {
 	var err error
 
 	ticker := TickerItem{
 		Provider: params.Provider,
 	}
-	ticker.CreateKey(KeyTicker, params.TickerId, KeyTickerId, params.TickerId)
+	ticker.SetKey(KeyTicker, params.TickerId, KeyTickerId, params.TickerId)
 
 	av, err := attributevalue.MarshalMap(ticker)
+
+	log.Infow("add item",
+		"original", ticker,
+		"item", av,
+	)
 
 	if err != nil {
 		return err
@@ -37,11 +43,11 @@ func (db DatabaseRepository) NewTickerItem(params providers.NewTickerParams) err
 	return err
 }
 
-func (db DatabaseRepository) SetTickerDescription(tickerId string, description *providers.TickerDescription) error {
+func (db DatabaseRepository) SetTickerDescription(log *zap.SugaredLogger, tickerId string, description *providers.TickerDescription) error {
 	var err error
 
 	var item = StocksTableItem{}
-	item.CreateKey(KeyTicker, tickerId, KeyTickerId, tickerId)
+	item.SetKey(KeyTicker, tickerId, KeyTickerId, tickerId)
 
 	if err != nil {
 		return err
@@ -61,6 +67,13 @@ func (db DatabaseRepository) SetTickerDescription(tickerId string, description *
 		ExpressionAttributeValues: expr.Values(),
 		UpdateExpression:          expr.Update(),
 	}
+
+	log.Infow("Update item",
+		"item", item,
+		"key", item.GetKey(),
+		"input", input,
+	)
+
 	_, err = db.svc.UpdateItem(context.TODO(), &input)
 
 	return err

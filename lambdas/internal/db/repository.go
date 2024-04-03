@@ -32,7 +32,7 @@ func NewDatabaseService() *DatabaseRepository {
 	}
 }
 
-func (item StocksTableItem) GetKey() map[string]types.AttributeValue {
+func (item *StocksTableItem) GetKey() map[string]types.AttributeValue {
 	id, err := attributevalue.Marshal(item.Id)
 	if err != nil {
 		panic(err)
@@ -44,7 +44,7 @@ func (item StocksTableItem) GetKey() map[string]types.AttributeValue {
 	return map[string]types.AttributeValue{"PK": id, "SK": sort}
 }
 
-func (item StocksTableItem) CreateKey(partitionKeyType KeyType, partitionId string, sortKeyType KeyType, sortId string) {
+func (item *StocksTableItem) SetKey(partitionKeyType KeyType, partitionId string, sortKeyType KeyType, sortId string) {
 	partitionKey := string(partitionKeyType) + partitionId
 	sortKey := string(sortKeyType) + sortId
 

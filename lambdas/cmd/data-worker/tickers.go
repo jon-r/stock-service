@@ -22,7 +22,7 @@ func setTickerDescription(log *zap.SugaredLogger, provider providers.ProviderNam
 	}
 
 	// 2. insert this ^ data into the ticker table
-	err = dbService.SetTickerDescription(tickerId, description)
+	err = dbService.SetTickerDescription(log, tickerId, description)
 
 	return err
 }

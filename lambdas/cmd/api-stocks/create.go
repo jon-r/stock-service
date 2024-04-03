@@ -27,7 +27,7 @@ func createTicker(ctx context.Context, request events.APIGatewayProxyRequest) (*
 	}
 
 	// 2. enter basic content to the database
-	err = dbService.NewTickerItem(params)
+	err = dbService.NewTickerItem(log, params)
 
 	if err != nil {
 		return clientError(ctx, http.StatusInternalServerError, err)

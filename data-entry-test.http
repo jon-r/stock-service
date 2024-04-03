@@ -1,4 +1,4 @@
-POST https://am63scpuj2.execute-api.eu-west-2.amazonaws.com/prod/stocks/test
+POST https://294f74urx2.execute-api.eu-west-2.amazonaws.com/prod/stocks/test
 
 {
   "provider" : "POLYGON_IO",
