@@ -2,17 +2,13 @@ package db
 
 import (
 	"context"
-	"os"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"go.uber.org/zap"
 	"jon-richards.com/stock-app/internal/providers"
 )
-
-var tableName = aws.String(os.Getenv("DB_TICKERS_TABLE_NAME"))
 
 func (db DatabaseRepository) NewTickerItem(log *zap.SugaredLogger, params providers.NewTickerParams) error {
 	var err error
@@ -61,7 +57,7 @@ func (db DatabaseRepository) SetTickerDescription(log *zap.SugaredLogger, ticker
 	}
 
 	input := dynamodb.UpdateItemInput{
-		TableName:                 tableName,
+		TableName:                 db.StocksTableName,
 		Key:                       item.GetKey(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),

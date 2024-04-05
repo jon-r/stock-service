@@ -2,5 +2,5 @@ POST https://294f74urx2.execute-api.eu-west-2.amazonaws.com/prod/stocks/test
 
 {
   "provider" : "POLYGON_IO",
-  "ticker": "BRK.B"
+  "ticker": "NVDA"
 }
