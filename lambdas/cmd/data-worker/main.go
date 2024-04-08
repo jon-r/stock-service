@@ -22,6 +22,7 @@ func handleJobAction(log *zap.SugaredLogger, job jobs.JobAction) error {
 	case jobs.LoadHistoricalPrices:
 		return setTickerHistoricalPrices(log, job.Provider, job.TickerId)
 
+	// TODO STK-112
 	//case jobs.UpdatePrices:
 	//	return updateTickerPrices(ctx, job.Provider, strings.Split(job.TickerId, ","))
 

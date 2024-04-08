@@ -76,68 +76,47 @@ func (db DatabaseRepository) SetTickerDescription(log *zap.SugaredLogger, ticker
 	return err
 }
 
-//func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, value interface{}) error {
-//	var err error
-//
-//	key, err := attributevalue.MarshalMap(map[string]string{"TickerId": tickerId})
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	update := expression.Add(expression.Name(name), expression.Value(value))
-//	// update.Set(expression.Name("UpdatedAt"), expression.Value(time.Now().UnixMilli()))
-//	expr, err := expression.NewBuilder().WithUpdate(update).Build()
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	input := dynamodb.UpdateItemInput{
-//		TableName:                 tableName,
-//		Key:                       key,
-//		ExpressionAttributeNames:  expr.Names(),
-//		ExpressionAttributeValues: expr.Values(),
-//		UpdateExpression:          expr.Update(),
-//	}
-//	_, err = db.svc.UpdateItem(context.TODO(), &input)
-//
-//	return err
-//}
+// todo maybe move this elsewhere? also can the generic be added?
+func mapPricesToStockItems(prices []providers.TickerPrices, tickerId string) []PriceItem {
+	priceItems := make([]PriceItem, len(prices))
 
-//func (db DatabaseRepository) SetTickerDescription(tickerId string, description providers.TickerDescription) error {
-//	return db.SetTickerItemValue(tickerId, "Description", description)
-//}
+	for i, price := range prices {
+		date, _ := price.Timestamp.MarshalJSON()
+		priceItem := PriceItem{
+			Price: price,
+			Date:  string(date),
+		}
+		priceItem.SetKey(KeyTicker, tickerId, KeyTickerPrice, string(date))
 
-func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, tickerId string, prices []providers.TickerPrices) error {
-	// https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/gov2/dynamodb/actions/table_basics.go#L182
+		priceItems[i] = priceItem
+	}
 
+	return priceItems
+}
+
+func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, tickerId string, prices *[]providers.TickerPrices) error {
 	var err error
 	var item map[string]types.AttributeValue
+
+	priceItems := mapPricesToStockItems(*prices, tickerId)
 
 	written := 0
 	batchSize := 25
 	start := 0
 	end := start + batchSize
-	// todo split this up to be one fn that makes the data, and one that batch inserts it
-	for start < len(prices) {
-		var writeReqs []types.WriteRequest
-		if end > len(prices) {
-			end = len(prices)
-		}
-		for _, price := range prices[start:end] {
-			date, _ := price.Timestamp.MarshalJSON()
-			priceItem := PriceItem{
-				Price: price,
-				Date:  string(date),
-			}
-			priceItem.SetKey(KeyTicker, tickerId, KeyTickerPrice, string(date))
 
+	for start < len(priceItems) {
+		var writeReqs []types.WriteRequest
+		if end > len(priceItems) {
+			end = len(priceItems)
+		}
+		for _, price := range priceItems[start:end] {
 			item, err = attributevalue.MarshalMap(price)
 			if err != nil {
-				log.Warnw("Couldn't marshal price for batch writing",
-					"price", price.Timestamp,
-					"error", err)
+				log.Warnw("Couldn't marshal item for batch writing",
+					"item", price,
+					"error", err,
+				)
 			} else {
 				writeReqs = append(writeReqs, types.WriteRequest{
 					PutRequest: &types.PutRequest{Item: item},
@@ -148,8 +127,9 @@ func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, t
 			RequestItems: map[string][]types.WriteRequest{*db.StocksTableName: writeReqs},
 		})
 		if err != nil {
-			log.Warnw("Couldn't add a batch of movies to the table",
+			log.Warnw("Couldn't add a batch of table tableItems to the table",
 				"table", *db.StocksTableName,
+				"req", writeReqs,
 				"error", err,
 			)
 		} else {
@@ -160,7 +140,7 @@ func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, t
 	}
 
 	if written > 0 {
-		log.Infof("Inserted %d items to table %s", written, *db.StocksTableName)
+		log.Infof("Inserted %d tableItems to table %s", written, *db.StocksTableName)
 	}
 
 	return err

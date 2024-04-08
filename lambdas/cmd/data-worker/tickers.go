@@ -30,7 +30,7 @@ func setTickerHistoricalPrices(log *zap.SugaredLogger, provider providers.Provid
 		return err
 	}
 
-	err = dbService.SetTickerHistoricalPrices(log, tickerId, *prices)
+	err = dbService.SetTickerHistoricalPrices(log, tickerId, prices)
 
 	return err
 }
