@@ -23,5 +23,11 @@ type StocksTableItem struct {
 type TickerItem struct {
 	StocksTableItem
 	Provider    providers.ProviderName
-	Description providers.TickerDescription `dynomodbav:",omitemptyelem"`
+	Description providers.TickerDescription
+}
+
+type PriceItem struct {
+	StocksTableItem
+	Price providers.TickerPrices
+	Date  string `dynamodbav:"DT"`
 }

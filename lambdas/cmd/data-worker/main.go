@@ -19,8 +19,8 @@ func handleJobAction(log *zap.SugaredLogger, job jobs.JobAction) error {
 	switch job.Type {
 	case jobs.LoadTickerDescription:
 		return setTickerDescription(log, job.Provider, job.TickerId)
-	//case jobs.LoadHistoricalPrices:
-	//	return setTickerHistoricalPrices(job.Provider, job.TickerId)
+	case jobs.LoadHistoricalPrices:
+		return setTickerHistoricalPrices(log, job.Provider, job.TickerId)
 
 	//case jobs.UpdatePrices:
 	//	return updateTickerPrices(ctx, job.Provider, strings.Split(job.TickerId, ","))

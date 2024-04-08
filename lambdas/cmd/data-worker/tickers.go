@@ -11,12 +11,6 @@ func setTickerDescription(log *zap.SugaredLogger, provider providers.ProviderNam
 	// 1. fetch the ticker details (based on the above)
 	description, err := providers.FetchTickerDescription(provider, tickerId)
 
-	log.Infow("Fetched description",
-		"provider", provider,
-		"ticker", tickerId,
-		"description", *description,
-	)
-
 	if err != nil {
 		return err
 	}
@@ -27,19 +21,19 @@ func setTickerDescription(log *zap.SugaredLogger, provider providers.ProviderNam
 	return err
 }
 
-//func setTickerHistoricalPrices(provider providers.ProviderName, tickerId string) error {
-//	var err error
-//
-//	prices, err := providers.FetchTickerHistoricalPrices(provider, tickerId)
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	err = dbService.SetTickerHistoricalPrices(tickerId, *prices)
-//
-//	return err
-//}
+func setTickerHistoricalPrices(log *zap.SugaredLogger, provider providers.ProviderName, tickerId string) error {
+	var err error
+
+	prices, err := providers.FetchTickerHistoricalPrices(provider, tickerId)
+
+	if err != nil {
+		return err
+	}
+
+	err = dbService.SetTickerHistoricalPrices(log, tickerId, *prices)
+
+	return err
+}
 
 //func updateTickerPrices(ctx context.Context, provider providers.ProviderName, tickerIds []string) error {
 //	// todo CPT-95 add logger to all these worker functions. maybe pass logger around instead of context?
