@@ -115,6 +115,7 @@ func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, t
 	var err error
 	var item map[string]types.AttributeValue
 
+	written := 0
 	batchSize := 25
 	start := 0
 	end := start + batchSize
@@ -151,9 +152,15 @@ func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, t
 				"table", *db.StocksTableName,
 				"error", err,
 			)
+		} else {
+			written += len(writeReqs)
 		}
 		start = end
 		end += batchSize
+	}
+
+	if written > 0 {
+		log.Infof("Inserted %d items to table %s", written, *db.StocksTableName)
 	}
 
 	return err
