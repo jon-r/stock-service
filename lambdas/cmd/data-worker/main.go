@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"go.uber.org/zap"
 	"jon-richards.com/stock-app/internal/db"
 	"jon-richards.com/stock-app/internal/jobs"
 	"jon-richards.com/stock-app/internal/logging"
@@ -15,22 +15,23 @@ var dbService = db.NewDatabaseService()
 
 var queueService = jobs.NewQueueService()
 
-func handleJobAction(ctx context.Context, job jobs.JobAction) error {
+func handleJobAction(log *zap.SugaredLogger, job jobs.JobAction) error {
 	switch job.Type {
 	case jobs.LoadTickerDescription:
-		return setTickerDescription(job.Provider, job.TickerId)
+		return setTickerDescription(log, job.Provider, job.TickerId)
 	case jobs.LoadHistoricalPrices:
-		return setTickerHistoricalPrices(job.Provider, job.TickerId)
+		return setTickerHistoricalPrices(log, job.Provider, job.TickerId)
 
-	case jobs.UpdatePrices:
-		return updateTickerPrices(ctx, job.Provider, strings.Split(job.TickerId, ","))
+	// TODO STK-112
+	//case jobs.UpdatePrices:
+	//	return updateTickerPrices(ctx, job.Provider, strings.Split(job.TickerId, ","))
 
-		// TODO STK-86
-		// jobs.LoadTickerIcon
+	// TODO STK-86
+	// jobs.LoadTickerIcon
 
-		// TODO STK-88
-		// jobs.UpdateDividends
-		// jobs.LoadHistoricalDividends
+	// TODO STK-88
+	// jobs.UpdateDividends
+	// jobs.LoadHistoricalDividends
 
 	default:
 		return fmt.Errorf("invalid action type = %v", job.Type)
@@ -47,7 +48,7 @@ func handleRequest(ctx context.Context, event jobs.JobAction) {
 	log.Infow("Attempt to do job",
 		"job", event,
 	)
-	err = handleJobAction(ctx, event)
+	err = handleJobAction(log, event)
 
 	if err == nil {
 		log.Infoln("Job completed",

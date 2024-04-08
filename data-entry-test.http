@@ -1,6 +1,6 @@
-POST https://am63scpuj2.execute-api.eu-west-2.amazonaws.com/prod/stocks/test
+POST {{apigatewayurl}}/stocks/test
 
 {
   "provider" : "POLYGON_IO",
-  "ticker": "BRK.B"
+  "ticker": "NVDA"
 }

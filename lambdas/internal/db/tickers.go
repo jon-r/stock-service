@@ -2,34 +2,36 @@ package db
 
 import (
 	"context"
-	"os"
-	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"go.uber.org/zap"
 	"jon-richards.com/stock-app/internal/providers"
 )
 
-var tableName = aws.String(os.Getenv("DB_TICKERS_TABLE_NAME"))
-
-func (db DatabaseRepository) NewTickerItem(provider providers.ProviderName, tickerId string) error {
+func (db DatabaseRepository) NewTickerItem(log *zap.SugaredLogger, params providers.NewTickerParams) error {
 	var err error
 
-	ticker := providers.TickerItem{
-		TickerId:  tickerId,
-		Provider:  provider,
-		UpdatedAt: time.Now().UnixMilli(),
+	ticker := TickerItem{
+		Provider: params.Provider,
 	}
+	ticker.SetKey(KeyTicker, params.TickerId, KeyTickerId, params.TickerId)
+
 	av, err := attributevalue.MarshalMap(ticker)
+
+	log.Infow("add item",
+		"original", ticker,
+		"item", av,
+	)
 
 	if err != nil {
 		return err
 	}
 
 	input := dynamodb.PutItemInput{
-		TableName: tableName,
+		TableName: db.StocksTableName,
 		Item:      av,
 	}
 
@@ -38,17 +40,17 @@ func (db DatabaseRepository) NewTickerItem(provider providers.ProviderName, tick
 	return err
 }
 
-func (db DatabaseRepository) SetTickerItemValue(tickerId string, name string, value interface{}) error {
+func (db DatabaseRepository) SetTickerDescription(log *zap.SugaredLogger, tickerId string, description *providers.TickerDescription) error {
 	var err error
 
-	key, err := attributevalue.MarshalMap(map[string]string{"TickerId": tickerId})
+	var item = StocksTableItem{}
+	item.SetKey(KeyTicker, tickerId, KeyTickerId, tickerId)
 
 	if err != nil {
 		return err
 	}
 
-	update := expression.Set(expression.Name(name), expression.Value(value))
-	update.Set(expression.Name("UpdatedAt"), expression.Value(time.Now().UnixMilli()))
+	update := expression.Set(expression.Name("Description"), expression.Value(*description))
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 
 	if err != nil {
@@ -56,99 +58,134 @@ func (db DatabaseRepository) SetTickerItemValue(tickerId string, name string, va
 	}
 
 	input := dynamodb.UpdateItemInput{
-		TableName:                 tableName,
-		Key:                       key,
+		TableName:                 db.StocksTableName,
+		Key:                       item.GetKey(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		UpdateExpression:          expr.Update(),
 	}
-	_, err = db.svc.UpdateItem(context.TODO(), &input)
 
-	return err
-}
-
-func (db DatabaseRepository) AddTickerItemValue(tickerId string, name string, value interface{}) error {
-	var err error
-
-	key, err := attributevalue.MarshalMap(map[string]string{"TickerId": tickerId})
-
-	if err != nil {
-		return err
-	}
-
-	update := expression.Add(expression.Name(name), expression.Value(value))
-	// update.Set(expression.Name("UpdatedAt"), expression.Value(time.Now().UnixMilli()))
-	expr, err := expression.NewBuilder().WithUpdate(update).Build()
-
-	if err != nil {
-		return err
-	}
-
-	input := dynamodb.UpdateItemInput{
-		TableName:                 tableName,
-		Key:                       key,
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		UpdateExpression:          expr.Update(),
-	}
-	_, err = db.svc.UpdateItem(context.TODO(), &input)
-
-	return err
-}
-
-func (db DatabaseRepository) SetTickerDescription(tickerId string, description providers.TickerDescription) error {
-	return db.SetTickerItemValue(tickerId, "Description", description)
-}
-
-func (db DatabaseRepository) SetTickerHistoricalPrices(tickerId string, prices []providers.TickerPrices) error {
-	// todo STK-96 cant ADD to map :(
-	//  redo this with binary set instead of map (this feels like best option) <- [][]byte will cnvert to binary set
-	//     https://www.golinuxcloud.com/golang-base64-encode/
-	//  alternatively read, then set?
-	//  OR whole new table for prices?
-	return db.SetTickerItemValue(tickerId, "Prices", prices)
-}
-
-func (db DatabaseRepository) UpdateTickerDailyPrices(tickerId string, prices []providers.TickerPrices) error {
-	return db.AddTickerItemValue(tickerId, "Prices", prices)
-}
-
-func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {
-	var tickers []providers.TickerItemStub
-	var err error
-	var response *dynamodb.ScanOutput
-
-	projEx := expression.NamesList(
-		expression.Name("TickerId"), expression.Name("Provider"),
+	log.Infow("Update item",
+		"item", item,
+		"key", item.GetKey(),
+		"input", input,
 	)
-	expr, err := expression.NewBuilder().WithProjection(projEx).Build()
 
-	if err != nil {
-		return nil, err
+	_, err = db.svc.UpdateItem(context.TODO(), &input)
+
+	return err
+}
+
+// todo maybe move this elsewhere? also can the generic be added?
+func mapPricesToStockItems(prices []providers.TickerPrices, tickerId string) []PriceItem {
+	priceItems := make([]PriceItem, len(prices))
+
+	for i, price := range prices {
+		date, _ := price.Timestamp.MarshalJSON()
+		priceItem := PriceItem{
+			Price: price,
+			Date:  string(date),
+		}
+		priceItem.SetKey(KeyTicker, tickerId, KeyTickerPrice, string(date))
+
+		priceItems[i] = priceItem
 	}
 
-	scanPaginator := dynamodb.NewScanPaginator(db.svc, &dynamodb.ScanInput{
-		TableName:                 tableName,
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		FilterExpression:          expr.Filter(),
-		ProjectionExpression:      expr.Projection(),
-	})
-	for scanPaginator.HasMorePages() {
-		response, err = scanPaginator.NextPage(context.TODO())
-		if err != nil {
-			break
-		} else {
-			var tickerPage []providers.TickerItemStub
-			err = attributevalue.UnmarshalListOfMaps(response.Items, &tickerPage)
+	return priceItems
+}
 
+func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, tickerId string, prices *[]providers.TickerPrices) error {
+	var err error
+	var item map[string]types.AttributeValue
+
+	priceItems := mapPricesToStockItems(*prices, tickerId)
+
+	written := 0
+	batchSize := 25
+	start := 0
+	end := start + batchSize
+
+	for start < len(priceItems) {
+		var writeReqs []types.WriteRequest
+		if end > len(priceItems) {
+			end = len(priceItems)
+		}
+		for _, price := range priceItems[start:end] {
+			item, err = attributevalue.MarshalMap(price)
 			if err != nil {
-				break
+				log.Warnw("Couldn't marshal item for batch writing",
+					"item", price,
+					"error", err,
+				)
 			} else {
-				tickers = append(tickers, tickerPage...)
+				writeReqs = append(writeReqs, types.WriteRequest{
+					PutRequest: &types.PutRequest{Item: item},
+				})
 			}
 		}
+		_, err = db.svc.BatchWriteItem(context.TODO(), &dynamodb.BatchWriteItemInput{
+			RequestItems: map[string][]types.WriteRequest{*db.StocksTableName: writeReqs},
+		})
+		if err != nil {
+			log.Warnw("Couldn't add a batch of table tableItems to the table",
+				"table", *db.StocksTableName,
+				"req", writeReqs,
+				"error", err,
+			)
+		} else {
+			written += len(writeReqs)
+		}
+		start = end
+		end += batchSize
 	}
 
-	return tickers, err
+	if written > 0 {
+		log.Infof("Inserted %d tableItems to table %s", written, *db.StocksTableName)
+	}
+
+	return err
 }
+
+//func (db DatabaseRepository) UpdateTickerDailyPrices(tickerId string, prices []providers.TickerPrices) error {
+//	return db.AddTickerItemValue(tickerId, "Prices", prices)
+//}
+
+//func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {
+//	var tickers []providers.TickerItemStub
+//	var err error
+//	var response *dynamodb.ScanOutput
+//
+//	projEx := expression.NamesList(
+//		expression.Name("TickerId"), expression.Name("Provider"),
+//	)
+//	expr, err := expression.NewBuilder().WithProjection(projEx).Build()
+//
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	scanPaginator := dynamodb.NewScanPaginator(db.svc, &dynamodb.ScanInput{
+//		TableName:                 tableName,
+//		ExpressionAttributeNames:  expr.Names(),
+//		ExpressionAttributeValues: expr.Values(),
+//		FilterExpression:          expr.Filter(),
+//		ProjectionExpression:      expr.Projection(),
+//	})
+//	for scanPaginator.HasMorePages() {
+//		response, err = scanPaginator.NextPage(context.TODO())
+//		if err != nil {
+//			break
+//		} else {
+//			var tickerPage []providers.TickerItemStub
+//			err = attributevalue.UnmarshalListOfMaps(response.Items, &tickerPage)
+//
+//			if err != nil {
+//				break
+//			} else {
+//				tickers = append(tickers, tickerPage...)
+//			}
+//		}
+//	}
+//
+//	return tickers, err
+//}
