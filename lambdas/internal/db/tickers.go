@@ -150,42 +150,43 @@ func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, t
 //	return db.AddTickerItemValue(tickerId, "Prices", prices)
 //}
 
-//func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {
-//	var tickers []providers.TickerItemStub
-//	var err error
-//	var response *dynamodb.ScanOutput
-//
-//	projEx := expression.NamesList(
-//		expression.Name("TickerId"), expression.Name("Provider"),
-//	)
-//	expr, err := expression.NewBuilder().WithProjection(projEx).Build()
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	scanPaginator := dynamodb.NewScanPaginator(db.svc, &dynamodb.ScanInput{
-//		TableName:                 tableName,
-//		ExpressionAttributeNames:  expr.Names(),
-//		ExpressionAttributeValues: expr.Values(),
-//		FilterExpression:          expr.Filter(),
-//		ProjectionExpression:      expr.Projection(),
-//	})
-//	for scanPaginator.HasMorePages() {
-//		response, err = scanPaginator.NextPage(context.TODO())
-//		if err != nil {
-//			break
-//		} else {
-//			var tickerPage []providers.TickerItemStub
-//			err = attributevalue.UnmarshalListOfMaps(response.Items, &tickerPage)
-//
-//			if err != nil {
-//				break
-//			} else {
-//				tickers = append(tickers, tickerPage...)
-//			}
-//		}
-//	}
-//
-//	return tickers, err
-//}
+func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {
+	var tickers []providers.TickerItemStub
+	var err error
+	var response *dynamodb.QueryOutput
+
+	keyEx := expression.Key("SK").BeginsWith(string(KeyTickerId))
+	projEx := expression.NamesList(
+		expression.Name("SK"), expression.Name("Provider"),
+	)
+	expr, err := expression.NewBuilder().WithKeyCondition(keyEx).WithProjection(projEx).Build()
+
+	if err != nil {
+		return nil, err
+	}
+
+	queryPaginator := dynamodb.NewQueryPaginator(db.svc, &dynamodb.QueryInput{
+		TableName:                 db.StocksTableName,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
+	})
+	for queryPaginator.HasMorePages() {
+		response, err = queryPaginator.NextPage(context.TODO())
+		if err != nil {
+			break
+		} else {
+			var tickerPage []providers.TickerItemStub
+			err = attributevalue.UnmarshalListOfMaps(response.Items, &tickerPage)
+
+			if err != nil {
+				break
+			} else {
+				tickers = append(tickers, tickerPage...)
+			}
+		}
+	}
+
+	return tickers, err
+}

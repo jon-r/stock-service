@@ -29,6 +29,6 @@ type NewTickerParams struct {
 }
 
 type TickerItemStub struct {
-	TickerId string
-	Provider ProviderName
+	TickerSort string `dynamodbav:"SK"`
+	Provider   ProviderName
 }
