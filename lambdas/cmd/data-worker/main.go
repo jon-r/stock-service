@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"go.uber.org/zap"
@@ -21,10 +22,8 @@ func handleJobAction(log *zap.SugaredLogger, job jobs.JobAction) error {
 		return setTickerDescription(log, job.Provider, job.TickerId)
 	case jobs.LoadHistoricalPrices:
 		return setTickerHistoricalPrices(log, job.Provider, job.TickerId)
-
-	// TODO STK-112
-	//case jobs.UpdatePrices:
-	//	return updateTickerPrices(ctx, job.Provider, strings.Split(job.TickerId, ","))
+	case jobs.UpdatePrices:
+		return updateTickerPrices(log, job.Provider, strings.Split(job.TickerId, ","))
 
 	// TODO STK-86
 	// jobs.LoadTickerIcon

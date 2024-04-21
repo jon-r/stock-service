@@ -76,8 +76,8 @@ func (db DatabaseRepository) SetTickerDescription(log *zap.SugaredLogger, ticker
 	return err
 }
 
-// todo maybe move this elsewhere? also can the generic be added?
-func mapPricesToStockItems(prices []providers.TickerPrices, tickerId string) []PriceItem {
+// todo maybe move this elsewhere? also can the generic be added? maybe use AttributeValue map
+func mapPricesToStockItems(prices []providers.TickerPrices) []PriceItem {
 	priceItems := make([]PriceItem, len(prices))
 
 	for i, price := range prices {
@@ -86,7 +86,7 @@ func mapPricesToStockItems(prices []providers.TickerPrices, tickerId string) []P
 			Price: price,
 			Date:  string(date),
 		}
-		priceItem.SetKey(KeyTicker, tickerId, KeyTickerPrice, string(date))
+		priceItem.SetKey(KeyTicker, price.Id, KeyTickerPrice, string(date))
 
 		priceItems[i] = priceItem
 	}
@@ -94,11 +94,11 @@ func mapPricesToStockItems(prices []providers.TickerPrices, tickerId string) []P
 	return priceItems
 }
 
-func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, tickerId string, prices *[]providers.TickerPrices) error {
+func (db DatabaseRepository) AddTickerPrices(log *zap.SugaredLogger, prices *[]providers.TickerPrices) error {
 	var err error
 	var item map[string]types.AttributeValue
 
-	priceItems := mapPricesToStockItems(*prices, tickerId)
+	priceItems := mapPricesToStockItems(*prices)
 
 	written := 0
 	batchSize := 25
@@ -145,10 +145,6 @@ func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, t
 
 	return err
 }
-
-//func (db DatabaseRepository) UpdateTickerDailyPrices(tickerId string, prices []providers.TickerPrices) error {
-//	return db.AddTickerItemValue(tickerId, "Prices", prices)
-//}
 
 func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {
 	var tickers []providers.TickerItemStub

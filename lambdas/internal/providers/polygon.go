@@ -13,8 +13,9 @@ import (
 
 var client = polygon.New(os.Getenv("POLYGON_API_KEY"))
 
-func convertPolygonToPrice(item models.Agg) TickerPrices {
+func convertPolygonToPrice(item models.Agg, tickerId string) TickerPrices {
 	return TickerPrices{
+		Id:        tickerId,
 		Open:      item.Open,
 		Close:     item.Close,
 		High:      item.High,
@@ -62,7 +63,7 @@ func fetchPolygonTickerPrices(tickerId string) (*[]TickerPrices, error) {
 	for iter.Next() {
 		item := iter.Item()
 
-		prices = append(prices, convertPolygonToPrice(item))
+		prices = append(prices, convertPolygonToPrice(item, tickerId))
 	}
 
 	if iter.Err() != nil {
@@ -72,7 +73,7 @@ func fetchPolygonTickerPrices(tickerId string) (*[]TickerPrices, error) {
 	return &prices, nil
 }
 
-func fetchPolygonDailyPrices(tickerIds []string) (*map[string]TickerPrices, error) {
+func fetchPolygonDailyPrices(tickerIds []string) (*[]TickerPrices, error) {
 	yesterday := models.Date(time.Now().AddDate(0, 0, -1))
 
 	params := models.GetGroupedDailyAggsParams{
@@ -91,13 +92,14 @@ func fetchPolygonDailyPrices(tickerIds []string) (*map[string]TickerPrices, erro
 		return nil, nil
 	}
 
-	prices := make(map[string]TickerPrices, len(tickerIds))
+	var prices []TickerPrices
+
 	for _, tickerId := range tickerIds {
 		item, exists := lo.Find(res.Results, func(price models.Agg) bool {
 			return price.Ticker == tickerId
 		})
 		if exists {
-			prices[tickerId] = convertPolygonToPrice(item)
+			prices = append(prices, convertPolygonToPrice(item, tickerId))
 		}
 	}
 

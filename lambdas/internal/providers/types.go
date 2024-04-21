@@ -16,6 +16,7 @@ type TickerDescription struct {
 }
 
 type TickerPrices struct {
+	Id        string
 	Open      float64
 	Close     float64
 	High      float64

@@ -61,7 +61,7 @@ func MakeUpdateJobs(tickers []providers.TickerItemStub) *[]JobAction {
 
 		// todo STK-90 no need to chunk for prices, just dividends
 		//chunkedTickers := lo.Chunk(tickerGroup, tickerLimit)
-		// have a look at SetTickerHistoricalPrices for how to chunk in a way that dynamoDB likes
+		// have a look at AddTickerPrices for how to chunk in a way that dynamoDB likes
 		//for _, chunk := range chunkedTickers {
 		//
 		//	for _, jobType := range updateItemActions {
