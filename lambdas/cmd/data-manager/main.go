@@ -21,12 +21,16 @@ func updateAllTickers(ctx context.Context) {
 	defer log.Sync()
 
 	// 1. get all tickers
-	tickers, queueErr := dbService.GetAllTickers()
+	tickers, err := dbService.GetAllTickers()
 
-	if queueErr != nil {
-		log.Errorw("Errors in fetching the tickers",
+	if err != nil {
+		log.Fatalw("Errors in fetching the tickers",
 			"error", err,
 		)
+	}
+
+	if len(tickers) == 0 {
+		log.Fatal("No tickers found")
 	}
 
 	// 2. convert the jobs into update actions
@@ -45,7 +49,7 @@ func updateAllTickers(ctx context.Context) {
 		)
 	}
 
-	// 4. enable the ticker
+	// 4. enable the jobs ticker
 	err = eventsService.StartTickerScheduler()
 
 	if err != nil {

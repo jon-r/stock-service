@@ -149,27 +149,28 @@ func (db DatabaseRepository) AddTickerPrices(log *zap.SugaredLogger, prices *[]p
 func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {
 	var tickers []providers.TickerItemStub
 	var err error
-	var response *dynamodb.QueryOutput
+	var response *dynamodb.ScanOutput
 
-	keyEx := expression.Key("SK").BeginsWith(string(KeyTickerId))
+	filterEx := expression.Name("SK").BeginsWith(string(KeyTickerId))
 	projEx := expression.NamesList(
 		expression.Name("SK"), expression.Name("Provider"),
 	)
-	expr, err := expression.NewBuilder().WithKeyCondition(keyEx).WithProjection(projEx).Build()
+	expr, err := expression.NewBuilder().WithFilter(filterEx).WithProjection(projEx).Build()
 
 	if err != nil {
 		return nil, err
 	}
 
-	queryPaginator := dynamodb.NewQueryPaginator(db.svc, &dynamodb.QueryInput{
+	scanPaginator := dynamodb.NewScanPaginator(db.svc, &dynamodb.ScanInput{
 		TableName:                 db.StocksTableName,
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		FilterExpression:          expr.Filter(),
 		ProjectionExpression:      expr.Projection(),
 	})
-	for queryPaginator.HasMorePages() {
-		response, err = queryPaginator.NextPage(context.TODO())
+
+	for scanPaginator.HasMorePages() {
+		response, err = scanPaginator.NextPage(context.TODO())
 		if err != nil {
 			break
 		} else {
