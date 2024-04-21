@@ -3,13 +3,14 @@ package jobs
 import (
 	"strings"
 
-	"github.com/google/uuid"
 	"jon-richards.com/stock-app/internal/providers"
 )
 
-func MakeJob(provider providers.ProviderName, tickerId string, jobType JobTypes) JobAction {
+type uuidGen func() string
+
+func MakeJob(provider providers.ProviderName, tickerId string, jobType JobTypes, newUuid uuidGen) JobAction {
 	return JobAction{
-		JobId:    uuid.NewString(),
+		JobId:    newUuid(),
 		Provider: provider,
 		Type:     jobType,
 		TickerId: tickerId,
@@ -17,11 +18,11 @@ func MakeJob(provider providers.ProviderName, tickerId string, jobType JobTypes)
 	}
 }
 
-func MakeBulkJob(provider providers.ProviderName, tickerIds []string, jobType JobTypes) JobAction {
+func MakeBulkJob(provider providers.ProviderName, tickerIds []string, jobType JobTypes, newUuid uuidGen) JobAction {
 	tickerId := strings.Join(tickerIds, ",")
 
 	return JobAction{
-		JobId:    uuid.NewString(),
+		JobId:    newUuid(),
 		Provider: provider,
 		Type:     jobType,
 		TickerId: tickerId,
@@ -29,7 +30,7 @@ func MakeBulkJob(provider providers.ProviderName, tickerIds []string, jobType Jo
 	}
 }
 
-func MakeCreateJobs(provider providers.ProviderName, tickerId string) *[]JobAction {
+func MakeCreateJobs(provider providers.ProviderName, tickerId string, newUuid uuidGen) *[]JobAction {
 	newItemActions := []JobTypes{
 		LoadTickerDescription,
 		LoadHistoricalPrices,
@@ -39,7 +40,7 @@ func MakeCreateJobs(provider providers.ProviderName, tickerId string) *[]JobActi
 
 	jobActions := make([]JobAction, len(newItemActions))
 	for i, jobType := range newItemActions {
-		job := MakeJob(provider, tickerId, jobType)
+		job := MakeJob(provider, tickerId, jobType, newUuid)
 
 		jobActions[i] = job
 	}
@@ -47,7 +48,7 @@ func MakeCreateJobs(provider providers.ProviderName, tickerId string) *[]JobActi
 	return &jobActions
 }
 
-func MakeUpdateJobs(tickers []providers.TickerItemStub) *[]JobAction {
+func MakeUpdateJobs(tickers []providers.TickerItemStub, newUuid uuidGen) *[]JobAction {
 
 	//tickerLimit := 10
 	groupedTickerIds := groupByProvider(tickers)
@@ -56,7 +57,7 @@ func MakeUpdateJobs(tickers []providers.TickerItemStub) *[]JobAction {
 	var jobActions []JobAction
 	for provider, tickerGroup := range groupedTickerIds {
 
-		job = MakeBulkJob(provider, tickerGroup, UpdatePrices)
+		job = MakeBulkJob(provider, tickerGroup, UpdatePrices, newUuid)
 		jobActions = append(jobActions, job)
 
 		// todo STK-90 no need to chunk for prices, just dividends

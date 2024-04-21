@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/google/uuid"
 	"jon-richards.com/stock-app/internal/jobs"
 	"jon-richards.com/stock-app/internal/logging"
 	"jon-richards.com/stock-app/internal/providers"
@@ -34,7 +35,7 @@ func createTicker(ctx context.Context, request events.APIGatewayProxyRequest) (*
 	}
 
 	// 3. Create new job queue item
-	newItemJobs := jobs.MakeCreateJobs(params.Provider, params.TickerId)
+	newItemJobs := jobs.MakeCreateJobs(params.Provider, params.TickerId, uuid.NewString)
 
 	log.Infow("Add jobs to the queue",
 		"jobs", *newItemJobs,

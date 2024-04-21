@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/google/uuid"
 	"jon-richards.com/stock-app/internal/db"
 	"jon-richards.com/stock-app/internal/jobs"
 	"jon-richards.com/stock-app/internal/logging"
@@ -34,7 +35,7 @@ func updateAllTickers(ctx context.Context) {
 	}
 
 	// 2. convert the jobs into update actions
-	jobActions := jobs.MakeUpdateJobs(tickers)
+	jobActions := jobs.MakeUpdateJobs(tickers, uuid.NewString)
 
 	// 3. add queue jobs for ticker prices + dividends
 	err = queueService.AddJobs(*jobActions)
