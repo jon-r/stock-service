@@ -8,6 +8,9 @@ import (
 )
 
 // https://dev.to/salesforceeng/mocks-in-go-tests-with-testify-mock-6pd
+// todo look at coverage library?
+//   or pipeline
+//   https://medium.com/synechron/how-to-set-up-a-test-coverage-threshold-in-go-and-github-167f69b940dc
 
 func mockUuid() string {
 	return "test"
