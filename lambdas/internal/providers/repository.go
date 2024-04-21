@@ -20,7 +20,7 @@ func FetchTickerHistoricalPrices(provider ProviderName, tickerId string) (*[]Tic
 	}
 }
 
-func FetchTickerDailyPrices(provider ProviderName, tickerIds []string) (*map[string]TickerPrices, error) {
+func FetchTickerDailyPrices(provider ProviderName, tickerIds []string) (*[]TickerPrices, error) {
 	switch provider {
 	case PolygonIo:
 		return fetchPolygonDailyPrices(tickerIds)

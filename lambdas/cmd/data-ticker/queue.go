@@ -45,8 +45,6 @@ func shutDownWhenEmpty(ctx context.Context, jobList *[]jobs.JobQueueItem, emptyR
 	if len(*jobList) == 0 {
 		emptyResponses += 1
 	} else {
-		// todo remove this
-		log.Infof("Found %v jobs", len(*jobList))
 		emptyResponses = 0
 	}
 

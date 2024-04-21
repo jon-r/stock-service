@@ -16,6 +16,7 @@ type TickerDescription struct {
 }
 
 type TickerPrices struct {
+	Id        string
 	Open      float64
 	Close     float64
 	High      float64
@@ -29,6 +30,6 @@ type NewTickerParams struct {
 }
 
 type TickerItemStub struct {
-	TickerId string
-	Provider ProviderName
+	TickerSort string `dynamodbav:"SK"`
+	Provider   ProviderName
 }

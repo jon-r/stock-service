@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/samber/lo"
 	"jon-richards.com/stock-app/internal/providers"
 )
 
@@ -49,28 +48,28 @@ func MakeCreateJobs(provider providers.ProviderName, tickerId string) *[]JobActi
 }
 
 func MakeUpdateJobs(tickers []providers.TickerItemStub) *[]JobAction {
-	updateItemActions := []JobTypes{
-		UpdatePrices,
-		// TODO jobs.UpdateDividends,
-	}
 
-	tickerLimit := 10
+	//tickerLimit := 10
 	groupedTickerIds := groupByProvider(tickers)
 
+	var job JobAction
 	var jobActions []JobAction
 	for provider, tickerGroup := range groupedTickerIds {
+
+		job = MakeBulkJob(provider, tickerGroup, UpdatePrices)
+		jobActions = append(jobActions, job)
+
 		// todo STK-90 no need to chunk for prices, just dividends
-		// have a look at SetTickerHistoricalPrices for how to chunk in a way that dynamoDB likes
-		chunkedTickers := lo.Chunk(tickerGroup, tickerLimit)
-
-		for _, chunk := range chunkedTickers {
-
-			for _, jobType := range updateItemActions {
-				job := MakeBulkJob(provider, chunk, jobType)
-
-				jobActions = append(jobActions, job)
-			}
-		}
+		//chunkedTickers := lo.Chunk(tickerGroup, tickerLimit)
+		// have a look at AddTickerPrices for how to chunk in a way that dynamoDB likes
+		//for _, chunk := range chunkedTickers {
+		//
+		//	for _, jobType := range updateItemActions {
+		//		job := MakeBulkJob(provider, chunk, jobType)
+		//
+		//		jobActions = append(jobActions, job)
+		//	}
+		//}
 	}
 
 	return &jobActions

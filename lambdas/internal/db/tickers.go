@@ -76,8 +76,8 @@ func (db DatabaseRepository) SetTickerDescription(log *zap.SugaredLogger, ticker
 	return err
 }
 
-// todo maybe move this elsewhere? also can the generic be added?
-func mapPricesToStockItems(prices []providers.TickerPrices, tickerId string) []PriceItem {
+// todo maybe move this elsewhere? also can the generic be added? maybe use AttributeValue map
+func mapPricesToStockItems(prices []providers.TickerPrices) []PriceItem {
 	priceItems := make([]PriceItem, len(prices))
 
 	for i, price := range prices {
@@ -86,7 +86,7 @@ func mapPricesToStockItems(prices []providers.TickerPrices, tickerId string) []P
 			Price: price,
 			Date:  string(date),
 		}
-		priceItem.SetKey(KeyTicker, tickerId, KeyTickerPrice, string(date))
+		priceItem.SetKey(KeyTicker, price.Id, KeyTickerPrice, string(date))
 
 		priceItems[i] = priceItem
 	}
@@ -94,11 +94,11 @@ func mapPricesToStockItems(prices []providers.TickerPrices, tickerId string) []P
 	return priceItems
 }
 
-func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, tickerId string, prices *[]providers.TickerPrices) error {
+func (db DatabaseRepository) AddTickerPrices(log *zap.SugaredLogger, prices *[]providers.TickerPrices) error {
 	var err error
 	var item map[string]types.AttributeValue
 
-	priceItems := mapPricesToStockItems(*prices, tickerId)
+	priceItems := mapPricesToStockItems(*prices)
 
 	written := 0
 	batchSize := 25
@@ -146,46 +146,44 @@ func (db DatabaseRepository) SetTickerHistoricalPrices(log *zap.SugaredLogger, t
 	return err
 }
 
-//func (db DatabaseRepository) UpdateTickerDailyPrices(tickerId string, prices []providers.TickerPrices) error {
-//	return db.AddTickerItemValue(tickerId, "Prices", prices)
-//}
+func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {
+	var tickers []providers.TickerItemStub
+	var err error
+	var response *dynamodb.ScanOutput
 
-//func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {
-//	var tickers []providers.TickerItemStub
-//	var err error
-//	var response *dynamodb.ScanOutput
-//
-//	projEx := expression.NamesList(
-//		expression.Name("TickerId"), expression.Name("Provider"),
-//	)
-//	expr, err := expression.NewBuilder().WithProjection(projEx).Build()
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	scanPaginator := dynamodb.NewScanPaginator(db.svc, &dynamodb.ScanInput{
-//		TableName:                 tableName,
-//		ExpressionAttributeNames:  expr.Names(),
-//		ExpressionAttributeValues: expr.Values(),
-//		FilterExpression:          expr.Filter(),
-//		ProjectionExpression:      expr.Projection(),
-//	})
-//	for scanPaginator.HasMorePages() {
-//		response, err = scanPaginator.NextPage(context.TODO())
-//		if err != nil {
-//			break
-//		} else {
-//			var tickerPage []providers.TickerItemStub
-//			err = attributevalue.UnmarshalListOfMaps(response.Items, &tickerPage)
-//
-//			if err != nil {
-//				break
-//			} else {
-//				tickers = append(tickers, tickerPage...)
-//			}
-//		}
-//	}
-//
-//	return tickers, err
-//}
+	filterEx := expression.Name("SK").BeginsWith(string(KeyTickerId))
+	projEx := expression.NamesList(
+		expression.Name("SK"), expression.Name("Provider"),
+	)
+	expr, err := expression.NewBuilder().WithFilter(filterEx).WithProjection(projEx).Build()
+
+	if err != nil {
+		return nil, err
+	}
+
+	scanPaginator := dynamodb.NewScanPaginator(db.svc, &dynamodb.ScanInput{
+		TableName:                 db.StocksTableName,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ProjectionExpression:      expr.Projection(),
+	})
+
+	for scanPaginator.HasMorePages() {
+		response, err = scanPaginator.NextPage(context.TODO())
+		if err != nil {
+			break
+		} else {
+			var tickerPage []providers.TickerItemStub
+			err = attributevalue.UnmarshalListOfMaps(response.Items, &tickerPage)
+
+			if err != nil {
+				break
+			} else {
+				tickers = append(tickers, tickerPage...)
+			}
+		}
+	}
+
+	return tickers, err
+}

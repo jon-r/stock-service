@@ -21,31 +21,35 @@ func updateAllTickers(ctx context.Context) {
 	defer log.Sync()
 
 	// 1. get all tickers
-	//tickers, queueErr := dbService.GetAllTickers()
+	tickers, err := dbService.GetAllTickers()
 
-	//if queueErr != nil {
-	//	log.Errorw("Errors in fetching the tickers",
-	//		"error", err,
-	//	)
-	//}
-	//
-	//// 2. convert the jobs into update actions
-	//jobActions := jobs.MakeUpdateJobs(tickers)
-	//
-	//// 3. add queue jobs for ticker prices + dividends
-	//err = queueService.AddJobs(*jobActions)
-	//
-	//if err != nil {
-	//	log.Fatalw("Failed to add jobs",
-	//		"error", err,
-	//	)
-	//} else {
-	//	log.Infow("Added Jobs for tickers",
-	//		"tickers", tickers,
-	//	)
-	//}
+	if err != nil {
+		log.Fatalw("Errors in fetching the tickers",
+			"error", err,
+		)
+	}
 
-	// 4. enable the ticker
+	if len(tickers) == 0 {
+		log.Fatal("No tickers found")
+	}
+
+	// 2. convert the jobs into update actions
+	jobActions := jobs.MakeUpdateJobs(tickers)
+
+	// 3. add queue jobs for ticker prices + dividends
+	err = queueService.AddJobs(*jobActions)
+
+	if err != nil {
+		log.Fatalw("Failed to add jobs",
+			"error", err,
+		)
+	} else {
+		log.Infow("Added Jobs for tickers",
+			"tickers", tickers,
+		)
+	}
+
+	// 4. enable the jobs ticker
 	err = eventsService.StartTickerScheduler()
 
 	if err != nil {
