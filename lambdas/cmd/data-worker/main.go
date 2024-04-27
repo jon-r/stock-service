@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/jon-r/stock-service/lambdas/internal/db"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs"
+	"github.com/jon-r/stock-service/lambdas/internal/logging"
 	"go.uber.org/zap"
-	"jon-richards.com/stock-app/internal/db"
-	"jon-richards.com/stock-app/internal/jobs"
-	"jon-richards.com/stock-app/internal/logging"
 )
 
 var dbService = db.NewDatabaseService()

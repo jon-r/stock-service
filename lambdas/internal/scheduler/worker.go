@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
-	"jon-richards.com/stock-app/internal/jobs"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs"
 )
 
 func (events EventsRepository) InvokeWorker(job jobs.JobAction) error {

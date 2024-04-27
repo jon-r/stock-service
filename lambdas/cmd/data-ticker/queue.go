@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	"jon-richards.com/stock-app/internal/jobs"
-	"jon-richards.com/stock-app/internal/logging"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs"
+	"github.com/jon-r/stock-service/lambdas/internal/logging"
 )
 
 var done = make(chan bool)

@@ -3,8 +3,8 @@ package jobs
 import (
 	"testing"
 
+	"github.com/jon-r/stock-service/lambdas/internal/providers"
 	"github.com/stretchr/testify/assert"
-	"jon-richards.com/stock-app/internal/providers"
 )
 
 // https://dev.to/salesforceeng/mocks-in-go-tests-with-testify-mock-6pd

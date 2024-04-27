@@ -8,11 +8,11 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/jon-r/stock-service/lambdas/internal/db"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs"
+	"github.com/jon-r/stock-service/lambdas/internal/logging"
+	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
 	"go.uber.org/zap"
-	"jon-richards.com/stock-app/internal/db"
-	"jon-richards.com/stock-app/internal/jobs"
-	"jon-richards.com/stock-app/internal/logging"
-	"jon-richards.com/stock-app/internal/scheduler"
 )
 
 type ResponseBody struct {

@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/jon-r/stock-service/lambdas/internal/providers"
 	"go.uber.org/zap"
-	"jon-richards.com/stock-app/internal/providers"
 )
 
 func setTickerDescription(log *zap.SugaredLogger, provider providers.ProviderName, tickerId string) error {
