@@ -16,16 +16,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: 1.21.2
 
       - name: Run tests
-        run: go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
-        working-directory: lambdas
+        run: go test ./lambdas/... -coverprofile=./cover.out -covermode=atomic -coverpkg=./lambdas/...
 
       - name: check test coverage
         uses: vladopajic/go-test-coverage@v2
@@ -33,8 +32,8 @@ jobs:
           # Configure action by specifying input parameters individually (option 2).
           # If you are using config file (option 1) you shouldn't use these parameters, however
           # specifting these action parameters will override appropriate config values.
-          profile: lambdas/cover.out
-          local-prefix: github.com/jon-r/stock-service/lambdas
+          profile: cover.out
+          local-prefix: "github.com/jon-r/stock-service"
           threshold-file: 80
           threshold-package: 80
           threshold-total: 95

@@ -1,4 +1,4 @@
-module github.com/jon-r/stock-service/lambdas
+module github.com/jon-r/stock-service
 
 go 1.21.2
 
