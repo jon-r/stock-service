@@ -19,6 +19,7 @@ cdk.out
 cspell.json
 .vscode
 /http-client.private.env.json
+/cover.out
 
 npm-debug.log*
 yarn-debug.log*

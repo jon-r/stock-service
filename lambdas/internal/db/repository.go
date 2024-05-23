@@ -13,7 +13,7 @@ import (
 )
 
 type DatabaseRepository struct {
-	svc             *dynamodb.Client
+	Svc             *dynamodb.Client
 	StocksTableName *string
 	LogsTableName   *string
 }
@@ -26,7 +26,7 @@ func NewDatabaseService() *DatabaseRepository {
 	}
 
 	return &DatabaseRepository{
-		svc:             dynamodb.NewFromConfig(sdkConfig),
+		Svc:             dynamodb.NewFromConfig(sdkConfig),
 		StocksTableName: aws.String(os.Getenv("DB_STOCKS_TABLE_NAME")),
 		LogsTableName:   aws.String(os.Getenv("DB_LOGS_TABLE_NAME")),
 	}
