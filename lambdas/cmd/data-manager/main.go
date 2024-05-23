@@ -9,57 +9,68 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/jobs"
 	"github.com/jon-r/stock-service/lambdas/internal/logging"
 	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
+	"go.uber.org/zap"
 )
 
-var dbService = db.NewDatabaseService()
-var queueService = jobs.NewQueueService()
-var eventsService = scheduler.NewEventsService()
+type DataManagerHandler struct {
+	queueService  *jobs.QueueRepository
+	eventsService *scheduler.EventsRepository
+	dbService     *db.DatabaseRepository
+	log           *zap.SugaredLogger
+}
 
-func updateAllTickers(ctx context.Context) {
+func (handler DataManagerHandler) updateAllTickers(ctx context.Context) {
+	// todo this might not work?
+	handler.log = logging.NewLogger(ctx)
+	defer handler.log.Sync()
+
 	var err error
 
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
-
 	// 1. get all tickers
-	tickers, err := dbService.GetAllTickers()
+	tickers, err := handler.dbService.GetAllTickers()
 
 	if err != nil {
-		log.Fatalw("Errors in fetching the tickers",
+		handler.log.Fatalw("Errors in fetching the tickers",
 			"error", err,
 		)
 	}
 
 	if len(tickers) == 0 {
-		log.Fatal("No tickers found")
+		handler.log.Fatal("No tickers found")
 	}
 
 	// 2. convert the jobs into update actions
 	jobActions := jobs.MakeUpdateJobs(tickers, uuid.NewString)
 
 	// 3. add queue jobs for ticker prices + dividends
-	err = queueService.AddJobs(*jobActions)
+	err = handler.queueService.AddJobs(*jobActions)
 
 	if err != nil {
-		log.Fatalw("Failed to add jobs",
+		handler.log.Fatalw("Failed to add jobs",
 			"error", err,
 		)
 	} else {
-		log.Infow("Added Jobs for tickers",
+		handler.log.Infow("Added Jobs for tickers",
 			"tickers", tickers,
 		)
 	}
 
 	// 4. enable the jobs ticker
-	err = eventsService.StartTickerScheduler()
+	err = handler.eventsService.StartTickerScheduler()
 
 	if err != nil {
-		log.Fatalw("Failed to start the ticker",
+		handler.log.Fatalw("Failed to start the ticker",
 			"error", err,
 		)
 	}
 }
 
+var handler = DataManagerHandler{
+	queueService:  jobs.NewQueueService(),
+	eventsService: scheduler.NewEventsService(),
+	dbService:     db.NewDatabaseService(),
+}
+
 func main() {
-	lambda.Start(updateAllTickers)
+	lambda.Start(handler.updateAllTickers)
 }

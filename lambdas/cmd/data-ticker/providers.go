@@ -1,11 +1,9 @@
 package main
 
 import (
-	"context"
 	"time"
 
 	"github.com/jon-r/stock-service/lambdas/internal/jobs"
-	"github.com/jon-r/stock-service/lambdas/internal/logging"
 	"github.com/jon-r/stock-service/lambdas/internal/providers"
 )
 
@@ -19,10 +17,7 @@ func sortJobs(jobList *[]jobs.JobQueueItem) {
 	}
 }
 
-func invokeWorkerTicker(ctx context.Context, provider providers.ProviderName, delay providers.SettingsDelay) {
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
-
+func (handler DataTickerHandler) invokeWorkerTicker(provider providers.ProviderName, delay providers.SettingsDelay) {
 	var err error
 
 	duration := time.Duration(delay) * time.Second
@@ -36,21 +31,21 @@ func invokeWorkerTicker(ctx context.Context, provider providers.ProviderName, de
 			select {
 			case job, ok := <-providerQueues[provider]:
 				if ok {
-					log.Infow("Invoking Job",
+					handler.log.Infow("Invoking Job",
 						"job", job,
 					)
-					err = eventsService.InvokeWorker(job.Action)
+					err = handler.eventsService.InvokeWorker(job.Action)
 					if err != nil {
-						log.Warnw("Failed to Invoke Worker",
+						handler.log.Warnw("Failed to Invoke Worker",
 							"error", err,
 						)
 
-						err = queueService.RetryJob(job.Action, err.Error())
+						err = handler.queueService.RetryJob(job.Action, err.Error())
 					}
 
-					err = queueService.DeleteJob(job.RecieptHandle)
+					err = handler.queueService.DeleteJob(job.RecieptHandle)
 					if err != nil {
-						log.Warnw("Failed to delete Job from queue",
+						handler.log.Warnw("Failed to delete Job from queue",
 							"error", err,
 						)
 					}

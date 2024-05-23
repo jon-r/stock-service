@@ -1,24 +1,16 @@
 package main
 
-import (
-	"context"
-
-	"github.com/jon-r/stock-service/lambdas/internal/jobs"
-	"github.com/jon-r/stock-service/lambdas/internal/logging"
-)
+import "github.com/jon-r/stock-service/lambdas/internal/jobs"
 
 var done = make(chan bool)
 
-func checkForNewJobs(ctx context.Context, attempts int) (*[]jobs.JobQueueItem, int) {
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
-
-	log.Infoln("attempt to receive jobs...")
-	jobList, err := queueService.ReceiveJobs()
+func (handler DataTickerHandler) checkForNewJobs(attempts int) (*[]jobs.JobQueueItem, int) {
+	handler.log.Infoln("attempt to receive jobs...")
+	jobList, err := handler.queueService.ReceiveJobs()
 
 	if err != nil {
 		attempts += 1
-		log.Warnw("Failed to get queue items",
+		handler.log.Warnw("Failed to get queue items",
 			"attempts", attempts,
 		)
 	} else {
@@ -26,22 +18,19 @@ func checkForNewJobs(ctx context.Context, attempts int) (*[]jobs.JobQueueItem, i
 	}
 
 	if attempts >= 6 {
-		err = eventsService.StopTickerScheduler()
+		err = handler.eventsService.StopTickerScheduler()
 		if err != nil {
-			log.Errorw("Failed to stop scheduler",
+			handler.log.Errorw("Failed to stop scheduler",
 				"error", err,
 			)
 		}
-		log.Fatalln("Aborting after too many failed attempts")
+		handler.log.Fatalln("Aborting after too many failed attempts")
 	}
 
 	return jobList, attempts
 }
 
-func shutDownWhenEmpty(ctx context.Context, jobList *[]jobs.JobQueueItem, emptyResponses int) int {
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
-
+func (handler DataTickerHandler) shutDownWhenEmpty(jobList *[]jobs.JobQueueItem, emptyResponses int) int {
 	if len(*jobList) == 0 {
 		emptyResponses += 1
 	} else {
@@ -49,10 +38,10 @@ func shutDownWhenEmpty(ctx context.Context, jobList *[]jobs.JobQueueItem, emptyR
 	}
 
 	if emptyResponses == 6 {
-		log.Infoln("No new jobs received in 60 seconds, disabling scheduler")
-		err := eventsService.StopTickerScheduler()
+		handler.log.Infoln("No new jobs received in 60 seconds, disabling scheduler")
+		err := handler.eventsService.StopTickerScheduler()
 		if err != nil {
-			log.Errorw("Failed to stop scheduler",
+			handler.log.Errorw("Failed to stop scheduler",
 				"error", err,
 			)
 		}

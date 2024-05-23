@@ -11,14 +11,19 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/logging"
 	"github.com/jon-r/stock-service/lambdas/internal/providers"
 	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
+	"go.uber.org/zap"
 )
 
-var eventsService = scheduler.NewEventsService()
-var queueService = jobs.NewQueueService()
+type DataTickerHandler struct {
+	queueService  *jobs.QueueRepository
+	eventsService *scheduler.EventsRepository
+	log           *zap.SugaredLogger
+}
 
-func pollSqsQueue(ctx context.Context) {
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
+func (handler DataTickerHandler) pollSqsQueue(ctx context.Context) {
+	// todo this might not work?
+	handler.log = logging.NewLogger(ctx)
+	defer handler.log.Sync()
 
 	queueTicker := time.NewTicker(10 * time.Second)
 	tickerTimeout, err := strconv.Atoi(os.Getenv("TICKER_TIMEOUT"))
@@ -27,24 +32,24 @@ func pollSqsQueue(ctx context.Context) {
 		tickerTimeout = 5
 	}
 
-	jobList, attempts := checkForNewJobs(ctx, 0)
+	jobList, attempts := handler.checkForNewJobs(0)
 	sortJobs(jobList)
 
 	go func() {
-		log.Infoln("Started polling...")
+		handler.log.Infoln("Started polling...")
 		emptyResponses := 0
 
 		for {
 			select {
 			case <-done:
-				log.Infoln("Finished polling")
+				handler.log.Infoln("Finished polling")
 				return
 			case <-queueTicker.C:
 				// 1. poll to get all items in queue
-				jobList, attempts = checkForNewJobs(ctx, attempts)
+				jobList, attempts = handler.checkForNewJobs(attempts)
 
 				// 2. if queue is empty, disable the event rule and end the function
-				emptyResponses = shutDownWhenEmpty(ctx, jobList, emptyResponses)
+				emptyResponses = handler.shutDownWhenEmpty(jobList, emptyResponses)
 
 				// 3. group queue jobs by provider
 				sortJobs(jobList)
@@ -53,13 +58,18 @@ func pollSqsQueue(ctx context.Context) {
 	}()
 
 	// 4. for each provider have a ticker function that invokes event provider/ticker/type to the worker fn
-	go invokeWorkerTicker(ctx, providers.PolygonIo, providers.PolygonIoDelay)
+	go handler.invokeWorkerTicker(providers.PolygonIo, providers.PolygonIoDelay)
 
 	// 5. Switch off after 5min
 	time.Sleep(time.Duration(tickerTimeout) * time.Minute)
 	done <- true
 }
 
+var handler = DataTickerHandler{
+	queueService:  jobs.NewQueueService(),
+	eventsService: scheduler.NewEventsService(),
+}
+
 func main() {
-	lambda.Start(pollSqsQueue)
+	lambda.Start(handler.pollSqsQueue)
 }

@@ -20,32 +20,32 @@ type ResponseBody struct {
 	Status  int    `json:"status"`
 }
 
-var queueService = jobs.NewQueueService()
-var eventsService = scheduler.NewEventsService()
-var dbService = db.NewDatabaseService()
-
-func init() {
-	zap.ReplaceGlobals(zap.Must(zap.NewProduction()))
+type ApiStockHandler struct {
+	queueService  *jobs.QueueRepository
+	eventsService *scheduler.EventsRepository
+	dbService     *db.DatabaseRepository
+	log           *zap.SugaredLogger
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func (handler ApiStockHandler) handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	// todo this might not work?
+	handler.log = logging.NewLogger(ctx)
+	defer handler.log.Sync()
+
 	switch request.HTTPMethod {
 	case "POST":
-		return create(ctx, request)
+		return handler.create(request)
 	default:
-		return clientError(ctx, http.StatusMethodNotAllowed, fmt.Errorf("request method %s not supported", request.HTTPMethod))
+		err := fmt.Errorf("request method %s not supported", request.HTTPMethod)
+		handler.log.Errorw("Request error",
+			"status", http.StatusMethodNotAllowed,
+			"message", err,
+		)
+		return clientError(http.StatusMethodNotAllowed, err)
 	}
 }
 
-func clientError(ctx context.Context, status int, err error) (*events.APIGatewayProxyResponse, error) {
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
-
-	log.Errorw("Request error",
-		"status", status,
-		"message", err,
-	)
-
+func clientError(status int, err error) (*events.APIGatewayProxyResponse, error) {
 	body, _ := json.Marshal(ResponseBody{
 		Message: http.StatusText(status),
 		Status:  status,
@@ -73,6 +73,12 @@ func clientSuccess(message string) *events.APIGatewayProxyResponse {
 	}
 }
 
+var handler = ApiStockHandler{
+	queueService:  jobs.NewQueueService(),
+	eventsService: scheduler.NewEventsService(),
+	dbService:     db.NewDatabaseService(),
+}
+
 func main() {
-	lambda.Start(handleRequest)
+	lambda.Start(handler.handleRequest)
 }
