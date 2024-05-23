@@ -66,8 +66,8 @@ func (handler DataTickerHandler) pollSqsQueue(ctx context.Context) {
 }
 
 var handler = DataTickerHandler{
-	queueService:  jobs.NewQueueService(),
-	eventsService: scheduler.NewEventsService(),
+	queueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
+	eventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
 }
 
 func main() {

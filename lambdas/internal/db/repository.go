@@ -18,15 +18,19 @@ type DatabaseRepository struct {
 	LogsTableName   *string
 }
 
-func NewDatabaseService() *DatabaseRepository {
+func CreateDatabaseClient() *dynamodb.Client {
 	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
 
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
 
+	return dynamodb.NewFromConfig(sdkConfig)
+}
+
+func NewDatabaseService(client *dynamodb.Client) *DatabaseRepository {
 	return &DatabaseRepository{
-		Svc:             dynamodb.NewFromConfig(sdkConfig),
+		Svc:             client,
 		StocksTableName: aws.String(os.Getenv("DB_STOCKS_TABLE_NAME")),
 		LogsTableName:   aws.String(os.Getenv("DB_LOGS_TABLE_NAME")),
 	}

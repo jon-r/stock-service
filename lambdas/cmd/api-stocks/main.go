@@ -74,9 +74,9 @@ func clientSuccess(message string) *events.APIGatewayProxyResponse {
 }
 
 var handler = ApiStockHandler{
-	queueService:  jobs.NewQueueService(),
-	eventsService: scheduler.NewEventsService(),
-	dbService:     db.NewDatabaseService(),
+	queueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
+	eventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
+	dbService:     db.NewDatabaseService(db.CreateDatabaseClient()),
 }
 
 func main() {

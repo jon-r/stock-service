@@ -19,15 +19,18 @@ type QueueRepository struct {
 	DLQUrl   string
 }
 
-func NewQueueService() *QueueRepository {
+func CreateSqsClient() *sqs.Client {
 	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
-
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
 
+	return sqs.NewFromConfig(sdkConfig)
+}
+
+func NewQueueService(client *sqs.Client) *QueueRepository {
 	return &QueueRepository{
-		svc:      sqs.NewFromConfig(sdkConfig),
+		svc:      client,
 		QueueUrl: os.Getenv("SQS_QUEUE_URL"),
 		DLQUrl:   os.Getenv("SQS_DLQ_URL"),
 	}

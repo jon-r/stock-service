@@ -76,8 +76,8 @@ func (handler DataWorkerHandler) handleRequest(ctx context.Context, event jobs.J
 }
 
 var handler = DataWorkerHandler{
-	queueService: jobs.NewQueueService(),
-	dbService:    db.NewDatabaseService(),
+	queueService: jobs.NewQueueService(jobs.CreateSqsClient()),
+	dbService:    db.NewDatabaseService(db.CreateDatabaseClient()),
 }
 
 func main() {

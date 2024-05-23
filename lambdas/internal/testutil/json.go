@@ -13,7 +13,6 @@ func ReadTestJson(testFile string, target any) {
 		fmt.Println(err)
 		panic(err)
 	}
-	fmt.Println("Successfully Opened " + testFile)
 	defer jsonFile.Close()
 
 	byteValue, err := io.ReadAll(jsonFile)
