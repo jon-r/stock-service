@@ -31,21 +31,21 @@ func (handler DataTickerHandler) invokeWorkerTicker(provider providers.ProviderN
 			select {
 			case job, ok := <-providerQueues[provider]:
 				if ok {
-					handler.logService.Infow("Invoking Job",
+					handler.LogService.Infow("Invoking Job",
 						"job", job,
 					)
-					err = handler.eventsService.InvokeWorker(job.Action)
+					err = handler.EventsService.InvokeWorker(job.Action)
 					if err != nil {
-						handler.logService.Warnw("Failed to Invoke Worker",
+						handler.LogService.Warnw("Failed to Invoke Worker",
 							"error", err,
 						)
 
-						err = handler.queueService.RetryJob(job.Action, err.Error(), handler.newUuid)
+						err = handler.QueueService.RetryJob(job.Action, err.Error(), handler.NewUuid)
 					}
 
-					err = handler.queueService.DeleteJob(job.RecieptHandle)
+					err = handler.QueueService.DeleteJob(job.RecieptHandle)
 					if err != nil {
-						handler.logService.Warnw("Failed to delete Job from queue",
+						handler.LogService.Warnw("Failed to delete Job from queue",
 							"error", err,
 						)
 					}

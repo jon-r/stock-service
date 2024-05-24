@@ -18,7 +18,7 @@ func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyReques
 	err = json.Unmarshal([]byte(request.Body), &params)
 
 	if err != nil {
-		handler.logService.Errorw("Request error",
+		handler.LogService.Errorw("Request error",
 			"status", http.StatusBadRequest,
 			"message", err,
 		)
@@ -26,10 +26,10 @@ func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyReques
 	}
 
 	// 2. enter basic content to the database
-	err = handler.dbService.NewTickerItem(handler.logService, params)
+	err = handler.DbService.NewTickerItem(handler.LogService, params)
 
 	if err != nil {
-		handler.logService.Errorw("Request error",
+		handler.LogService.Errorw("Request error",
 			"status", http.StatusInternalServerError,
 			"message", err,
 		)
@@ -37,15 +37,15 @@ func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyReques
 	}
 
 	// 3. Create new job queue item
-	newItemJobs := jobs.MakeCreateJobs(params.Provider, params.TickerId, handler.newUuid)
+	newItemJobs := jobs.MakeCreateJobs(params.Provider, params.TickerId, handler.NewUuid)
 
-	handler.logService.Infow("Add jobs to the queue",
+	handler.LogService.Infow("Add jobs to the queue",
 		"jobs", *newItemJobs,
 	)
-	err = handler.queueService.AddJobs(*newItemJobs, handler.newUuid)
+	err = handler.QueueService.AddJobs(*newItemJobs, handler.NewUuid)
 
 	if err != nil {
-		handler.logService.Errorw("Request error",
+		handler.LogService.Errorw("Request error",
 			"status", http.StatusInternalServerError,
 			"message", err,
 		)
@@ -53,10 +53,10 @@ func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyReques
 	}
 
 	// 4. enable the jobs ticker
-	err = handler.eventsService.StartTickerScheduler()
+	err = handler.EventsService.StartTickerScheduler()
 
 	if err != nil {
-		handler.logService.Errorw("Request error",
+		handler.LogService.Errorw("Request error",
 			"status", http.StatusInternalServerError,
 			"message", err,
 		)

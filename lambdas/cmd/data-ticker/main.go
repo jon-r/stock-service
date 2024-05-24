@@ -12,22 +12,19 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/logging"
 	"github.com/jon-r/stock-service/lambdas/internal/providers"
 	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
-	"go.uber.org/zap"
+	"github.com/jon-r/stock-service/lambdas/internal/types"
 )
 
 type DataTickerHandler struct {
-	queueService  *jobs.QueueRepository
-	eventsService *scheduler.EventsRepository
-	logService    *zap.SugaredLogger
-	newUuid       jobs.UuidGen
+	types.ServiceHandler
 }
 
 func (handler DataTickerHandler) pollSqsQueue(ctx context.Context) {
 	// todo this might not work?
-	if handler.logService == nil {
-		handler.logService = logging.NewLogger(ctx)
+	if handler.LogService == nil {
+		handler.LogService = logging.NewLogger(ctx)
 	}
-	defer handler.logService.Sync()
+	defer handler.LogService.Sync()
 
 	queueTicker := time.NewTicker(10 * time.Second)
 	tickerTimeout, err := strconv.Atoi(os.Getenv("TICKER_TIMEOUT"))
@@ -40,13 +37,13 @@ func (handler DataTickerHandler) pollSqsQueue(ctx context.Context) {
 	sortJobs(jobList)
 
 	go func() {
-		handler.logService.Infoln("Started polling...")
+		handler.LogService.Infoln("Started polling...")
 		emptyResponses := 0
 
 		for {
 			select {
 			case <-done:
-				handler.logService.Infoln("Finished polling")
+				handler.LogService.Infoln("Finished polling")
 				return
 			case <-queueTicker.C:
 				// 1. poll to get all items in queue
@@ -69,12 +66,13 @@ func (handler DataTickerHandler) pollSqsQueue(ctx context.Context) {
 	done <- true
 }
 
-var handler = DataTickerHandler{
-	queueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
-	eventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
-	newUuid:       uuid.NewString,
+var serviceHandler = types.ServiceHandler{
+	QueueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
+	EventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
+	NewUuid:       uuid.NewString,
 }
 
 func main() {
+	handler := DataTickerHandler{ServiceHandler: serviceHandler}
 	lambda.Start(handler.pollSqsQueue)
 }

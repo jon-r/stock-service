@@ -5,12 +5,12 @@ import "github.com/jon-r/stock-service/lambdas/internal/jobs"
 var done = make(chan bool)
 
 func (handler DataTickerHandler) checkForNewJobs(attempts int) (*[]jobs.JobQueueItem, int) {
-	handler.logService.Infoln("attempt to receive jobs...")
-	jobList, err := handler.queueService.ReceiveJobs()
+	handler.LogService.Infoln("attempt to receive jobs...")
+	jobList, err := handler.QueueService.ReceiveJobs()
 
 	if err != nil {
 		attempts += 1
-		handler.logService.Warnw("Failed to get queue items",
+		handler.LogService.Warnw("Failed to get queue items",
 			"attempts", attempts,
 		)
 	} else {
@@ -18,13 +18,13 @@ func (handler DataTickerHandler) checkForNewJobs(attempts int) (*[]jobs.JobQueue
 	}
 
 	if attempts >= 6 {
-		err = handler.eventsService.StopTickerScheduler()
+		err = handler.EventsService.StopTickerScheduler()
 		if err != nil {
-			handler.logService.Errorw("Failed to stop scheduler",
+			handler.LogService.Errorw("Failed to stop scheduler",
 				"error", err,
 			)
 		}
-		handler.logService.Fatalln("Aborting after too many failed attempts")
+		handler.LogService.Fatalln("Aborting after too many failed attempts")
 	}
 
 	return jobList, attempts
@@ -38,10 +38,10 @@ func (handler DataTickerHandler) shutDownWhenEmpty(jobList *[]jobs.JobQueueItem,
 	}
 
 	if emptyResponses == 6 {
-		handler.logService.Infoln("No new jobs received in 60 seconds, disabling scheduler")
-		err := handler.eventsService.StopTickerScheduler()
+		handler.LogService.Infoln("No new jobs received in 60 seconds, disabling scheduler")
+		err := handler.EventsService.StopTickerScheduler()
 		if err != nil {
-			handler.logService.Errorw("Failed to stop scheduler",
+			handler.LogService.Errorw("Failed to stop scheduler",
 				"error", err,
 			)
 		}

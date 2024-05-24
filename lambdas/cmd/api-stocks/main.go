@@ -13,7 +13,7 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/jobs"
 	"github.com/jon-r/stock-service/lambdas/internal/logging"
 	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
-	"go.uber.org/zap"
+	"github.com/jon-r/stock-service/lambdas/internal/types"
 )
 
 type ResponseBody struct {
@@ -22,25 +22,21 @@ type ResponseBody struct {
 }
 
 type ApiStockHandler struct {
-	queueService  *jobs.QueueRepository
-	eventsService *scheduler.EventsRepository
-	dbService     *db.DatabaseRepository
-	logService    *zap.SugaredLogger
-	newUuid       jobs.UuidGen
+	types.ServiceHandler
 }
 
 func (handler ApiStockHandler) handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	if handler.logService == nil { // todo this might not work?
-		handler.logService = logging.NewLogger(ctx)
+	if handler.LogService == nil { // todo this might not work?
+		handler.LogService = logging.NewLogger(ctx)
 	}
-	defer handler.logService.Sync()
+	defer handler.LogService.Sync()
 
 	switch request.HTTPMethod {
 	case "POST":
 		return handler.create(request)
 	default:
 		err := fmt.Errorf("request method %s not supported", request.HTTPMethod)
-		handler.logService.Errorw("Request error",
+		handler.LogService.Errorw("Request error",
 			"status", http.StatusMethodNotAllowed,
 			"message", err,
 		)
@@ -76,13 +72,15 @@ func clientSuccess(message string) *events.APIGatewayProxyResponse {
 	}
 }
 
-var handler = ApiStockHandler{
-	queueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
-	eventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
-	dbService:     db.NewDatabaseService(db.CreateDatabaseClient()),
-	newUuid:       uuid.NewString,
+var serviceHandler = types.ServiceHandler{
+	QueueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
+	EventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
+	DbService:     db.NewDatabaseService(db.CreateDatabaseClient()),
+	NewUuid:       uuid.NewString,
 }
 
 func main() {
+	handler := ApiStockHandler{ServiceHandler: serviceHandler}
+
 	lambda.Start(handler.handleRequest)
 }

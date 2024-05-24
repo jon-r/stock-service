@@ -9,14 +9,11 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/db"
 	"github.com/jon-r/stock-service/lambdas/internal/jobs"
 	"github.com/jon-r/stock-service/lambdas/internal/logging"
-	"go.uber.org/zap"
+	"github.com/jon-r/stock-service/lambdas/internal/types"
 )
 
 type DataWorkerHandler struct {
-	queueService *jobs.QueueRepository
-	dbService    *db.DatabaseRepository
-	logService   *zap.SugaredLogger
-	newUuid      jobs.UuidGen
+	types.ServiceHandler
 }
 
 func (handler DataWorkerHandler) handleJobAction(job jobs.JobAction) error {
@@ -42,47 +39,48 @@ func (handler DataWorkerHandler) handleJobAction(job jobs.JobAction) error {
 
 func (handler DataWorkerHandler) handleRequest(ctx context.Context, event jobs.JobAction) {
 	// todo this might not work?
-	if handler.logService == nil {
-		handler.logService = logging.NewLogger(ctx)
+	if handler.LogService == nil {
+		handler.LogService = logging.NewLogger(ctx)
 	}
-	defer handler.logService.Sync()
+	defer handler.LogService.Sync()
 
 	var err error
 
 	// 1. handle action
-	handler.logService.Infow("Attempt to do job",
+	handler.LogService.Infow("Attempt to do job",
 		"job", event,
 	)
 	err = handler.handleJobAction(event)
 
 	if err == nil {
-		handler.logService.Infoln("Job completed",
+		handler.LogService.Infoln("Job completed",
 			"jobId", event.JobId,
 		)
 		return // job done
 	}
 
-	handler.logService.Warnw("failed to process event, re-adding it to queue",
+	handler.LogService.Warnw("failed to process event, re-adding it to queue",
 		"jobId", event.JobId,
 		"error", err,
 	)
 
 	// 2. if action failed or new queue actions after last, try again
-	queueErr := handler.queueService.RetryJob(event, err.Error(), handler.newUuid)
+	queueErr := handler.QueueService.RetryJob(event, err.Error(), handler.NewUuid)
 
 	if queueErr != nil {
-		handler.logService.Fatalw("Failed to add item to DLQ",
+		handler.LogService.Fatalw("Failed to add item to DLQ",
 			"jobId", event.JobId,
 			"error", queueErr,
 		)
 	}
 }
 
-var handler = DataWorkerHandler{
-	queueService: jobs.NewQueueService(jobs.CreateSqsClient()),
-	dbService:    db.NewDatabaseService(db.CreateDatabaseClient()),
+var serviceHandler = types.ServiceHandler{
+	QueueService: jobs.NewQueueService(jobs.CreateSqsClient()),
+	DbService:    db.NewDatabaseService(db.CreateDatabaseClient()),
 }
 
 func main() {
+	handler := DataWorkerHandler{ServiceHandler: serviceHandler}
 	lambda.Start(handler.handleRequest)
 }
