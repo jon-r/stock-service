@@ -10,8 +10,11 @@ import (
 func StubLambdaInvoke(functionName string, raiseErr *testtools.StubError) testtools.Stub {
 	return testtools.Stub{
 		OperationName: "Invoke",
-		Input:         &lambda.InvokeInput{FunctionName: aws.String(functionName), InvocationType: lambdaTypes.InvocationTypeEvent},
-		Output:        &lambda.InvokeOutput{},
-		Error:         raiseErr,
+		Input: &lambda.InvokeInput{
+			FunctionName:   aws.String(functionName),
+			InvocationType: lambdaTypes.InvocationTypeEvent,
+		},
+		Output: &lambda.InvokeOutput{},
+		Error:  raiseErr,
 	}
 }

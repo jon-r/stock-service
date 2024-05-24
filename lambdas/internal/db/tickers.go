@@ -35,7 +35,7 @@ func (db DatabaseRepository) NewTickerItem(log *zap.SugaredLogger, params provid
 		Item:      av,
 	}
 
-	_, err = db.Svc.PutItem(context.TODO(), &input)
+	_, err = db.svc.PutItem(context.TODO(), &input)
 
 	return err
 }
@@ -71,7 +71,7 @@ func (db DatabaseRepository) SetTickerDescription(log *zap.SugaredLogger, ticker
 		"input", input,
 	)
 
-	_, err = db.Svc.UpdateItem(context.TODO(), &input)
+	_, err = db.svc.UpdateItem(context.TODO(), &input)
 
 	return err
 }
@@ -123,7 +123,7 @@ func (db DatabaseRepository) AddTickerPrices(log *zap.SugaredLogger, prices *[]p
 				})
 			}
 		}
-		_, err = db.Svc.BatchWriteItem(context.TODO(), &dynamodb.BatchWriteItemInput{
+		_, err = db.svc.BatchWriteItem(context.TODO(), &dynamodb.BatchWriteItemInput{
 			RequestItems: map[string][]types.WriteRequest{*db.StocksTableName: writeReqs},
 		})
 		if err != nil {
@@ -161,7 +161,7 @@ func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error)
 		return nil, err
 	}
 
-	scanPaginator := dynamodb.NewScanPaginator(db.Svc, &dynamodb.ScanInput{
+	scanPaginator := dynamodb.NewScanPaginator(db.svc, &dynamodb.ScanInput{
 		TableName:                 db.StocksTableName,
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),

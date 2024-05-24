@@ -61,8 +61,14 @@ func handleRequest(raiseErr *testtools.StubError, t *testing.T) {
 	stubber.Add(testutil.StubDynamoDbAddTicker("DB_STOCKS_TABLE_NAME", item, raiseErr))
 
 	expectedQueueItems := []types.SendMessageBatchRequestEntry{
-		{Id: aws.String("TEST_ID"), MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`)},
-		{Id: aws.String("TEST_ID"), MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`)},
+		{
+			Id:          aws.String("TEST_ID"),
+			MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`),
+		},
+		{
+			Id:          aws.String("TEST_ID"),
+			MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`),
+		},
 	}
 	stubber.Add(testutil.StubSqsSendMessageBatch("", expectedQueueItems, raiseErr))
 
