@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/google/uuid"
 	"github.com/jon-r/stock-service/lambdas/internal/jobs"
 	"github.com/jon-r/stock-service/lambdas/internal/logging"
 	"github.com/jon-r/stock-service/lambdas/internal/providers"
@@ -17,13 +18,16 @@ import (
 type DataTickerHandler struct {
 	queueService  *jobs.QueueRepository
 	eventsService *scheduler.EventsRepository
-	log           *zap.SugaredLogger
+	logService    *zap.SugaredLogger
+	newUuid       jobs.UuidGen
 }
 
 func (handler DataTickerHandler) pollSqsQueue(ctx context.Context) {
 	// todo this might not work?
-	handler.log = logging.NewLogger(ctx)
-	defer handler.log.Sync()
+	if handler.logService == nil {
+		handler.logService = logging.NewLogger(ctx)
+	}
+	defer handler.logService.Sync()
 
 	queueTicker := time.NewTicker(10 * time.Second)
 	tickerTimeout, err := strconv.Atoi(os.Getenv("TICKER_TIMEOUT"))
@@ -36,13 +40,13 @@ func (handler DataTickerHandler) pollSqsQueue(ctx context.Context) {
 	sortJobs(jobList)
 
 	go func() {
-		handler.log.Infoln("Started polling...")
+		handler.logService.Infoln("Started polling...")
 		emptyResponses := 0
 
 		for {
 			select {
 			case <-done:
-				handler.log.Infoln("Finished polling")
+				handler.logService.Infoln("Finished polling")
 				return
 			case <-queueTicker.C:
 				// 1. poll to get all items in queue
@@ -68,6 +72,7 @@ func (handler DataTickerHandler) pollSqsQueue(ctx context.Context) {
 var handler = DataTickerHandler{
 	queueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
 	eventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
+	newUuid:       uuid.NewString,
 }
 
 func main() {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/google/uuid"
 	"github.com/jon-r/stock-service/lambdas/internal/db"
 	"github.com/jon-r/stock-service/lambdas/internal/jobs"
 	"github.com/jon-r/stock-service/lambdas/internal/logging"
@@ -24,20 +25,22 @@ type ApiStockHandler struct {
 	queueService  *jobs.QueueRepository
 	eventsService *scheduler.EventsRepository
 	dbService     *db.DatabaseRepository
-	log           *zap.SugaredLogger
+	logService    *zap.SugaredLogger
+	newUuid       jobs.UuidGen
 }
 
 func (handler ApiStockHandler) handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	// todo this might not work?
-	handler.log = logging.NewLogger(ctx)
-	defer handler.log.Sync()
+	if handler.logService == nil { // todo this might not work?
+		handler.logService = logging.NewLogger(ctx)
+	}
+	defer handler.logService.Sync()
 
 	switch request.HTTPMethod {
 	case "POST":
 		return handler.create(request)
 	default:
 		err := fmt.Errorf("request method %s not supported", request.HTTPMethod)
-		handler.log.Errorw("Request error",
+		handler.logService.Errorw("Request error",
 			"status", http.StatusMethodNotAllowed,
 			"message", err,
 		)
@@ -77,6 +80,7 @@ var handler = ApiStockHandler{
 	queueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
 	eventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
 	dbService:     db.NewDatabaseService(db.CreateDatabaseClient()),
+	newUuid:       uuid.NewString,
 }
 
 func main() {

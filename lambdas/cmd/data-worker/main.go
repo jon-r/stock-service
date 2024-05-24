@@ -15,7 +15,8 @@ import (
 type DataWorkerHandler struct {
 	queueService *jobs.QueueRepository
 	dbService    *db.DatabaseRepository
-	log          *zap.SugaredLogger
+	logService   *zap.SugaredLogger
+	newUuid      jobs.UuidGen
 }
 
 func (handler DataWorkerHandler) handleJobAction(job jobs.JobAction) error {
@@ -41,34 +42,36 @@ func (handler DataWorkerHandler) handleJobAction(job jobs.JobAction) error {
 
 func (handler DataWorkerHandler) handleRequest(ctx context.Context, event jobs.JobAction) {
 	// todo this might not work?
-	handler.log = logging.NewLogger(ctx)
-	defer handler.log.Sync()
+	if handler.logService == nil {
+		handler.logService = logging.NewLogger(ctx)
+	}
+	defer handler.logService.Sync()
 
 	var err error
 
 	// 1. handle action
-	handler.log.Infow("Attempt to do job",
+	handler.logService.Infow("Attempt to do job",
 		"job", event,
 	)
 	err = handler.handleJobAction(event)
 
 	if err == nil {
-		handler.log.Infoln("Job completed",
+		handler.logService.Infoln("Job completed",
 			"jobId", event.JobId,
 		)
 		return // job done
 	}
 
-	handler.log.Warnw("failed to process event, re-adding it to queue",
+	handler.logService.Warnw("failed to process event, re-adding it to queue",
 		"jobId", event.JobId,
 		"error", err,
 	)
 
 	// 2. if action failed or new queue actions after last, try again
-	queueErr := handler.queueService.RetryJob(event, err.Error())
+	queueErr := handler.queueService.RetryJob(event, err.Error(), handler.newUuid)
 
 	if queueErr != nil {
-		handler.log.Fatalw("Failed to add item to DLQ",
+		handler.logService.Fatalw("Failed to add item to DLQ",
 			"jobId", event.JobId,
 			"error", queueErr,
 		)

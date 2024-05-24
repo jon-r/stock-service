@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/google/uuid"
 	"github.com/jon-r/stock-service/lambdas/internal/jobs"
 	"github.com/jon-r/stock-service/lambdas/internal/providers"
 )
@@ -19,7 +18,7 @@ func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyReques
 	err = json.Unmarshal([]byte(request.Body), &params)
 
 	if err != nil {
-		handler.log.Errorw("Request error",
+		handler.logService.Errorw("Request error",
 			"status", http.StatusBadRequest,
 			"message", err,
 		)
@@ -27,10 +26,10 @@ func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyReques
 	}
 
 	// 2. enter basic content to the database
-	err = handler.dbService.NewTickerItem(handler.log, params)
+	err = handler.dbService.NewTickerItem(handler.logService, params)
 
 	if err != nil {
-		handler.log.Errorw("Request error",
+		handler.logService.Errorw("Request error",
 			"status", http.StatusInternalServerError,
 			"message", err,
 		)
@@ -38,15 +37,15 @@ func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyReques
 	}
 
 	// 3. Create new job queue item
-	newItemJobs := jobs.MakeCreateJobs(params.Provider, params.TickerId, uuid.NewString)
+	newItemJobs := jobs.MakeCreateJobs(params.Provider, params.TickerId, handler.newUuid)
 
-	handler.log.Infow("Add jobs to the queue",
+	handler.logService.Infow("Add jobs to the queue",
 		"jobs", *newItemJobs,
 	)
-	err = handler.queueService.AddJobs(*newItemJobs)
+	err = handler.queueService.AddJobs(*newItemJobs, handler.newUuid)
 
 	if err != nil {
-		handler.log.Errorw("Request error",
+		handler.logService.Errorw("Request error",
 			"status", http.StatusInternalServerError,
 			"message", err,
 		)
@@ -57,7 +56,7 @@ func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyReques
 	err = handler.eventsService.StartTickerScheduler()
 
 	if err != nil {
-		handler.log.Errorw("Request error",
+		handler.logService.Errorw("Request error",
 			"status", http.StatusInternalServerError,
 			"message", err,
 		)

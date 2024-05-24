@@ -21,8 +21,6 @@ func ReadTestJson(testFile string, target any) {
 		panic(err)
 	}
 
-	fmt.Printf("%+v\n", jsonFile.Name())
-
 	err = json.Unmarshal(byteValue, target)
 	if err != nil {
 		fmt.Println(err)

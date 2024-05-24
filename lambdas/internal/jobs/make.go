@@ -6,9 +6,9 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/providers"
 )
 
-type uuidGen func() string
+type UuidGen func() string
 
-func MakeJob(provider providers.ProviderName, tickerId string, jobType JobTypes, newUuid uuidGen) JobAction {
+func MakeJob(provider providers.ProviderName, tickerId string, jobType JobTypes, newUuid UuidGen) JobAction {
 	return JobAction{
 		JobId:    newUuid(),
 		Provider: provider,
@@ -18,7 +18,7 @@ func MakeJob(provider providers.ProviderName, tickerId string, jobType JobTypes,
 	}
 }
 
-func MakeBulkJob(provider providers.ProviderName, tickerIds []string, jobType JobTypes, newUuid uuidGen) JobAction {
+func MakeBulkJob(provider providers.ProviderName, tickerIds []string, jobType JobTypes, newUuid UuidGen) JobAction {
 	tickerId := strings.Join(tickerIds, ",")
 
 	return JobAction{
@@ -30,7 +30,7 @@ func MakeBulkJob(provider providers.ProviderName, tickerIds []string, jobType Jo
 	}
 }
 
-func MakeCreateJobs(provider providers.ProviderName, tickerId string, newUuid uuidGen) *[]JobAction {
+func MakeCreateJobs(provider providers.ProviderName, tickerId string, newUuid UuidGen) *[]JobAction {
 	newItemActions := []JobTypes{
 		LoadTickerDescription,
 		LoadHistoricalPrices,
@@ -48,7 +48,7 @@ func MakeCreateJobs(provider providers.ProviderName, tickerId string, newUuid uu
 	return &jobActions
 }
 
-func MakeUpdateJobs(tickers []providers.TickerItemStub, newUuid uuidGen) *[]JobAction {
+func MakeUpdateJobs(tickers []providers.TickerItemStub, newUuid UuidGen) *[]JobAction {
 
 	//tickerLimit := 10
 	groupedTickerIds := groupByProvider(tickers)

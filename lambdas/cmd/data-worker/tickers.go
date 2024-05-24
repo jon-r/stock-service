@@ -13,7 +13,7 @@ func (handler DataWorkerHandler) setTickerDescription(provider providers.Provide
 	}
 
 	// 2. insert this ^ data into the ticker table
-	err = handler.dbService.SetTickerDescription(handler.log, tickerId, description)
+	err = handler.dbService.SetTickerDescription(handler.logService, tickerId, description)
 
 	return err
 }
@@ -27,7 +27,7 @@ func (handler DataWorkerHandler) setTickerHistoricalPrices(provider providers.Pr
 		return err
 	}
 
-	err = handler.dbService.AddTickerPrices(handler.log, prices)
+	err = handler.dbService.AddTickerPrices(handler.logService, prices)
 
 	return err
 }
@@ -42,13 +42,13 @@ func (handler DataWorkerHandler) updateTickerPrices(provider providers.ProviderN
 	}
 
 	if prices == nil {
-		handler.log.Warnw("No prices for today",
+		handler.logService.Warnw("No prices for today",
 			"provider", provider,
 		)
 		return nil
 	}
 
-	err = handler.dbService.AddTickerPrices(handler.log, prices)
+	err = handler.dbService.AddTickerPrices(handler.logService, prices)
 
 	return err
 }

@@ -1,4 +1,5 @@
 POST {{apigatewayurl}}/stocks/test
+Accept:
 
 {
   "provider" : "POLYGON_IO",

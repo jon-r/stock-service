@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/google/uuid"
 )
 
 type QueueRepository struct {
@@ -36,12 +35,12 @@ func NewQueueService(client *sqs.Client) *QueueRepository {
 	}
 }
 
-func (queue QueueRepository) AddJobs(jobs []JobAction) error {
+func (queue QueueRepository) AddJobs(jobs []JobAction, newUuid UuidGen) error {
 	var err error
 
 	messageRequests := make([]types.SendMessageBatchRequestEntry, len(jobs))
 	for i, message := range jobs {
-		id := uuid.NewString()
+		id := newUuid()
 
 		data, err := json.Marshal(message)
 		if err != nil {
@@ -72,7 +71,7 @@ func (queue QueueRepository) AddJobs(jobs []JobAction) error {
 	return err
 }
 
-func (queue QueueRepository) RetryJob(job JobAction, failReason string) error {
+func (queue QueueRepository) RetryJob(job JobAction, failReason string, newUuid UuidGen) error {
 	var err error
 	updatedJob := job
 	updatedJob.Attempts += 1
@@ -81,7 +80,7 @@ func (queue QueueRepository) RetryJob(job JobAction, failReason string) error {
 		err = queue.AddJobToDLQ(updatedJob, failReason)
 	} else {
 		// put the failed item back into the queue
-		err = queue.AddJobs([]JobAction{updatedJob})
+		err = queue.AddJobs([]JobAction{updatedJob}, newUuid)
 	}
 
 	return err
