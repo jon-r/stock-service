@@ -21,10 +21,10 @@ func TestHandleRequest(t *testing.T) {
 
 // todo break this up to have tests that hit every error
 func handleRequest(raiseErr error, t *testing.T) {
-	stubber, mockServiceHandler := testutil.EnterTest()
-	mockHandler := ApiStockHandler{
-		ServiceHandler: *mockServiceHandler,
-	}
+	stubber, mockServiceHandler := testutil.EnterTest(&testutil.TestSettings{
+		MuteErrors: raiseErr != nil,
+	})
+	mockHandler := ApiStockHandler{*mockServiceHandler}
 
 	expectedTicker := db.TickerItem{
 		StocksTableItem: db.StocksTableItem{Id: "T#AMZN", Sort: "T#AMZN"},
@@ -55,5 +55,5 @@ func handleRequest(raiseErr error, t *testing.T) {
 
 	_, err := mockHandler.handleRequest(context.TODO(), postEvent)
 
-	testutil.ExitTest(stubber, err, raiseErr, t)
+	testutil.Assert(stubber, err, raiseErr, t)
 }

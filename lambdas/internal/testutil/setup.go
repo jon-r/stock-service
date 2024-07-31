@@ -16,7 +16,15 @@ import (
 	"go.uber.org/zap"
 )
 
-func EnterTest() (*testtools.AwsmStubber, *types.ServiceHandler) {
+type TestSettings struct {
+	MuteErrors bool
+}
+
+func EnterTest(settings *TestSettings) (*testtools.AwsmStubber, *types.ServiceHandler) {
+	if settings == nil {
+		settings = &TestSettings{MuteErrors: false}
+	}
+
 	stubber := testtools.NewStubber()
 
 	os.Setenv("LAMBDA_TICKER_NAME", "LAMBDA_TICKER_NAME")
@@ -28,17 +36,24 @@ func EnterTest() (*testtools.AwsmStubber, *types.ServiceHandler) {
 	mockEventsClient := eventbridge.NewFromConfig(*stubber.SdkConfig)
 	mockLambdaClient := lambda.NewFromConfig(*stubber.SdkConfig)
 
+	var mockLogger *zap.Logger
+	if settings.MuteErrors {
+		mockLogger = zap.NewNop()
+	} else {
+		mockLogger = zap.Must(zap.NewDevelopment())
+	}
+
 	mockHandler := &types.ServiceHandler{
 		QueueService:  jobs.NewQueueService(mockSqsClient),
 		EventsService: scheduler.NewEventsService(mockEventsClient, mockLambdaClient),
 		DbService:     db.NewDatabaseService(mockDbClient),
-		LogService:    zap.NewNop().Sugar(),
+		LogService:    mockLogger.Sugar(),
 		NewUuid:       func() string { return "TEST_ID" },
 	}
 	return stubber, mockHandler
 }
 
-func ExitTest(stubber *testtools.AwsmStubber, actualError error, expectedError error, t *testing.T) {
+func Assert(stubber *testtools.AwsmStubber, actualError error, expectedError error, t *testing.T) {
 	testtools.VerifyError(actualError, StubbedError(expectedError), t)
 
 	testtools.ExitTest(stubber, t)

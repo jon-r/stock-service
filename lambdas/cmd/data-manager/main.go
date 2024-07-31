@@ -16,7 +16,7 @@ type DataManagerHandler struct {
 	types.ServiceHandler
 }
 
-func (handler DataManagerHandler) updateAllTickers(ctx context.Context) {
+func (handler DataManagerHandler) updateAllTickers(ctx context.Context) error {
 	// todo this might not work?
 	if handler.LogService == nil {
 		handler.LogService = logging.NewLogger(ctx)
@@ -62,6 +62,8 @@ func (handler DataManagerHandler) updateAllTickers(ctx context.Context) {
 			"error", err,
 		)
 	}
+
+	return err
 }
 
 var serviceHandler = types.ServiceHandler{
