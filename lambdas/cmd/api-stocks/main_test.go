@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 	"github.com/jon-r/stock-service/lambdas/internal/db"
 	"github.com/jon-r/stock-service/lambdas/internal/providers"
 	"github.com/jon-r/stock-service/lambdas/internal/testutil"
@@ -17,11 +16,11 @@ import (
 
 func TestHandleRequest(t *testing.T) {
 	t.Run("NoErrors", func(t *testing.T) { handleRequest(nil, t) })
-	t.Run("TestError", func(t *testing.T) { handleRequest(&testtools.StubError{Err: errors.New("TestError")}, t) })
+	t.Run("TestError", func(t *testing.T) { handleRequest(errors.New("TestError"), t) })
 }
 
-func handleRequest(raiseErr *testtools.StubError, t *testing.T) {
-	// var mockHandler ApiStockHandler
+// todo break this up to have tests that hit every error
+func handleRequest(raiseErr error, t *testing.T) {
 	stubber, mockServiceHandler := testutil.EnterTest()
 	mockHandler := ApiStockHandler{
 		ServiceHandler: *mockServiceHandler,
@@ -56,7 +55,5 @@ func handleRequest(raiseErr *testtools.StubError, t *testing.T) {
 
 	_, err := mockHandler.handleRequest(context.TODO(), postEvent)
 
-	testtools.VerifyError(err, raiseErr, t)
-
-	testtools.ExitTest(stubber, t)
+	testutil.ExitTest(stubber, err, raiseErr, t)
 }

@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"os"
+	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
@@ -35,4 +36,10 @@ func EnterTest() (*testtools.AwsmStubber, *types.ServiceHandler) {
 		NewUuid:       func() string { return "TEST_ID" },
 	}
 	return stubber, mockHandler
+}
+
+func ExitTest(stubber *testtools.AwsmStubber, actualError error, expectedError error, t *testing.T) {
+	testtools.VerifyError(actualError, StubbedError(expectedError), t)
+
+	testtools.ExitTest(stubber, t)
 }

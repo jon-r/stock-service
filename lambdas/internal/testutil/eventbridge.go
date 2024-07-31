@@ -6,11 +6,11 @@ import (
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 )
 
-func StubEventbridgeEnableRule(ruleName string, raiseErr *testtools.StubError) testtools.Stub {
+func StubEventbridgeEnableRule(ruleName string, raiseErr error) testtools.Stub {
 	return testtools.Stub{
 		OperationName: "EnableRule",
 		Input:         &eventbridge.EnableRuleInput{Name: aws.String(ruleName)},
 		Output:        &eventbridge.EnableRuleOutput{},
-		Error:         raiseErr,
+		Error:         StubbedError(raiseErr),
 	}
 }

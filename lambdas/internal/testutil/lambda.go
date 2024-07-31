@@ -7,7 +7,7 @@ import (
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 )
 
-func StubLambdaInvoke(functionName string, raiseErr *testtools.StubError) testtools.Stub {
+func StubLambdaInvoke(functionName string, raiseErr error) testtools.Stub {
 	return testtools.Stub{
 		OperationName: "Invoke",
 		Input: &lambda.InvokeInput{
@@ -15,6 +15,6 @@ func StubLambdaInvoke(functionName string, raiseErr *testtools.StubError) testto
 			InvocationType: types.InvocationTypeEvent,
 		},
 		Output: &lambda.InvokeOutput{},
-		Error:  raiseErr,
+		Error:  StubbedError(raiseErr),
 	}
 }
