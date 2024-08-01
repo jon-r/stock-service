@@ -1,8 +1,6 @@
 package testutil
 
 import (
-	"reflect"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -18,15 +16,6 @@ func StubDynamoDbAddTicker(tableName string, item map[string]types.AttributeValu
 		Output:        &dynamodb.PutItemOutput{},
 		Error:         StubbedError(raiseErr),
 	}
-}
-
-func unpackArray(s any) []any {
-	v := reflect.ValueOf(s)
-	r := make([]any, v.Len())
-	for i := 0; i < v.Len(); i++ {
-		r[i] = v.Index(i).Interface()
-	}
-	return r
 }
 
 func StubDynamoDbScan(request *dynamodb.ScanInput, response interface{}, raiseErr error) testtools.Stub {

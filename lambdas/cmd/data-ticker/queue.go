@@ -1,17 +1,55 @@
 package main
 
-import "github.com/jon-r/stock-service/lambdas/internal/jobs"
+import (
+	"time"
+
+	"github.com/jon-r/stock-service/lambdas/internal/jobs"
+)
 
 var done = make(chan bool)
 
-func (handler DataTickerHandler) checkForNewJobs(attempts int) (*[]jobs.JobQueueItem, int) {
+func (handler DataTickerHandler) checkForJobs() {
+	queueTicker := handler.Clock.Ticker(10 * time.Second)
+
+	var jobList *[]jobs.JobQueueItem
+
+	emptyResponses := 0
+
+	jobList, attempts := handler.receiveNewJobs(0)
+	sortJobs(jobList)
+
+	handler.LogService.Infoln("Started polling...")
+
+	for {
+		select {
+		case <-done:
+			handler.LogService.Infoln("Finished polling")
+			return
+		case <-queueTicker.C:
+			handler.LogService.Infoln("TICK?")
+			// 1. poll to get all items in queue
+			jobList, attempts = handler.receiveNewJobs(attempts)
+
+			// 2. if queue is empty, disable the event rule and end the function
+			emptyResponses = handler.shutDownWhenEmpty(jobList, emptyResponses)
+
+			// 3. group queue jobs by provider
+			sortJobs(jobList)
+		}
+	}
+}
+
+func (handler DataTickerHandler) receiveNewJobs(attempts int) (*[]jobs.JobQueueItem, int) {
 	handler.LogService.Infoln("attempt to receive jobs...")
 	jobList, err := handler.QueueService.ReceiveJobs()
+
+	handler.LogService.Infow("jobs TEMP", "joblist", jobList)
 
 	if err != nil {
 		attempts += 1
 		handler.LogService.Warnw("Failed to get queue items",
 			"attempts", attempts,
+			"error", err,
 		)
 	} else {
 		attempts = 0

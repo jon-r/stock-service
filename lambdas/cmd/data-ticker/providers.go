@@ -21,7 +21,7 @@ func (handler DataTickerHandler) invokeWorkerTicker(provider providers.ProviderN
 	var err error
 
 	duration := time.Duration(delay) * time.Second
-	ticker := time.NewTicker(duration)
+	ticker := handler.Clock.Ticker(duration)
 
 	for {
 		select {
@@ -30,6 +30,7 @@ func (handler DataTickerHandler) invokeWorkerTicker(provider providers.ProviderN
 		case <-ticker.C:
 			select {
 			case job, ok := <-providerQueues[provider]:
+				handler.LogService.Warn("TICK")
 				if ok {
 					handler.LogService.Infow("Invoking Job",
 						"job", job,

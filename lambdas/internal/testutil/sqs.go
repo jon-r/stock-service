@@ -15,3 +15,12 @@ func StubSqsSendMessageBatch(queue string, items []types.SendMessageBatchRequest
 		Error:         StubbedError(raiseErr),
 	}
 }
+
+func StubSqsReceiveMessages(request *sqs.ReceiveMessageInput, response *sqs.ReceiveMessageOutput, raiseErr error) testtools.Stub {
+	return testtools.Stub{
+		OperationName: "ReceiveMessage",
+		Input:         request,
+		Output:        response,
+		Error:         StubbedError(raiseErr),
+	}
+}
