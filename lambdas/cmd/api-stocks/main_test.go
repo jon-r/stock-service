@@ -43,7 +43,7 @@ func handleRequest(raiseErr error, t *testing.T) {
 			MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`),
 		},
 	}
-	stubber.Add(testutil.StubSqsSendMessageBatch("", expectedQueueItems, raiseErr))
+	stubber.Add(testutil.StubSqsSendMessageBatch("SQS_QUEUE_URL", expectedQueueItems, raiseErr))
 
 	expectedRule := "EVENTBRIDGE_RULE_NAME"
 	stubber.Add(testutil.StubEventbridgeEnableRule(expectedRule, raiseErr))

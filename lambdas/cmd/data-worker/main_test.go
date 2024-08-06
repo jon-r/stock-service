@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -54,7 +55,7 @@ func handleSetTickerDescriptionNoErrors(t *testing.T) {
 		TickerId: "TestTicker",
 		Attempts: 0,
 	}
-	err := mockHandler.handleJobAction(job)
+	err := mockHandler.handleJobEvent(context.TODO(), job)
 
 	testutil.Assert(stubber, err, nil, t)
 }
@@ -112,10 +113,12 @@ func handleSetHistoricalPricesNoErrors(t *testing.T) {
 		TickerId: "TestTicker",
 		Attempts: 0,
 	}
-	err := mockHandler.handleJobAction(job)
+
+	err := mockHandler.handleJobEvent(context.TODO(), job)
 
 	testutil.Assert(stubber, err, nil, t)
 }
+
 func handleUpdatePricesNoErrors(t *testing.T) {
 	stubber, mockServiceHander := testutil.EnterTest(nil)
 	mockHandler := DataWorkerHandler{
@@ -170,7 +173,7 @@ func handleUpdatePricesNoErrors(t *testing.T) {
 		TickerId: "TestTicker1,TestTicker2",
 		Attempts: 0,
 	}
-	err := mockHandler.handleJobAction(job)
+	err := mockHandler.handleJobEvent(context.TODO(), job)
 
 	testutil.Assert(stubber, err, nil, t)
 }

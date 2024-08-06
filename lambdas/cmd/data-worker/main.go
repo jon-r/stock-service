@@ -18,7 +18,7 @@ type DataWorkerHandler struct {
 	ProviderService providers.ProviderService
 }
 
-func (handler DataWorkerHandler) handleJobAction(job jobs.JobAction) error {
+func (handler DataWorkerHandler) doJob(job jobs.JobAction) error {
 	switch job.Type {
 	case jobs.LoadTickerDescription:
 		return handler.setTickerDescription(job.Provider, job.TickerId)
@@ -39,7 +39,7 @@ func (handler DataWorkerHandler) handleJobAction(job jobs.JobAction) error {
 	}
 }
 
-func (handler DataWorkerHandler) handleRequest(ctx context.Context, event jobs.JobAction) {
+func (handler DataWorkerHandler) handleJobEvent(ctx context.Context, event jobs.JobAction) error {
 	// todo this might not work?
 	if handler.LogService == nil {
 		handler.LogService = logging.NewLogger(ctx)
@@ -52,13 +52,13 @@ func (handler DataWorkerHandler) handleRequest(ctx context.Context, event jobs.J
 	handler.LogService.Infow("Attempt to do job",
 		"job", event,
 	)
-	err = handler.handleJobAction(event)
+	err = handler.doJob(event)
 
 	if err == nil {
 		handler.LogService.Infoln("Job completed",
 			"jobId", event.JobId,
 		)
-		return // job done
+		return nil // job done
 	}
 
 	handler.LogService.Warnw("failed to process event, re-adding it to queue",
@@ -74,7 +74,10 @@ func (handler DataWorkerHandler) handleRequest(ctx context.Context, event jobs.J
 			"jobId", event.JobId,
 			"error", queueErr,
 		)
+		return queueErr
 	}
+
+	return err
 }
 
 var serviceHandler = types.ServiceHandler{
@@ -84,5 +87,5 @@ var serviceHandler = types.ServiceHandler{
 
 func main() {
 	handler := DataWorkerHandler{ServiceHandler: serviceHandler, ProviderService: providers.NewProviderService()}
-	lambda.Start(handler.handleRequest)
+	lambda.Start(handler.handleJobEvent)
 }

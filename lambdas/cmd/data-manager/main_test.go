@@ -51,7 +51,7 @@ func updateAllTickerNoErrors(t *testing.T) {
 			MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"UPDATE_PRICES","TickerId":"AMZN,META","Attempts":0}`),
 		},
 	}
-	stubber.Add(testutil.StubSqsSendMessageBatch("", expectedQueueItems, nil))
+	stubber.Add(testutil.StubSqsSendMessageBatch("SQS_QUEUE_URL", expectedQueueItems, nil))
 
 	expectedRule := "EVENTBRIDGE_RULE_NAME"
 	stubber.Add(testutil.StubEventbridgeEnableRule(expectedRule, nil))
