@@ -9,11 +9,13 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/db"
 	"github.com/jon-r/stock-service/lambdas/internal/jobs"
 	"github.com/jon-r/stock-service/lambdas/internal/logging"
+	"github.com/jon-r/stock-service/lambdas/internal/providers"
 	"github.com/jon-r/stock-service/lambdas/internal/types"
 )
 
 type DataWorkerHandler struct {
 	types.ServiceHandler
+	ProviderService providers.ProviderService
 }
 
 func (handler DataWorkerHandler) handleJobAction(job jobs.JobAction) error {
@@ -81,6 +83,6 @@ var serviceHandler = types.ServiceHandler{
 }
 
 func main() {
-	handler := DataWorkerHandler{ServiceHandler: serviceHandler}
+	handler := DataWorkerHandler{ServiceHandler: serviceHandler, ProviderService: providers.NewProviderService()}
 	lambda.Start(handler.handleRequest)
 }

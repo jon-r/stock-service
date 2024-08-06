@@ -18,6 +18,24 @@ func StubDynamoDbAddTicker(tableName string, item map[string]types.AttributeValu
 	}
 }
 
+func StubDynamoDbUpdate(request *dynamodb.UpdateItemInput, raiseErr error) testtools.Stub {
+	return testtools.Stub{
+		OperationName: "UpdateItem",
+		Input:         request,
+		Output:        &dynamodb.UpdateItemOutput{},
+		Error:         StubbedError(raiseErr),
+	}
+}
+
+func StubDynamoDbBatchWriteTicker(request *dynamodb.BatchWriteItemInput, raiseErr error) testtools.Stub {
+	return testtools.Stub{
+		OperationName: "BatchWriteItem",
+		Input:         request,
+		Output:        &dynamodb.BatchWriteItemOutput{},
+		Error:         StubbedError(raiseErr),
+	}
+}
+
 func StubDynamoDbScan(request *dynamodb.ScanInput, response interface{}, raiseErr error) testtools.Stub {
 	// query, _ := attributevalue.MarshalMap(request)
 	list := unpackArray(response)

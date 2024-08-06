@@ -6,7 +6,7 @@ func (handler DataWorkerHandler) setTickerDescription(provider providers.Provide
 	var err error
 
 	// 1. fetch the ticker details (based on the above)
-	description, err := providers.FetchTickerDescription(provider, tickerId)
+	description, err := handler.ProviderService.FetchTickerDescription(provider, tickerId)
 
 	if err != nil {
 		return err
@@ -21,7 +21,7 @@ func (handler DataWorkerHandler) setTickerDescription(provider providers.Provide
 func (handler DataWorkerHandler) setTickerHistoricalPrices(provider providers.ProviderName, tickerId string) error {
 	var err error
 
-	prices, err := providers.FetchTickerHistoricalPrices(provider, tickerId)
+	prices, err := handler.ProviderService.FetchTickerHistoricalPrices(provider, tickerId)
 
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func (handler DataWorkerHandler) setTickerHistoricalPrices(provider providers.Pr
 func (handler DataWorkerHandler) updateTickerPrices(provider providers.ProviderName, tickerIds []string) error {
 	var err error
 
-	prices, err := providers.FetchTickerDailyPrices(provider, tickerIds)
+	prices, err := handler.ProviderService.FetchTickerDailyPrices(provider, tickerIds)
 
 	if err != nil {
 		return err
