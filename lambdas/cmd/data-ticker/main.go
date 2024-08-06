@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jon-r/stock-service/lambdas/internal/jobs"
 	"github.com/jon-r/stock-service/lambdas/internal/logging"
+	"github.com/jon-r/stock-service/lambdas/internal/providers"
 	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
 	"github.com/jon-r/stock-service/lambdas/internal/types"
 )
@@ -32,8 +33,7 @@ func (handler DataTickerHandler) handleQueuedJobs(ctx context.Context) {
 	go handler.checkForJobs()
 
 	// 2. for each provider have a ticker function that invokes event provider/ticker/type to the worker fn
-	// fixme reenable this
-	//go handler.invokeWorkerTicker(providers.PolygonIo, providers.PolygonIoDelay)
+	go handler.invokeWorkerTicker(providers.PolygonIo, providers.PolygonIoDelay)
 
 	// 3. Switch off after TICKER_TIMEOUT min
 	tickerTimeout, timeErr := strconv.Atoi(os.Getenv("TICKER_TIMEOUT"))
@@ -41,10 +41,8 @@ func (handler DataTickerHandler) handleQueuedJobs(ctx context.Context) {
 		tickerTimeout = 5
 	}
 
-	handler.LogService.Debugln("waiting %v mins", tickerTimeout)
 	handler.Clock.Sleep(time.Duration(tickerTimeout) * time.Minute)
 	handler.done <- true
-	handler.LogService.Debugln("DONE?")
 
 	//return nil // todo have the goroutines send the error here?
 }

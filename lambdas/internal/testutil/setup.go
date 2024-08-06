@@ -28,6 +28,8 @@ func EnterTest(settings *TestSettings) (*testtools.AwsmStubber, *types.ServiceHa
 	stubber := testtools.NewStubber()
 
 	os.Setenv("LAMBDA_TICKER_NAME", "LAMBDA_TICKER_NAME")
+	os.Setenv("LAMBDA_WORKER_NAME", "LAMBDA_WORKER_NAME")
+	os.Setenv("SQS_QUEUE_URL", "SQS_QUEUE_URL")
 	os.Setenv("EVENTBRIDGE_RULE_NAME", "EVENTBRIDGE_RULE_NAME")
 	os.Setenv("DB_STOCKS_TABLE_NAME", "DB_STOCKS_TABLE_NAME")
 	os.Setenv("TICKER_TIMEOUT", "2")

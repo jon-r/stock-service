@@ -48,7 +48,7 @@ func handleRequest(raiseErr error, t *testing.T) {
 	expectedRule := "EVENTBRIDGE_RULE_NAME"
 	stubber.Add(testutil.StubEventbridgeEnableRule(expectedRule, raiseErr))
 	expectedLambda := "LAMBDA_TICKER_NAME"
-	stubber.Add(testutil.StubLambdaInvoke(expectedLambda, raiseErr))
+	stubber.Add(testutil.StubLambdaInvoke(expectedLambda, nil, raiseErr))
 
 	var postEvent events.APIGatewayProxyRequest
 	testutil.ReadTestJson("./testevents/api-stocks_POST.json", &postEvent)

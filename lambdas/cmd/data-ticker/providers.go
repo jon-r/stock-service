@@ -11,7 +11,7 @@ var providerQueues = map[providers.ProviderName]chan jobs.JobQueueItem{
 	providers.PolygonIo: make(chan jobs.JobQueueItem, 20),
 }
 
-func sortJobs(jobList *[]jobs.JobQueueItem) {
+func allocateJobs(jobList *[]jobs.JobQueueItem) {
 	for _, job := range *jobList {
 		providerQueues[job.Action.Provider] <- job
 	}
@@ -25,13 +25,9 @@ func (handler DataTickerHandler) invokeWorkerTicker(provider providers.ProviderN
 
 	for {
 		select {
-		case <-handler.done:
-			ticker.Stop()
-			return
 		case <-ticker.C:
 			select {
 			case job, ok := <-providerQueues[provider]:
-				handler.LogService.Debugln("TICK")
 				if ok {
 					handler.LogService.Infow("Invoking Job",
 						"job", job,

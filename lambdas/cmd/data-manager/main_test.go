@@ -56,7 +56,7 @@ func updateAllTickerNoErrors(t *testing.T) {
 	expectedRule := "EVENTBRIDGE_RULE_NAME"
 	stubber.Add(testutil.StubEventbridgeEnableRule(expectedRule, nil))
 	expectedLambda := "LAMBDA_TICKER_NAME"
-	stubber.Add(testutil.StubLambdaInvoke(expectedLambda, nil))
+	stubber.Add(testutil.StubLambdaInvoke(expectedLambda, nil, nil))
 
 	err := mockHandler.updateAllTickers(context.TODO())
 

@@ -14,7 +14,7 @@ func (handler DataTickerHandler) checkForJobs() {
 	emptyResponses := 0
 
 	jobList, attempts := handler.receiveNewJobs(0)
-	sortJobs(jobList)
+	allocateJobs(jobList)
 
 	handler.LogService.Infoln("Started polling...")
 
@@ -32,7 +32,7 @@ func (handler DataTickerHandler) checkForJobs() {
 			emptyResponses = handler.shutDownWhenEmpty(jobList, emptyResponses)
 
 			// 3. group queue jobs by provider
-			sortJobs(jobList)
+			allocateJobs(jobList)
 		}
 	}
 }

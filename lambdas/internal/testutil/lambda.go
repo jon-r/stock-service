@@ -7,12 +7,13 @@ import (
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 )
 
-func StubLambdaInvoke(functionName string, raiseErr error) testtools.Stub {
+func StubLambdaInvoke(functionName string, payload []byte, raiseErr error) testtools.Stub {
 	return testtools.Stub{
 		OperationName: "Invoke",
 		Input: &lambda.InvokeInput{
 			FunctionName:   aws.String(functionName),
 			InvocationType: types.InvocationTypeEvent,
+			Payload:        payload,
 		},
 		Output: &lambda.InvokeOutput{},
 		Error:  StubbedError(raiseErr),

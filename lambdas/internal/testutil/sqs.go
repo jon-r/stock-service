@@ -24,3 +24,12 @@ func StubSqsReceiveMessages(request *sqs.ReceiveMessageInput, response *sqs.Rece
 		Error:         StubbedError(raiseErr),
 	}
 }
+
+func StubSqsDeleteMessage(queue string, messageId string, raiseErr error) testtools.Stub {
+	return testtools.Stub{
+		OperationName: "DeleteMessage",
+		Input:         &sqs.DeleteMessageInput{QueueUrl: aws.String(queue), ReceiptHandle: aws.String(messageId)},
+		Output:        &sqs.DeleteMessageOutput{},
+		Error:         StubbedError(raiseErr),
+	}
+}
