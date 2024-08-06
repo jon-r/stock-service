@@ -1,6 +1,6 @@
 package jobs
 
-import "jon-richards.com/stock-app/internal/providers"
+import "github.com/jon-r/stock-service/lambdas/internal/providers"
 
 type JobTypes string
 

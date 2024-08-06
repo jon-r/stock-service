@@ -1,0 +1,40 @@
+name: Go CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - feature/STK-92-unit-tests
+
+  pull_request_target:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21.2
+
+      - name: Run tests
+        run: go test ./lambdas/... -coverprofile=./cover.out -covermode=atomic -coverpkg=./lambdas/...
+
+      - name: check test coverage
+        uses: vladopajic/go-test-coverage@v2
+        with:
+          # Configure action by specifying input parameters individually (option 2).
+          # If you are using config file (option 1) you shouldn't use these parameters, however
+          # specifting these action parameters will override appropriate config values.
+          profile: cover.out
+          local-prefix: "github.com/jon-r/stock-service"
+          #          fixme raise this up at some point
+          #          threshold-file: 80
+          #          threshold-package: 80
+          threshold-total: 70

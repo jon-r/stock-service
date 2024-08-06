@@ -3,7 +3,7 @@ package jobs
 import (
 	"strings"
 
-	"jon-richards.com/stock-app/internal/providers"
+	"github.com/jon-r/stock-service/lambdas/internal/providers"
 )
 
 func groupByProvider(tickers []providers.TickerItemStub) map[providers.ProviderName][]string {

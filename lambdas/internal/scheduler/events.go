@@ -17,16 +17,20 @@ type EventsRepository struct {
 	lambda *lambda.Client
 }
 
-func NewEventsService() *EventsRepository {
+func CreateEventClients() (*eventbridge.Client, *lambda.Client) {
 	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
 
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
 
+	return eventbridge.NewFromConfig(sdkConfig), lambda.NewFromConfig(sdkConfig)
+}
+
+func NewEventsService(client *eventbridge.Client, lambdaClient *lambda.Client) *EventsRepository {
 	return &EventsRepository{
-		svc:    eventbridge.NewFromConfig(sdkConfig),
-		lambda: lambda.NewFromConfig(sdkConfig),
+		svc:    client,
+		lambda: lambdaClient,
 	}
 }
 

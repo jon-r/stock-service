@@ -1,0 +1,4 @@
+{
+  "httpMethod": "POST",
+  "body": "{\"provider\":\"POLYGON_IO\",\"ticker\":\"AMZN\"}"
+}

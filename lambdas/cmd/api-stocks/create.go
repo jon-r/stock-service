@@ -1,21 +1,16 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
-	"jon-richards.com/stock-app/internal/jobs"
-	"jon-richards.com/stock-app/internal/logging"
-	"jon-richards.com/stock-app/internal/providers"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs"
+	"github.com/jon-r/stock-service/lambdas/internal/providers"
 )
 
-func createTicker(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
-
+func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var err error
 
 	// 1. get ticket and provider from post request body
@@ -23,39 +18,55 @@ func createTicker(ctx context.Context, request events.APIGatewayProxyRequest) (*
 	err = json.Unmarshal([]byte(request.Body), &params)
 
 	if err != nil {
-		return clientError(ctx, http.StatusBadRequest, err)
+		handler.LogService.Errorw("Request error",
+			"status", http.StatusBadRequest,
+			"message", err,
+		)
+		return clientError(http.StatusBadRequest, err)
 	}
 
 	// 2. enter basic content to the database
-	err = dbService.NewTickerItem(log, params)
+	err = handler.DbService.NewTickerItem(handler.LogService, params)
 
 	if err != nil {
-		return clientError(ctx, http.StatusInternalServerError, err)
+		handler.LogService.Errorw("Request error",
+			"status", http.StatusInternalServerError,
+			"message", err,
+		)
+		return clientError(http.StatusInternalServerError, err)
 	}
 
 	// 3. Create new job queue item
-	newItemJobs := jobs.MakeCreateJobs(params.Provider, params.TickerId)
+	newItemJobs := jobs.MakeCreateJobs(params.Provider, params.TickerId, handler.NewUuid)
 
-	log.Infow("Add jobs to the queue",
+	handler.LogService.Infow("Add jobs to the queue",
 		"jobs", *newItemJobs,
 	)
-	err = queueService.AddJobs(*newItemJobs)
+	err = handler.QueueService.AddJobs(*newItemJobs, handler.NewUuid)
 
 	if err != nil {
-		return clientError(ctx, http.StatusInternalServerError, err)
+		handler.LogService.Errorw("Request error",
+			"status", http.StatusInternalServerError,
+			"message", err,
+		)
+		return clientError(http.StatusInternalServerError, err)
 	}
 
 	// 4. enable the jobs ticker
-	err = eventsService.StartTickerScheduler()
+	err = handler.EventsService.StartTickerScheduler()
 
 	if err != nil {
-		return clientError(ctx, http.StatusInternalServerError, err)
+		handler.LogService.Errorw("Request error",
+			"status", http.StatusInternalServerError,
+			"message", err,
+		)
+		return clientError(http.StatusInternalServerError, err)
 	}
 
 	return clientSuccess(fmt.Sprintf("Success: ticker '%s' queued", params.TickerId)), nil
 }
 
-func create(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func (handler ApiStockHandler) create(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	// todo would be switch if multiple endpoints
-	return createTicker(ctx, request)
+	return handler.createTicker(request)
 }

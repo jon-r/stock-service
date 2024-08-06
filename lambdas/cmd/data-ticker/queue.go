@@ -1,47 +1,70 @@
 package main
 
 import (
-	"context"
+	"time"
 
-	"jon-richards.com/stock-app/internal/jobs"
-	"jon-richards.com/stock-app/internal/logging"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs"
 )
 
-var done = make(chan bool)
+func (handler DataTickerHandler) checkForJobs() {
+	queueTicker := handler.Clock.Ticker(10 * time.Second)
 
-func checkForNewJobs(ctx context.Context, attempts int) (*[]jobs.JobQueueItem, int) {
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
+	var jobList *[]jobs.JobQueueItem
 
-	log.Infoln("attempt to receive jobs...")
-	jobList, err := queueService.ReceiveJobs()
+	emptyResponses := 0
+
+	jobList, attempts := handler.receiveNewJobs(0)
+	allocateJobs(jobList)
+
+	handler.LogService.Infoln("Started polling...")
+
+	for {
+		select {
+		case <-handler.done:
+			handler.LogService.Infoln("Finished polling")
+			queueTicker.Stop()
+			return
+		case <-queueTicker.C:
+			// 1. poll to get all items in queue
+			jobList, attempts = handler.receiveNewJobs(attempts)
+
+			// 2. if queue is empty, disable the event rule and end the function
+			emptyResponses = handler.shutDownWhenEmpty(jobList, emptyResponses)
+
+			// 3. group queue jobs by provider
+			allocateJobs(jobList)
+		}
+	}
+}
+
+func (handler DataTickerHandler) receiveNewJobs(attempts int) (*[]jobs.JobQueueItem, int) {
+	handler.LogService.Infof("attempt to receive jobs...")
+	jobList, err := handler.QueueService.ReceiveJobs()
 
 	if err != nil {
 		attempts += 1
-		log.Warnw("Failed to get queue items",
+		handler.LogService.Warnw("Failed to get queue items",
 			"attempts", attempts,
+			"error", err,
 		)
 	} else {
 		attempts = 0
 	}
 
 	if attempts >= 6 {
-		err = eventsService.StopTickerScheduler()
+		err = handler.EventsService.StopTickerScheduler()
 		if err != nil {
-			log.Errorw("Failed to stop scheduler",
+			handler.LogService.Errorw("Failed to stop scheduler",
 				"error", err,
 			)
 		}
-		log.Fatalln("Aborting after too many failed attempts")
+		handler.LogService.Fatalln("Aborting after too many failed attempts")
 	}
 
 	return jobList, attempts
 }
 
-func shutDownWhenEmpty(ctx context.Context, jobList *[]jobs.JobQueueItem, emptyResponses int) int {
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
-
+func (handler DataTickerHandler) shutDownWhenEmpty(jobList *[]jobs.JobQueueItem, emptyResponses int) int {
 	if len(*jobList) == 0 {
 		emptyResponses += 1
 	} else {
@@ -49,10 +72,10 @@ func shutDownWhenEmpty(ctx context.Context, jobList *[]jobs.JobQueueItem, emptyR
 	}
 
 	if emptyResponses == 6 {
-		log.Infoln("No new jobs received in 60 seconds, disabling scheduler")
-		err := eventsService.StopTickerScheduler()
+		handler.LogService.Infoln("No new jobs received in 60 seconds, disabling scheduler")
+		err := handler.EventsService.StopTickerScheduler()
 		if err != nil {
-			log.Errorw("Failed to stop scheduler",
+			handler.LogService.Errorw("Failed to stop scheduler",
 				"error", err,
 			)
 		}

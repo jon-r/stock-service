@@ -8,11 +8,12 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"go.uber.org/zap"
-	"jon-richards.com/stock-app/internal/db"
-	"jon-richards.com/stock-app/internal/jobs"
-	"jon-richards.com/stock-app/internal/logging"
-	"jon-richards.com/stock-app/internal/scheduler"
+	"github.com/google/uuid"
+	"github.com/jon-r/stock-service/lambdas/internal/db"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs"
+	"github.com/jon-r/stock-service/lambdas/internal/logging"
+	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
+	"github.com/jon-r/stock-service/lambdas/internal/types"
 )
 
 type ResponseBody struct {
@@ -20,32 +21,30 @@ type ResponseBody struct {
 	Status  int    `json:"status"`
 }
 
-var queueService = jobs.NewQueueService()
-var eventsService = scheduler.NewEventsService()
-var dbService = db.NewDatabaseService()
-
-func init() {
-	zap.ReplaceGlobals(zap.Must(zap.NewProduction()))
+type ApiStockHandler struct {
+	types.ServiceHandler
 }
 
-func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func (handler ApiStockHandler) handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	if handler.LogService == nil { // todo this might not work?
+		handler.LogService = logging.NewLogger(ctx)
+	}
+	defer handler.LogService.Sync()
+
 	switch request.HTTPMethod {
 	case "POST":
-		return create(ctx, request)
+		return handler.create(request)
 	default:
-		return clientError(ctx, http.StatusMethodNotAllowed, fmt.Errorf("request method %s not supported", request.HTTPMethod))
+		err := fmt.Errorf("request method %s not supported", request.HTTPMethod)
+		handler.LogService.Errorw("Request error",
+			"status", http.StatusMethodNotAllowed,
+			"message", err,
+		)
+		return clientError(http.StatusMethodNotAllowed, err)
 	}
 }
 
-func clientError(ctx context.Context, status int, err error) (*events.APIGatewayProxyResponse, error) {
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
-
-	log.Errorw("Request error",
-		"status", status,
-		"message", err,
-	)
-
+func clientError(status int, err error) (*events.APIGatewayProxyResponse, error) {
 	body, _ := json.Marshal(ResponseBody{
 		Message: http.StatusText(status),
 		Status:  status,
@@ -73,6 +72,15 @@ func clientSuccess(message string) *events.APIGatewayProxyResponse {
 	}
 }
 
+var serviceHandler = types.ServiceHandler{
+	QueueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
+	EventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
+	DbService:     db.NewDatabaseService(db.CreateDatabaseClient()),
+	NewUuid:       uuid.NewString,
+}
+
 func main() {
-	lambda.Start(handleRequest)
+	handler := ApiStockHandler{ServiceHandler: serviceHandler}
+
+	lambda.Start(handler.handleRequest)
 }

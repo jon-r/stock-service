@@ -1,6 +1,6 @@
 package db
 
-import "jon-richards.com/stock-app/internal/providers"
+import "github.com/jon-r/stock-service/lambdas/internal/providers"
 
 type KeyType string
 

@@ -6,24 +6,26 @@ import (
 	"strings"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"go.uber.org/zap"
-	"jon-richards.com/stock-app/internal/db"
-	"jon-richards.com/stock-app/internal/jobs"
-	"jon-richards.com/stock-app/internal/logging"
+	"github.com/jon-r/stock-service/lambdas/internal/db"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs"
+	"github.com/jon-r/stock-service/lambdas/internal/logging"
+	"github.com/jon-r/stock-service/lambdas/internal/providers"
+	"github.com/jon-r/stock-service/lambdas/internal/types"
 )
 
-var dbService = db.NewDatabaseService()
+type DataWorkerHandler struct {
+	types.ServiceHandler
+	ProviderService providers.ProviderService
+}
 
-var queueService = jobs.NewQueueService()
-
-func handleJobAction(log *zap.SugaredLogger, job jobs.JobAction) error {
+func (handler DataWorkerHandler) doJob(job jobs.JobAction) error {
 	switch job.Type {
 	case jobs.LoadTickerDescription:
-		return setTickerDescription(log, job.Provider, job.TickerId)
+		return handler.setTickerDescription(job.Provider, job.TickerId)
 	case jobs.LoadHistoricalPrices:
-		return setTickerHistoricalPrices(log, job.Provider, job.TickerId)
+		return handler.setTickerHistoricalPrices(job.Provider, job.TickerId)
 	case jobs.UpdatePrices:
-		return updateTickerPrices(log, job.Provider, strings.Split(job.TickerId, ","))
+		return handler.updateTickerPrices(job.Provider, strings.Split(job.TickerId, ","))
 
 	// TODO STK-86
 	// jobs.LoadTickerIcon
@@ -37,41 +39,53 @@ func handleJobAction(log *zap.SugaredLogger, job jobs.JobAction) error {
 	}
 }
 
-func handleRequest(ctx context.Context, event jobs.JobAction) {
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
+func (handler DataWorkerHandler) handleJobEvent(ctx context.Context, event jobs.JobAction) error {
+	// todo this might not work?
+	if handler.LogService == nil {
+		handler.LogService = logging.NewLogger(ctx)
+	}
+	defer handler.LogService.Sync()
 
 	var err error
 
 	// 1. handle action
-	log.Infow("Attempt to do job",
+	handler.LogService.Infow("Attempt to do job",
 		"job", event,
 	)
-	err = handleJobAction(log, event)
+	err = handler.doJob(event)
 
 	if err == nil {
-		log.Infoln("Job completed",
+		handler.LogService.Infoln("Job completed",
 			"jobId", event.JobId,
 		)
-		return // job done
+		return nil // job done
 	}
 
-	log.Warnw("failed to process event, re-adding it to queue",
+	handler.LogService.Warnw("failed to process event, re-adding it to queue",
 		"jobId", event.JobId,
 		"error", err,
 	)
 
 	// 2. if action failed or new queue actions after last, try again
-	queueErr := queueService.RetryJob(event, err.Error())
+	queueErr := handler.QueueService.RetryJob(event, err.Error(), handler.NewUuid)
 
 	if queueErr != nil {
-		log.Fatalw("Failed to add item to DLQ",
+		handler.LogService.Fatalw("Failed to add item to DLQ",
 			"jobId", event.JobId,
 			"error", queueErr,
 		)
+		return queueErr
 	}
+
+	return err
+}
+
+var serviceHandler = types.ServiceHandler{
+	QueueService: jobs.NewQueueService(jobs.CreateSqsClient()),
+	DbService:    db.NewDatabaseService(db.CreateDatabaseClient()),
 }
 
 func main() {
-	lambda.Start(handleRequest)
+	handler := DataWorkerHandler{ServiceHandler: serviceHandler, ProviderService: providers.NewProviderService()}
+	lambda.Start(handler.handleJobEvent)
 }

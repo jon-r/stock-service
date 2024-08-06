@@ -4,61 +4,76 @@ import (
 	"context"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"jon-richards.com/stock-app/internal/db"
-	"jon-richards.com/stock-app/internal/jobs"
-	"jon-richards.com/stock-app/internal/logging"
-	"jon-richards.com/stock-app/internal/scheduler"
+	"github.com/google/uuid"
+	"github.com/jon-r/stock-service/lambdas/internal/db"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs"
+	"github.com/jon-r/stock-service/lambdas/internal/logging"
+	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
+	"github.com/jon-r/stock-service/lambdas/internal/types"
 )
 
-var dbService = db.NewDatabaseService()
-var queueService = jobs.NewQueueService()
-var eventsService = scheduler.NewEventsService()
+type DataManagerHandler struct {
+	types.ServiceHandler
+}
 
-func updateAllTickers(ctx context.Context) {
+func (handler DataManagerHandler) updateAllTickers(ctx context.Context) error {
+	// todo this might not work?
+	if handler.LogService == nil {
+		handler.LogService = logging.NewLogger(ctx)
+	}
+	defer handler.LogService.Sync()
+
 	var err error
 
-	log := logging.NewLogger(ctx)
-	defer log.Sync()
-
 	// 1. get all tickers
-	tickers, err := dbService.GetAllTickers()
+	tickers, err := handler.DbService.GetAllTickers()
 
 	if err != nil {
-		log.Fatalw("Errors in fetching the tickers",
+		handler.LogService.Fatalw("Errors in fetching the tickers",
 			"error", err,
 		)
 	}
 
 	if len(tickers) == 0 {
-		log.Fatal("No tickers found")
+		handler.LogService.Fatal("No tickers found")
 	}
 
 	// 2. convert the jobs into update actions
-	jobActions := jobs.MakeUpdateJobs(tickers)
+	jobActions := jobs.MakeUpdateJobs(tickers, handler.NewUuid)
 
 	// 3. add queue jobs for ticker prices + dividends
-	err = queueService.AddJobs(*jobActions)
+	err = handler.QueueService.AddJobs(*jobActions, handler.NewUuid)
 
 	if err != nil {
-		log.Fatalw("Failed to add jobs",
+		handler.LogService.Fatalw("Failed to add jobs",
 			"error", err,
 		)
 	} else {
-		log.Infow("Added Jobs for tickers",
+		handler.LogService.Infow("Added Jobs for tickers",
 			"tickers", tickers,
 		)
 	}
 
 	// 4. enable the jobs ticker
-	err = eventsService.StartTickerScheduler()
+	err = handler.EventsService.StartTickerScheduler()
 
 	if err != nil {
-		log.Fatalw("Failed to start the ticker",
+		handler.LogService.Fatalw("Failed to start the ticker",
 			"error", err,
 		)
 	}
+
+	return err
+}
+
+var serviceHandler = types.ServiceHandler{
+	QueueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
+	EventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
+	DbService:     db.NewDatabaseService(db.CreateDatabaseClient()),
+	NewUuid:       uuid.NewString,
 }
 
 func main() {
-	lambda.Start(updateAllTickers)
+	handler := DataManagerHandler{ServiceHandler: serviceHandler}
+	lambda.Start(handler.updateAllTickers)
 }

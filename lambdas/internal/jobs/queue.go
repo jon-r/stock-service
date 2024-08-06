@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/google/uuid"
 )
 
 type QueueRepository struct {
@@ -19,26 +18,29 @@ type QueueRepository struct {
 	DLQUrl   string
 }
 
-func NewQueueService() *QueueRepository {
+func CreateSqsClient() *sqs.Client {
 	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
-
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
 
+	return sqs.NewFromConfig(sdkConfig)
+}
+
+func NewQueueService(client *sqs.Client) *QueueRepository {
 	return &QueueRepository{
-		svc:      sqs.NewFromConfig(sdkConfig),
+		svc:      client,
 		QueueUrl: os.Getenv("SQS_QUEUE_URL"),
 		DLQUrl:   os.Getenv("SQS_DLQ_URL"),
 	}
 }
 
-func (queue QueueRepository) AddJobs(jobs []JobAction) error {
+func (queue QueueRepository) AddJobs(jobs []JobAction, newUuid UuidGen) error {
 	var err error
 
 	messageRequests := make([]types.SendMessageBatchRequestEntry, len(jobs))
 	for i, message := range jobs {
-		id := uuid.NewString()
+		id := newUuid()
 
 		data, err := json.Marshal(message)
 		if err != nil {
@@ -69,7 +71,7 @@ func (queue QueueRepository) AddJobs(jobs []JobAction) error {
 	return err
 }
 
-func (queue QueueRepository) RetryJob(job JobAction, failReason string) error {
+func (queue QueueRepository) RetryJob(job JobAction, failReason string, newUuid UuidGen) error {
 	var err error
 	updatedJob := job
 	updatedJob.Attempts += 1
@@ -78,7 +80,7 @@ func (queue QueueRepository) RetryJob(job JobAction, failReason string) error {
 		err = queue.AddJobToDLQ(updatedJob, failReason)
 	} else {
 		// put the failed item back into the queue
-		err = queue.AddJobs([]JobAction{updatedJob})
+		err = queue.AddJobs([]JobAction{updatedJob}, newUuid)
 	}
 
 	return err
