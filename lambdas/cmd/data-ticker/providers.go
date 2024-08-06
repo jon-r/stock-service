@@ -25,12 +25,13 @@ func (handler DataTickerHandler) invokeWorkerTicker(provider providers.ProviderN
 
 	for {
 		select {
-		case <-done:
+		case <-handler.done:
+			ticker.Stop()
 			return
 		case <-ticker.C:
 			select {
 			case job, ok := <-providerQueues[provider]:
-				handler.LogService.Warn("TICK")
+				handler.LogService.Debugln("TICK")
 				if ok {
 					handler.LogService.Infow("Invoking Job",
 						"job", job,

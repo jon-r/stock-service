@@ -30,7 +30,7 @@ func EnterTest(settings *TestSettings) (*testtools.AwsmStubber, *types.ServiceHa
 	os.Setenv("LAMBDA_TICKER_NAME", "LAMBDA_TICKER_NAME")
 	os.Setenv("EVENTBRIDGE_RULE_NAME", "EVENTBRIDGE_RULE_NAME")
 	os.Setenv("DB_STOCKS_TABLE_NAME", "DB_STOCKS_TABLE_NAME")
-	os.Setenv("TICKER_TIMEOUT", "1")
+	os.Setenv("TICKER_TIMEOUT", "2")
 
 	mockSqsClient := sqs.NewFromConfig(*stubber.SdkConfig)
 	mockDbClient := dynamodb.NewFromConfig(*stubber.SdkConfig)

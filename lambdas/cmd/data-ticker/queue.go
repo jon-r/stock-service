@@ -6,8 +6,6 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/jobs"
 )
 
-var done = make(chan bool)
-
 func (handler DataTickerHandler) checkForJobs() {
 	queueTicker := handler.Clock.Ticker(10 * time.Second)
 
@@ -22,11 +20,11 @@ func (handler DataTickerHandler) checkForJobs() {
 
 	for {
 		select {
-		case <-done:
+		case <-handler.done:
 			handler.LogService.Infoln("Finished polling")
+			queueTicker.Stop()
 			return
 		case <-queueTicker.C:
-			handler.LogService.Infoln("TICK?")
 			// 1. poll to get all items in queue
 			jobList, attempts = handler.receiveNewJobs(attempts)
 
@@ -40,10 +38,8 @@ func (handler DataTickerHandler) checkForJobs() {
 }
 
 func (handler DataTickerHandler) receiveNewJobs(attempts int) (*[]jobs.JobQueueItem, int) {
-	handler.LogService.Infoln("attempt to receive jobs...")
+	handler.LogService.Infof("attempt to receive jobs...")
 	jobList, err := handler.QueueService.ReceiveJobs()
-
-	handler.LogService.Infow("jobs TEMP", "joblist", jobList)
 
 	if err != nil {
 		attempts += 1

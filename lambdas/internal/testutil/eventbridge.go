@@ -14,3 +14,12 @@ func StubEventbridgeEnableRule(ruleName string, raiseErr error) testtools.Stub {
 		Error:         StubbedError(raiseErr),
 	}
 }
+
+func StubEventbridgeDisableRule(ruleName string, raiseErr error) testtools.Stub {
+	return testtools.Stub{
+		OperationName: "DisableRule",
+		Input:         &eventbridge.DisableRuleInput{Name: aws.String(ruleName)},
+		Output:        &eventbridge.DisableRuleOutput{},
+		Error:         StubbedError(raiseErr),
+	}
+}

@@ -15,8 +15,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.31.1
 	github.com/aws/constructs-go/constructs/v10 v10.3.0
 	github.com/aws/jsii-runtime-go v1.98.0
-	github.com/awsdocs/aws-doc-sdk-examples/gov2/dynamodb v0.0.0-20240522184700-e7a87c4485b7
 	github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools v0.0.0-20240522184700-e7a87c4485b7
+	github.com/benbjohnson/clock v1.3.5
 	github.com/google/uuid v1.6.0
 	github.com/polygon-io/client-go v1.16.4
 	github.com/samber/lo v1.39.0
@@ -57,7 +57,6 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/yuin/goldmark v1.4.13 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
