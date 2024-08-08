@@ -1,8 +1,8 @@
 package main
 
-import "github.com/jon-r/stock-service/lambdas/internal/providers"
+import "github.com/jon-r/stock-service/lambdas/internal/providers_old"
 
-func (handler DataWorkerHandler) setTickerDescription(provider providers.ProviderName, tickerId string) error {
+func (handler DataWorkerHandler) setTickerDescription(provider providers_old.ProviderName, tickerId string) error {
 	var err error
 
 	// 1. fetch the ticker details (based on the above)
@@ -18,7 +18,7 @@ func (handler DataWorkerHandler) setTickerDescription(provider providers.Provide
 	return err
 }
 
-func (handler DataWorkerHandler) setTickerHistoricalPrices(provider providers.ProviderName, tickerId string) error {
+func (handler DataWorkerHandler) setTickerHistoricalPrices(provider providers_old.ProviderName, tickerId string) error {
 	var err error
 
 	prices, err := handler.ProviderService.FetchTickerHistoricalPrices(provider, tickerId)
@@ -32,7 +32,7 @@ func (handler DataWorkerHandler) setTickerHistoricalPrices(provider providers.Pr
 	return err
 }
 
-func (handler DataWorkerHandler) updateTickerPrices(provider providers.ProviderName, tickerIds []string) error {
+func (handler DataWorkerHandler) updateTickerPrices(provider providers_old.ProviderName, tickerIds []string) error {
 	var err error
 
 	prices, err := handler.ProviderService.FetchTickerDailyPrices(provider, tickerIds)

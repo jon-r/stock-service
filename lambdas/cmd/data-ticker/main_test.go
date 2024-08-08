@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 	"github.com/benbjohnson/clock"
-	"github.com/jon-r/stock-service/lambdas/internal/testutil"
+	"github.com/jon-r/stock-service/lambdas/internal/testutil_old"
 )
 
 func TestPollSqsQueue(t *testing.T) {
@@ -18,7 +18,7 @@ func TestPollSqsQueue(t *testing.T) {
 }
 
 func pollSqsQueueNoErrors(t *testing.T) {
-	stubber, mockServiceHandler := testutil.EnterTest(nil)
+	stubber, mockServiceHandler := testutil_old.EnterTest(nil)
 	mockClock := clock.NewMock()
 
 	mockHandler := DataTickerHandler{
@@ -58,7 +58,7 @@ func pollSqsQueueNoErrors(t *testing.T) {
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
 
-	//receiveQueueEvent(stubber, []types.Message{})
+	//receiveQueueEvent(stubber, []types_old.Message{})
 
 	testDone := make(chan bool)
 	go func() {
@@ -76,7 +76,7 @@ func pollSqsQueueNoErrors(t *testing.T) {
 
 	<-testDone
 
-	testutil.Assert(stubber, nil, nil, t)
+	testutil_old.Assert(stubber, nil, nil, t)
 }
 
 func receiveQueueEvent(stubber *testtools.AwsmStubber, messages []types.Message) {
@@ -88,15 +88,15 @@ func receiveQueueEvent(stubber *testtools.AwsmStubber, messages []types.Message)
 	queueResponse := &sqs.ReceiveMessageOutput{
 		Messages: messages,
 	}
-	stubber.Add(testutil.StubSqsReceiveMessages(expectedQueueInput, queueResponse, nil))
+	stubber.Add(testutil_old.StubSqsReceiveMessages(expectedQueueInput, queueResponse, nil))
 }
 func deleteQueueEvent(stubber *testtools.AwsmStubber, messageId string) {
-	stubber.Add(testutil.StubSqsDeleteMessage("SQS_QUEUE_URL", messageId, nil))
+	stubber.Add(testutil_old.StubSqsDeleteMessage("SQS_QUEUE_URL", messageId, nil))
 }
 
 func invokeWorkerEvent(stubber *testtools.AwsmStubber, payloadJson string) {
-	stubber.Add(testutil.StubLambdaInvoke("LAMBDA_WORKER_NAME", []byte(payloadJson), nil))
+	stubber.Add(testutil_old.StubLambdaInvoke("LAMBDA_WORKER_NAME", []byte(payloadJson), nil))
 }
 func disableRuleEvent(stubber *testtools.AwsmStubber) {
-	stubber.Add(testutil.StubEventbridgeDisableRule("EVENTBRIDGE_RULE_NAME", nil))
+	stubber.Add(testutil_old.StubEventbridgeDisableRule("EVENTBRIDGE_RULE_NAME", nil))
 }

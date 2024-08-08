@@ -9,15 +9,15 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/benbjohnson/clock"
 	"github.com/google/uuid"
-	"github.com/jon-r/stock-service/lambdas/internal/jobs"
-	"github.com/jon-r/stock-service/lambdas/internal/logging"
-	"github.com/jon-r/stock-service/lambdas/internal/providers"
-	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
-	"github.com/jon-r/stock-service/lambdas/internal/types"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
+	"github.com/jon-r/stock-service/lambdas/internal/logging_old"
+	"github.com/jon-r/stock-service/lambdas/internal/providers_old"
+	"github.com/jon-r/stock-service/lambdas/internal/scheduler_old"
+	"github.com/jon-r/stock-service/lambdas/internal/types_old"
 )
 
 type DataTickerHandler struct {
-	types.ServiceHandler
+	types_old.ServiceHandler
 	Clock clock.Clock
 	done  chan bool
 }
@@ -25,7 +25,7 @@ type DataTickerHandler struct {
 func (handler DataTickerHandler) handleQueuedJobs(ctx context.Context) {
 	// todo this might not work?
 	if handler.LogService == nil {
-		handler.LogService = logging.NewLogger(ctx)
+		handler.LogService = logging_old.NewLogger(ctx)
 	}
 	defer handler.LogService.Sync()
 
@@ -33,7 +33,7 @@ func (handler DataTickerHandler) handleQueuedJobs(ctx context.Context) {
 	go handler.checkForJobs()
 
 	// 2. for each provider have a ticker function that invokes event provider/ticker/type to the worker fn
-	go handler.invokeWorkerTicker(providers.PolygonIo, providers.PolygonIoDelay)
+	go handler.invokeWorkerTicker(providers_old.PolygonIo, providers_old.PolygonIoDelay)
 
 	// 3. Switch off after TICKER_TIMEOUT min
 	tickerTimeout, timeErr := strconv.Atoi(os.Getenv("TICKER_TIMEOUT"))
@@ -47,9 +47,9 @@ func (handler DataTickerHandler) handleQueuedJobs(ctx context.Context) {
 	//return nil // todo have the goroutines send the error here?
 }
 
-var serviceHandler = types.ServiceHandler{
-	QueueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
-	EventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
+var serviceHandler = types_old.ServiceHandler{
+	QueueService:  jobs_old.NewQueueService(jobs_old.CreateSqsClient()),
+	EventsService: scheduler_old.NewEventsService(scheduler_old.CreateEventClients()),
 	NewUuid:       uuid.NewString,
 }
 

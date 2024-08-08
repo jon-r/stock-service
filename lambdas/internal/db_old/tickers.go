@@ -1,4 +1,4 @@
-package db
+package db_old
 
 import (
 	"context"
@@ -7,11 +7,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/jon-r/stock-service/lambdas/internal/providers"
+	"github.com/jon-r/stock-service/lambdas/internal/providers_old"
 	"go.uber.org/zap"
 )
 
-func (db DatabaseRepository) NewTickerItem(log *zap.SugaredLogger, params providers.NewTickerParams) error {
+func (db DatabaseRepository) NewTickerItem(log *zap.SugaredLogger, params providers_old.NewTickerParams) error {
 	var err error
 
 	ticker := TickerItem{
@@ -40,7 +40,7 @@ func (db DatabaseRepository) NewTickerItem(log *zap.SugaredLogger, params provid
 	return err
 }
 
-func (db DatabaseRepository) SetTickerDescription(log *zap.SugaredLogger, tickerId string, description *providers.TickerDescription) error {
+func (db DatabaseRepository) SetTickerDescription(log *zap.SugaredLogger, tickerId string, description *providers_old.TickerDescription) error {
 	var err error
 
 	var item = StocksTableItem{}
@@ -77,7 +77,7 @@ func (db DatabaseRepository) SetTickerDescription(log *zap.SugaredLogger, ticker
 }
 
 // todo maybe move this elsewhere? also can the generic be added? maybe use AttributeValue map
-func mapPricesToStockItems(prices []providers.TickerPrices) []PriceItem {
+func mapPricesToStockItems(prices []providers_old.TickerPrices) []PriceItem {
 	priceItems := make([]PriceItem, len(prices))
 
 	for i, price := range prices {
@@ -94,7 +94,7 @@ func mapPricesToStockItems(prices []providers.TickerPrices) []PriceItem {
 	return priceItems
 }
 
-func (db DatabaseRepository) AddTickerPrices(log *zap.SugaredLogger, prices *[]providers.TickerPrices) error {
+func (db DatabaseRepository) AddTickerPrices(log *zap.SugaredLogger, prices *[]providers_old.TickerPrices) error {
 	var err error
 	var item map[string]types.AttributeValue
 
@@ -146,8 +146,8 @@ func (db DatabaseRepository) AddTickerPrices(log *zap.SugaredLogger, prices *[]p
 	return err
 }
 
-func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error) {
-	var tickers []providers.TickerItemStub
+func (db DatabaseRepository) GetAllTickers() ([]providers_old.TickerItemStub, error) {
+	var tickers []providers_old.TickerItemStub
 	var err error
 	var response *dynamodb.ScanOutput
 
@@ -174,7 +174,7 @@ func (db DatabaseRepository) GetAllTickers() ([]providers.TickerItemStub, error)
 		if err != nil {
 			break
 		} else {
-			var tickerPage []providers.TickerItemStub
+			var tickerPage []providers_old.TickerItemStub
 			err = attributevalue.UnmarshalListOfMaps(response.Items, &tickerPage)
 
 			if err != nil {

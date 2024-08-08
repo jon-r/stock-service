@@ -5,21 +5,21 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/google/uuid"
-	"github.com/jon-r/stock-service/lambdas/internal/db"
-	"github.com/jon-r/stock-service/lambdas/internal/jobs"
-	"github.com/jon-r/stock-service/lambdas/internal/logging"
-	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
-	"github.com/jon-r/stock-service/lambdas/internal/types"
+	"github.com/jon-r/stock-service/lambdas/internal/db_old"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
+	"github.com/jon-r/stock-service/lambdas/internal/logging_old"
+	"github.com/jon-r/stock-service/lambdas/internal/scheduler_old"
+	"github.com/jon-r/stock-service/lambdas/internal/types_old"
 )
 
 type DataManagerHandler struct {
-	types.ServiceHandler
+	types_old.ServiceHandler
 }
 
 func (handler DataManagerHandler) updateAllTickers(ctx context.Context) error {
 	// todo this might not work?
 	if handler.LogService == nil {
-		handler.LogService = logging.NewLogger(ctx)
+		handler.LogService = logging_old.NewLogger(ctx)
 	}
 	defer handler.LogService.Sync()
 
@@ -38,14 +38,14 @@ func (handler DataManagerHandler) updateAllTickers(ctx context.Context) error {
 		handler.LogService.Fatal("No tickers found")
 	}
 
-	// 2. convert the jobs into update actions
-	jobActions := jobs.MakeUpdateJobs(tickers, handler.NewUuid)
+	// 2. convert the jobs_old into update actions
+	jobActions := jobs_old.MakeUpdateJobs(tickers, handler.NewUuid)
 
-	// 3. add queue jobs for ticker prices + dividends
+	// 3. add queue jobs_old for ticker prices + dividends
 	err = handler.QueueService.AddJobs(*jobActions, handler.NewUuid)
 
 	if err != nil {
-		handler.LogService.Fatalw("Failed to add jobs",
+		handler.LogService.Fatalw("Failed to add jobs_old",
 			"error", err,
 		)
 	} else {
@@ -54,7 +54,7 @@ func (handler DataManagerHandler) updateAllTickers(ctx context.Context) error {
 		)
 	}
 
-	// 4. enable the jobs ticker
+	// 4. enable the jobs_old ticker
 	err = handler.EventsService.StartTickerScheduler()
 
 	if err != nil {
@@ -66,10 +66,10 @@ func (handler DataManagerHandler) updateAllTickers(ctx context.Context) error {
 	return err
 }
 
-var serviceHandler = types.ServiceHandler{
-	QueueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
-	EventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
-	DbService:     db.NewDatabaseService(db.CreateDatabaseClient()),
+var serviceHandler = types_old.ServiceHandler{
+	QueueService:  jobs_old.NewQueueService(jobs_old.CreateSqsClient()),
+	EventsService: scheduler_old.NewEventsService(scheduler_old.CreateEventClients()),
+	DbService:     db_old.NewDatabaseService(db_old.CreateDatabaseClient()),
 	NewUuid:       uuid.NewString,
 }
 

@@ -1,6 +1,6 @@
-package db
+package db_old
 
-import "github.com/jon-r/stock-service/lambdas/internal/providers"
+import "github.com/jon-r/stock-service/lambdas/internal/providers_old"
 
 type KeyType string
 
@@ -22,12 +22,12 @@ type StocksTableItem struct {
 
 type TickerItem struct {
 	StocksTableItem
-	Provider    providers.ProviderName
-	Description providers.TickerDescription
+	Provider    providers_old.ProviderName
+	Description providers_old.TickerDescription
 }
 
 type PriceItem struct {
 	StocksTableItem
-	Price providers.TickerPrices
+	Price providers_old.TickerPrices
 	Date  string `dynamodbav:"DT"`
 }

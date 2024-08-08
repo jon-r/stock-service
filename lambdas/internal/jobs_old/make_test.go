@@ -1,9 +1,9 @@
-package jobs
+package jobs_old
 
 import (
 	"testing"
 
-	"github.com/jon-r/stock-service/lambdas/internal/providers"
+	"github.com/jon-r/stock-service/lambdas/internal/providers_old"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,11 +18,11 @@ func mockUuid() string {
 
 func TestMakeCreateJobs(t *testing.T) {
 	tickerId := "EXAMPLE"
-	actual := MakeCreateJobs(providers.PolygonIo, tickerId, mockUuid)
+	actual := MakeCreateJobs(providers_old.PolygonIo, tickerId, mockUuid)
 
 	expected := []JobAction{
-		{JobId: "test", Provider: providers.PolygonIo, Type: LoadTickerDescription, TickerId: tickerId},
-		{JobId: "test", Provider: providers.PolygonIo, Type: LoadHistoricalPrices, TickerId: tickerId},
+		{JobId: "test", Provider: providers_old.PolygonIo, Type: LoadTickerDescription, TickerId: tickerId},
+		{JobId: "test", Provider: providers_old.PolygonIo, Type: LoadHistoricalPrices, TickerId: tickerId},
 	}
 
 	assert.Equal(t, actual, &expected)

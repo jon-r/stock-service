@@ -9,9 +9,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/jon-r/stock-service/lambdas/internal/db"
-	"github.com/jon-r/stock-service/lambdas/internal/providers"
-	"github.com/jon-r/stock-service/lambdas/internal/testutil"
+	"github.com/jon-r/stock-service/lambdas/internal/db_old"
+	"github.com/jon-r/stock-service/lambdas/internal/providers_old"
+	"github.com/jon-r/stock-service/lambdas/internal/testutil_old"
 )
 
 func TestHandleRequest(t *testing.T) {
@@ -21,17 +21,17 @@ func TestHandleRequest(t *testing.T) {
 
 // todo break this up to have tests that hit every error
 func handleRequest(raiseErr error, t *testing.T) {
-	stubber, mockServiceHandler := testutil.EnterTest(&testutil.TestSettings{
+	stubber, mockServiceHandler := testutil_old.EnterTest(&testutil_old.TestSettings{
 		MuteErrors: raiseErr != nil,
 	})
 	mockHandler := ApiStockHandler{*mockServiceHandler}
 
-	expectedTicker := db.TickerItem{
-		StocksTableItem: db.StocksTableItem{Id: "T#AMZN", Sort: "T#AMZN"},
-		Provider:        providers.PolygonIo,
+	expectedTicker := db_old.TickerItem{
+		StocksTableItem: db_old.StocksTableItem{Id: "T#AMZN", Sort: "T#AMZN"},
+		Provider:        providers_old.PolygonIo,
 	}
 	item, _ := attributevalue.MarshalMap(expectedTicker)
-	stubber.Add(testutil.StubDynamoDbAddTicker("DB_STOCKS_TABLE_NAME", item, raiseErr))
+	stubber.Add(testutil_old.StubDynamoDbAddTicker("DB_STOCKS_TABLE_NAME", item, raiseErr))
 
 	expectedQueueItems := []types.SendMessageBatchRequestEntry{
 		{
@@ -43,17 +43,17 @@ func handleRequest(raiseErr error, t *testing.T) {
 			MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`),
 		},
 	}
-	stubber.Add(testutil.StubSqsSendMessageBatch("SQS_QUEUE_URL", expectedQueueItems, raiseErr))
+	stubber.Add(testutil_old.StubSqsSendMessageBatch("SQS_QUEUE_URL", expectedQueueItems, raiseErr))
 
 	expectedRule := "EVENTBRIDGE_RULE_NAME"
-	stubber.Add(testutil.StubEventbridgeEnableRule(expectedRule, raiseErr))
+	stubber.Add(testutil_old.StubEventbridgeEnableRule(expectedRule, raiseErr))
 	expectedLambda := "LAMBDA_TICKER_NAME"
-	stubber.Add(testutil.StubLambdaInvoke(expectedLambda, nil, raiseErr))
+	stubber.Add(testutil_old.StubLambdaInvoke(expectedLambda, nil, raiseErr))
 
 	var postEvent events.APIGatewayProxyRequest
-	testutil.ReadTestJson("./testevents/api-stocks_POST.json", &postEvent)
+	testutil_old.ReadTestJson("./testevents/api-stocks_POST.json", &postEvent)
 
 	_, err := mockHandler.handleRequest(context.TODO(), postEvent)
 
-	testutil.Assert(stubber, err, raiseErr, t)
+	testutil_old.Assert(stubber, err, raiseErr, t)
 }

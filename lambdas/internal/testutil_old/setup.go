@@ -1,4 +1,4 @@
-package testutil
+package testutil_old
 
 import (
 	"os"
@@ -9,10 +9,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
-	"github.com/jon-r/stock-service/lambdas/internal/db"
-	"github.com/jon-r/stock-service/lambdas/internal/jobs"
-	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
-	"github.com/jon-r/stock-service/lambdas/internal/types"
+	"github.com/jon-r/stock-service/lambdas/internal/db_old"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
+	"github.com/jon-r/stock-service/lambdas/internal/scheduler_old"
+	"github.com/jon-r/stock-service/lambdas/internal/types_old"
 	"go.uber.org/zap"
 )
 
@@ -20,7 +20,7 @@ type TestSettings struct {
 	MuteErrors bool
 }
 
-func EnterTest(settings *TestSettings) (*testtools.AwsmStubber, *types.ServiceHandler) {
+func EnterTest(settings *TestSettings) (*testtools.AwsmStubber, *types_old.ServiceHandler) {
 	if settings == nil {
 		settings = &TestSettings{MuteErrors: false}
 	}
@@ -48,10 +48,10 @@ func EnterTest(settings *TestSettings) (*testtools.AwsmStubber, *types.ServiceHa
 		mockLogger = zap.Must(zap.NewDevelopment())
 	}
 
-	mockHandler := &types.ServiceHandler{
-		QueueService:  jobs.NewQueueService(mockSqsClient),
-		EventsService: scheduler.NewEventsService(mockEventsClient, mockLambdaClient),
-		DbService:     db.NewDatabaseService(mockDbClient),
+	mockHandler := &types_old.ServiceHandler{
+		QueueService:  jobs_old.NewQueueService(mockSqsClient),
+		EventsService: scheduler_old.NewEventsService(mockEventsClient, mockLambdaClient),
+		DbService:     db_old.NewDatabaseService(mockDbClient),
 		LogService:    mockLogger.Sugar(),
 		NewUuid:       func() string { return "TEST_ID" },
 	}

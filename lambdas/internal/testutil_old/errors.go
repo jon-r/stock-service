@@ -1,4 +1,4 @@
-package testutil
+package testutil_old
 
 import (
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"

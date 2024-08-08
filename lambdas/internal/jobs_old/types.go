@@ -1,6 +1,6 @@
-package jobs
+package jobs_old
 
-import "github.com/jon-r/stock-service/lambdas/internal/providers"
+import "github.com/jon-r/stock-service/lambdas/internal/providers_old"
 
 type JobTypes string
 
@@ -17,7 +17,7 @@ const (
 
 type JobAction struct {
 	JobId    string
-	Provider providers.ProviderName
+	Provider providers_old.ProviderName
 	Type     JobTypes
 	TickerId string
 	Attempts int

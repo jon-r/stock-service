@@ -7,9 +7,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	dbTypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/jon-r/stock-service/lambdas/internal/jobs"
-	"github.com/jon-r/stock-service/lambdas/internal/providers"
-	"github.com/jon-r/stock-service/lambdas/internal/testutil"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
+	"github.com/jon-r/stock-service/lambdas/internal/providers_old"
+	"github.com/jon-r/stock-service/lambdas/internal/testutil_old"
 )
 
 func TestHandleJobAction(t *testing.T) {
@@ -19,10 +19,10 @@ func TestHandleJobAction(t *testing.T) {
 }
 
 func handleSetTickerDescriptionNoErrors(t *testing.T) {
-	stubber, mockServiceHander := testutil.EnterTest(nil)
+	stubber, mockServiceHander := testutil_old.EnterTest(nil)
 	mockHandler := DataWorkerHandler{
 		*mockServiceHander,
-		providers.NewMockProviderService(),
+		providers_old.NewMockProviderService(),
 	}
 
 	expectedUpdate := &dynamodb.UpdateItemInput{
@@ -46,24 +46,24 @@ func handleSetTickerDescriptionNoErrors(t *testing.T) {
 		},
 		UpdateExpression: aws.String("SET #0 = :0\n"),
 	}
-	stubber.Add(testutil.StubDynamoDbUpdate(expectedUpdate, nil))
+	stubber.Add(testutil_old.StubDynamoDbUpdate(expectedUpdate, nil))
 
-	job := jobs.JobAction{
+	job := jobs_old.JobAction{
 		JobId:    "TestJob",
-		Provider: providers.PolygonIo,
-		Type:     jobs.LoadTickerDescription,
+		Provider: providers_old.PolygonIo,
+		Type:     jobs_old.LoadTickerDescription,
 		TickerId: "TestTicker",
 		Attempts: 0,
 	}
 	err := mockHandler.handleJobEvent(context.TODO(), job)
 
-	testutil.Assert(stubber, err, nil, t)
+	testutil_old.Assert(stubber, err, nil, t)
 }
 func handleSetHistoricalPricesNoErrors(t *testing.T) {
-	stubber, mockServiceHander := testutil.EnterTest(nil)
+	stubber, mockServiceHander := testutil_old.EnterTest(nil)
 	mockHandler := DataWorkerHandler{
 		*mockServiceHander,
-		providers.NewMockProviderService(),
+		providers_old.NewMockProviderService(),
 	}
 
 	expectedInput := &dynamodb.BatchWriteItemInput{
@@ -104,26 +104,26 @@ func handleSetHistoricalPricesNoErrors(t *testing.T) {
 			},
 		},
 	}
-	stubber.Add(testutil.StubDynamoDbBatchWriteTicker(expectedInput, nil))
+	stubber.Add(testutil_old.StubDynamoDbBatchWriteTicker(expectedInput, nil))
 
-	job := jobs.JobAction{
+	job := jobs_old.JobAction{
 		JobId:    "TestJob",
-		Provider: providers.PolygonIo,
-		Type:     jobs.LoadHistoricalPrices,
+		Provider: providers_old.PolygonIo,
+		Type:     jobs_old.LoadHistoricalPrices,
 		TickerId: "TestTicker",
 		Attempts: 0,
 	}
 
 	err := mockHandler.handleJobEvent(context.TODO(), job)
 
-	testutil.Assert(stubber, err, nil, t)
+	testutil_old.Assert(stubber, err, nil, t)
 }
 
 func handleUpdatePricesNoErrors(t *testing.T) {
-	stubber, mockServiceHander := testutil.EnterTest(nil)
+	stubber, mockServiceHander := testutil_old.EnterTest(nil)
 	mockHandler := DataWorkerHandler{
 		*mockServiceHander,
-		providers.NewMockProviderService(),
+		providers_old.NewMockProviderService(),
 	}
 
 	expectedInput := &dynamodb.BatchWriteItemInput{
@@ -164,16 +164,16 @@ func handleUpdatePricesNoErrors(t *testing.T) {
 			},
 		},
 	}
-	stubber.Add(testutil.StubDynamoDbBatchWriteTicker(expectedInput, nil))
+	stubber.Add(testutil_old.StubDynamoDbBatchWriteTicker(expectedInput, nil))
 
-	job := jobs.JobAction{
+	job := jobs_old.JobAction{
 		JobId:    "TestJob",
-		Provider: providers.PolygonIo,
-		Type:     jobs.UpdatePrices,
+		Provider: providers_old.PolygonIo,
+		Type:     jobs_old.UpdatePrices,
 		TickerId: "TestTicker1,TestTicker2",
 		Attempts: 0,
 	}
 	err := mockHandler.handleJobEvent(context.TODO(), job)
 
-	testutil.Assert(stubber, err, nil, t)
+	testutil_old.Assert(stubber, err, nil, t)
 }

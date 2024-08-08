@@ -9,11 +9,11 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/google/uuid"
-	"github.com/jon-r/stock-service/lambdas/internal/db"
-	"github.com/jon-r/stock-service/lambdas/internal/jobs"
-	"github.com/jon-r/stock-service/lambdas/internal/logging"
-	"github.com/jon-r/stock-service/lambdas/internal/scheduler"
-	"github.com/jon-r/stock-service/lambdas/internal/types"
+	"github.com/jon-r/stock-service/lambdas/internal/db_old"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
+	"github.com/jon-r/stock-service/lambdas/internal/logging_old"
+	"github.com/jon-r/stock-service/lambdas/internal/scheduler_old"
+	"github.com/jon-r/stock-service/lambdas/internal/types_old"
 )
 
 type ResponseBody struct {
@@ -22,12 +22,12 @@ type ResponseBody struct {
 }
 
 type ApiStockHandler struct {
-	types.ServiceHandler
+	types_old.ServiceHandler
 }
 
 func (handler ApiStockHandler) handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	if handler.LogService == nil { // todo this might not work?
-		handler.LogService = logging.NewLogger(ctx)
+		handler.LogService = logging_old.NewLogger(ctx)
 	}
 	defer handler.LogService.Sync()
 
@@ -72,10 +72,10 @@ func clientSuccess(message string) *events.APIGatewayProxyResponse {
 	}
 }
 
-var serviceHandler = types.ServiceHandler{
-	QueueService:  jobs.NewQueueService(jobs.CreateSqsClient()),
-	EventsService: scheduler.NewEventsService(scheduler.CreateEventClients()),
-	DbService:     db.NewDatabaseService(db.CreateDatabaseClient()),
+var serviceHandler = types_old.ServiceHandler{
+	QueueService:  jobs_old.NewQueueService(jobs_old.CreateSqsClient()),
+	EventsService: scheduler_old.NewEventsService(scheduler_old.CreateEventClients()),
+	DbService:     db_old.NewDatabaseService(db_old.CreateDatabaseClient()),
 	NewUuid:       uuid.NewString,
 }
 

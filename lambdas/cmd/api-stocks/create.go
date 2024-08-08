@@ -6,15 +6,15 @@ import (
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/jon-r/stock-service/lambdas/internal/jobs"
-	"github.com/jon-r/stock-service/lambdas/internal/providers"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
+	"github.com/jon-r/stock-service/lambdas/internal/providers_old"
 )
 
 func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var err error
 
 	// 1. get ticket and provider from post request body
-	var params providers.NewTickerParams
+	var params providers_old.NewTickerParams
 	err = json.Unmarshal([]byte(request.Body), &params)
 
 	if err != nil {
@@ -37,10 +37,10 @@ func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyReques
 	}
 
 	// 3. Create new job queue item
-	newItemJobs := jobs.MakeCreateJobs(params.Provider, params.TickerId, handler.NewUuid)
+	newItemJobs := jobs_old.MakeCreateJobs(params.Provider, params.TickerId, handler.NewUuid)
 
-	handler.LogService.Infow("Add jobs to the queue",
-		"jobs", *newItemJobs,
+	handler.LogService.Infow("Add jobs_old to the queue",
+		"jobs_old", *newItemJobs,
 	)
 	err = handler.QueueService.AddJobs(*newItemJobs, handler.NewUuid)
 
@@ -52,7 +52,7 @@ func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyReques
 		return clientError(http.StatusInternalServerError, err)
 	}
 
-	// 4. enable the jobs ticker
+	// 4. enable the jobs_old ticker
 	err = handler.EventsService.StartTickerScheduler()
 
 	if err != nil {

@@ -1,4 +1,4 @@
-package providers
+package providers_old
 
 import (
 	"github.com/polygon-io/client-go/rest/models"

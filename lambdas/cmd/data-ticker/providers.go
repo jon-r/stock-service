@@ -3,21 +3,21 @@ package main
 import (
 	"time"
 
-	"github.com/jon-r/stock-service/lambdas/internal/jobs"
-	"github.com/jon-r/stock-service/lambdas/internal/providers"
+	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
+	"github.com/jon-r/stock-service/lambdas/internal/providers_old"
 )
 
-var providerQueues = map[providers.ProviderName]chan jobs.JobQueueItem{
-	providers.PolygonIo: make(chan jobs.JobQueueItem, 20),
+var providerQueues = map[providers_old.ProviderName]chan jobs_old.JobQueueItem{
+	providers_old.PolygonIo: make(chan jobs_old.JobQueueItem, 20),
 }
 
-func allocateJobs(jobList *[]jobs.JobQueueItem) {
+func allocateJobs(jobList *[]jobs_old.JobQueueItem) {
 	for _, job := range *jobList {
 		providerQueues[job.Action.Provider] <- job
 	}
 }
 
-func (handler DataTickerHandler) invokeWorkerTicker(provider providers.ProviderName, delay providers.SettingsDelay) {
+func (handler DataTickerHandler) invokeWorkerTicker(provider providers_old.ProviderName, delay providers_old.SettingsDelay) {
 	var err error
 
 	duration := time.Duration(delay) * time.Second
@@ -49,7 +49,7 @@ func (handler DataTickerHandler) invokeWorkerTicker(provider providers.ProviderN
 					}
 				}
 			default:
-				// no jobs for this provider
+				// no jobs_old for this provider
 			}
 		}
 	}
