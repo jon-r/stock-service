@@ -3,70 +3,73 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
-	"github.com/jon-r/stock-service/lambdas/internal/providers_old"
+	"github.com/jon-r/stock-service/lambdas/internal/models/job"
+	"github.com/jon-r/stock-service/lambdas/internal/models/ticker"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/response"
 )
 
-func (handler ApiStockHandler) createTicker(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func (h *handler) createTicker(req events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var err error
 
-	// 1. get ticket and provider from post request body
-	var params providers_old.NewTickerParams
-	err = json.Unmarshal([]byte(request.Body), &params)
+	// 1. get ticker and provider from post request body
+	var params ticker.NewTickerParams
+	err = json.Unmarshal([]byte(req.Body), &params)
 
 	if err != nil {
-		handler.LogService.Errorw("Request error",
-			"status", http.StatusBadRequest,
-			"message", err,
-		)
-		return clientError(http.StatusBadRequest, err)
+		h.log.Errorw("error unmarshalling ticker", "error", err)
+		return response.StatusBadRequest(err)
 	}
 
 	// 2. enter basic content to the database
-	err = handler.DbService.NewTickerItem(handler.LogService, params)
+	newTicker := ticker.NewTickerEntity(params)
+	h.log.Debugw("new ticker", "params", params, "item", newTicker)
+	_, err = h.dbRepository.AddOne(ticker.TableName(), newTicker)
 
 	if err != nil {
-		handler.LogService.Errorw("Request error",
-			"status", http.StatusInternalServerError,
-			"message", err,
-		)
-		return clientError(http.StatusInternalServerError, err)
+		h.log.Errorw("error adding ticker", "error", err)
+		return response.StatusServerError(err)
 	}
 
-	// 3. Create new job queue item
-	newItemJobs := jobs_old.MakeCreateJobs(params.Provider, params.TickerId, handler.NewUuid)
+	// 3. Create new job queue items
+	newTickerJobs := []job.Job{
+		*job.NewJob(job.LoadTickerDescription, h.idGen(), params.Provider, params.TickerId),
+		*job.NewJob(job.LoadHistoricalPrices, h.idGen(), params.Provider, params.TickerId),
+	}
 
-	handler.LogService.Infow("Add jobs_old to the queue",
-		"jobs_old", *newItemJobs,
+	h.log.Debugw("add jobs to the queue",
+		"jobs", newTickerJobs,
 	)
-	err = handler.QueueService.AddJobs(*newItemJobs, handler.NewUuid)
+	_, err = h.queueBroker.SendMessages(job.QueueUrl(), newTickerJobs)
 
 	if err != nil {
-		handler.LogService.Errorw("Request error",
-			"status", http.StatusInternalServerError,
-			"message", err,
-		)
-		return clientError(http.StatusInternalServerError, err)
+		h.log.Errorw("error sending messages", "error", err)
+		return response.StatusServerError(err)
 	}
 
-	// 4. enable the jobs_old ticker
-	err = handler.EventsService.StartTickerScheduler()
+	// 4. enable the jobs ticker
+	ruleName := os.Getenv("EVENTBRIDGE_RULE_NAME")
+	_, err = h.eventsScheduler.EnableRule(ruleName)
 
 	if err != nil {
-		handler.LogService.Errorw("Request error",
-			"status", http.StatusInternalServerError,
-			"message", err,
-		)
-		return clientError(http.StatusInternalServerError, err)
+		h.log.Errorw("error enabling rule", "error", err)
+		return response.StatusServerError(err)
 	}
 
-	return clientSuccess(fmt.Sprintf("Success: ticker '%s' queued", params.TickerId)), nil
+	// 5. manually trigger the lambda
+	functionName := os.Getenv("LAMBDA_TICKER_NAME")
+	_, err = h.eventsScheduler.InvokeFunction(functionName, nil)
+
+	if err != nil {
+		h.log.Errorw("error invoking function but continuing anyway", "error", err)
+	}
+
+	return response.StatusOK(fmt.Sprintf("Success: ticker '%s' queued", params.TickerId))
 }
 
-func (handler ApiStockHandler) create(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func (h *handler) handlePost(req events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	// todo would be switch if multiple endpoints
-	return handler.createTicker(request)
+	return h.createTicker(req)
 }

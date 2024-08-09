@@ -1,4 +1,4 @@
-package http
+package response
 
 import (
 	"encoding/json"
@@ -7,24 +7,24 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 )
 
-type ResponseBody struct {
+type Body struct {
 	Message string `json:"message"`
 	Status  string `json:"status"`
 }
 
-func response(status int, message string) events.APIGatewayProxyResponse {
-	body, _ := json.Marshal(ResponseBody{
+func response(status int, message string) *events.APIGatewayProxyResponse {
+	body, _ := json.Marshal(Body{
 		Message: message,
 		Status:  http.StatusText(status),
 	})
 
-	return events.APIGatewayProxyResponse{
+	return &events.APIGatewayProxyResponse{
 		StatusCode: status,
 		Body:       string(body),
 	}
 }
 
-func StatusOK(message string) (events.APIGatewayProxyResponse, error) {
+func StatusOK(message string) (*events.APIGatewayProxyResponse, error) {
 	if message == "" {
 		message = http.StatusText(http.StatusOK)
 	}
@@ -32,14 +32,14 @@ func StatusOK(message string) (events.APIGatewayProxyResponse, error) {
 	return response(http.StatusOK, message), nil
 }
 
-func StatusMethodNotAllowed(err error) (events.APIGatewayProxyResponse, error) {
+func StatusMethodNotAllowed(err error) (*events.APIGatewayProxyResponse, error) {
 	return response(http.StatusMethodNotAllowed, "Method not allowed"), err
 }
 
-func StatusBadRequest(err error) (events.APIGatewayProxyResponse, error) {
+func StatusBadRequest(err error) (*events.APIGatewayProxyResponse, error) {
 	return response(http.StatusBadRequest, "Bad request"), err
 }
 
-func StatusServerError(err error) (events.APIGatewayProxyResponse, error) {
+func StatusServerError(err error) (*events.APIGatewayProxyResponse, error) {
 	return response(http.StatusInternalServerError, "Internal server error"), err
 }

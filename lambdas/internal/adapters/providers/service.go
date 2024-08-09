@@ -46,7 +46,7 @@ func (api *api) GetDailyPrices(providerName provider.Name, tickerIds []string) (
 	}
 }
 
-// todo can mock the http client for tests?
+// todo can mock the response client for tests?
 func NewService(httpClient *http.Client) Service {
 	return &api{
 		polygon: newPolygonAPI(httpClient),

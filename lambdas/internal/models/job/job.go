@@ -7,7 +7,7 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 )
 
-func NewJob(id string, provider provider.Name, tickerId string, jobType Types) *Job {
+func NewJob(jobType Types, id string, provider provider.Name, tickerId string) *Job {
 	return &Job{
 		JobId:    id,
 		Provider: provider,
@@ -17,7 +17,7 @@ func NewJob(id string, provider provider.Name, tickerId string, jobType Types) *
 	}
 }
 
-func NewBulkJob(id string, provider provider.Name, tickerIds []string, jobType Types) *Job {
+func NewBulkJob(jobType Types, id string, provider provider.Name, tickerIds []string) *Job {
 	return &Job{
 		JobId:    id,
 		Provider: provider,
@@ -27,9 +27,9 @@ func NewBulkJob(id string, provider provider.Name, tickerIds []string, jobType T
 	}
 }
 
-func (j *Job) GetQueueUrl() string {
+func QueueUrl() string {
 	return os.Getenv("SQS_QUEUE_URL")
 }
-func (j *Job) GetDLQUrl() string {
+func DLQUrl() string {
 	return os.Getenv("SQS_DLQ_URL")
 }

@@ -24,6 +24,6 @@ func NewPriceEntity(prices TickerPrices) *Entity {
 	return entity
 }
 
-func (t *Entity) TableName() string {
-	return os.Getenv("STOCK_TICKER_TABLE_NAME")
+func TableName() string {
+	return os.Getenv("DB_STOCKS_TABLE_NAME")
 }
