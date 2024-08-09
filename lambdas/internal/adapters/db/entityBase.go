@@ -26,9 +26,6 @@ type KeyType string
 
 // todo move these to separate entity sub-packages
 const (
-	KeyTicker         KeyType = "T#"
-	KeyTickerPrice    KeyType = "P#"
-	KeyTickerId       KeyType = "T#"
 	KeyTickerDividend KeyType = "D#"
 
 	KeyUser        KeyType = "U#"
@@ -36,7 +33,9 @@ const (
 	KeyUserTxEvent KeyType = "E#"
 )
 
-func (item *EntityBase) GetKey() map[string]types.AttributeValue {
+type EntityKey map[string]types.AttributeValue
+
+func (item *EntityBase) GetKey() EntityKey {
 	id, err := attributevalue.Marshal(item.Id)
 	if err != nil {
 		panic(err)
@@ -45,7 +44,7 @@ func (item *EntityBase) GetKey() map[string]types.AttributeValue {
 	if err != nil {
 		panic(err)
 	}
-	return map[string]types.AttributeValue{"PK": id, "SK": sort}
+	return EntityKey{"PK": id, "SK": sort}
 }
 
 func (item *EntityBase) SetKey(partitionKeyType KeyType, partitionId string, sortKeyType KeyType, sortId string) {

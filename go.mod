@@ -19,7 +19,6 @@ require (
 	github.com/benbjohnson/clock v1.3.5
 	github.com/google/uuid v1.6.0
 	github.com/polygon-io/client-go v1.16.4
-	github.com/samber/lo v1.39.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
 )
@@ -60,7 +59,6 @@ require (
 	github.com/yuin/goldmark v1.4.13 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
-	golang.org/x/exp v0.0.0-20220414153411-bcd21879b8fd // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.24.0 // indirect

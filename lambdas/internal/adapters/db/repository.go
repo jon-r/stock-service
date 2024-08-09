@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/array"
 )
 
 type database struct {
@@ -16,10 +17,9 @@ type database struct {
 
 type Repository interface {
 	HealthCheck() bool
-	Create(tableName string, entity interface{}) (*dynamodb.PutItemOutput, error)
-	// todo can type key?
-	Update(tableName string, key map[string]types.AttributeValue, update expression.Expression) (*dynamodb.UpdateItemOutput, error)
+	AddOne(tableName string, entity interface{}) (*dynamodb.PutItemOutput, error)
 	AddMany(tableName string, entities interface{}) (int, error)
+	Update(tableName string, key EntityKey, update expression.Expression) (*dynamodb.UpdateItemOutput, error)
 	GetMany(tableName string, query expression.Expression) ([]map[string]types.AttributeValue, error)
 }
 
@@ -30,7 +30,7 @@ func (db *database) HealthCheck() bool {
 	return err == nil
 }
 
-func (db *database) Create(tableName string, entity interface{}) (*dynamodb.PutItemOutput, error) {
+func (db *database) AddOne(tableName string, entity interface{}) (*dynamodb.PutItemOutput, error) {
 	av, err := attributevalue.MarshalMap(entity)
 
 	if err != nil {
@@ -45,22 +45,10 @@ func (db *database) Create(tableName string, entity interface{}) (*dynamodb.PutI
 	return db.client.PutItem(context.TODO(), &input)
 }
 
-func (db *database) Update(tableName string, key map[string]types.AttributeValue, update expression.Expression) (*dynamodb.UpdateItemOutput, error) {
-	input := dynamodb.UpdateItemInput{
-		TableName:                 aws.String(tableName),
-		Key:                       key,
-		ExpressionAttributeNames:  update.Names(),
-		ExpressionAttributeValues: update.Values(),
-		UpdateExpression:          update.Update(),
-	}
-
-	return db.client.UpdateItem(context.TODO(), &input)
-}
-
 func (db *database) AddMany(tableName string, entities interface{}) (int, error) {
 	var err error
 	var data map[string]types.AttributeValue
-	slice := unpackArray(entities)
+	slice := array.UnpackArray(entities)
 
 	items := make([]map[string]types.AttributeValue, len(slice))
 	for i, entity := range slice {
@@ -100,6 +88,18 @@ func (db *database) AddMany(tableName string, entities interface{}) (int, error)
 	}
 
 	return written, nil
+}
+
+func (db *database) Update(tableName string, key EntityKey, update expression.Expression) (*dynamodb.UpdateItemOutput, error) {
+	input := dynamodb.UpdateItemInput{
+		TableName:                 aws.String(tableName),
+		Key:                       key,
+		ExpressionAttributeNames:  update.Names(),
+		ExpressionAttributeValues: update.Values(),
+		UpdateExpression:          update.Update(),
+	}
+
+	return db.client.UpdateItem(context.TODO(), &input)
 }
 
 func (db *database) GetMany(tableName string, query expression.Expression) ([]map[string]types.AttributeValue, error) {

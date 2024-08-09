@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jon-r/stock-service/lambdas/internal/utils/array"
 	polygon "github.com/polygon-io/client-go/rest"
 	"github.com/polygon-io/client-go/rest/models"
-	"github.com/samber/lo"
 )
 
 var client = polygon.New(os.Getenv("POLYGON_API_KEY"))
@@ -95,7 +95,7 @@ func fetchPolygonDailyPrices(tickerIds []string) (*[]TickerPrices, error) {
 	var prices []TickerPrices
 
 	for _, tickerId := range tickerIds {
-		item, exists := lo.Find(res.Results, func(price models.Agg) bool {
+		item, exists := array.Find(res.Results, func(price models.Agg) bool {
 			return price.Ticker == tickerId
 		})
 		if exists {
