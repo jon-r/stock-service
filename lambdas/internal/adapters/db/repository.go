@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -122,6 +123,10 @@ func (db *database) GetMany(tableName string, query expression.Expression) ([]ma
 		} else {
 			items = append(items, response.Items...)
 		}
+	}
+
+	if len(items) == 0 {
+		return items, fmt.Errorf("no items found")
 	}
 
 	return items, err

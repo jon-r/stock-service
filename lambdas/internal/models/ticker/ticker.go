@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-func NewTickerEntity(params NewTickerParams) *Entity {
+func NewTickerEntity(params *NewTickerParams) *Entity {
 	entity := &Entity{
 		Provider: params.Provider,
 	}
@@ -16,33 +17,20 @@ func NewTickerEntity(params NewTickerParams) *Entity {
 	return entity
 }
 
-func ParamsFromJsonString(jsonString string) (NewTickerParams, error) {
+func NewParamsFromJsonString(jsonString string) (*NewTickerParams, error) {
 	var params NewTickerParams
 	err := json.Unmarshal([]byte(jsonString), &params)
 
-	return params, err
+	return &params, err
 }
 
-func NewFromJsonString(jsonString string) (*Entity, error) {
-	var params NewTickerParams
-	err := json.Unmarshal([]byte(jsonString), &params)
+func NewStubsFromDynamoDb(entities []map[string]types.AttributeValue) (*[]EntityStub, error) {
+	var tickers []EntityStub
+	err := attributevalue.UnmarshalListOfMaps(entities, &tickers)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return NewTickerEntity(params), nil
+	return &tickers, err
 }
 
 func TableName() string {
 	return os.Getenv("DB_STOCKS_TABLE_NAME")
-}
-
-func NewSelectAllQuery() (expression.Expression, error) {
-	filterEx := expression.Name("SK").BeginsWith(string(KeyTickerId))
-	projEx := expression.NamesList(
-		expression.Name("SK"), expression.Name("Provider"),
-	)
-
-	return expression.NewBuilder().WithFilter(filterEx).WithProjection(projEx).Build()
 }

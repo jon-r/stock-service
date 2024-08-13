@@ -5,109 +5,59 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/google/uuid"
+	"github.com/jon-r/stock-service/lambdas/internal/adapters/config"
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/db"
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/events"
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/queue"
-	"github.com/jon-r/stock-service/lambdas/internal/db_old"
-	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
-	"github.com/jon-r/stock-service/lambdas/internal/logging_old"
-	"github.com/jon-r/stock-service/lambdas/internal/scheduler_old"
-	"github.com/jon-r/stock-service/lambdas/internal/types_old"
+	"github.com/jon-r/stock-service/lambdas/internal/controllers/jobs"
+	"github.com/jon-r/stock-service/lambdas/internal/controllers/tickers"
 	"github.com/jon-r/stock-service/lambdas/internal/utils/logger"
+	"go.uber.org/zap/zapcore"
 )
-
-type DataManagerHandler struct {
-	types_old.ServiceHandler
-}
 
 type dataManagerHandler interface {
 	HandleRequest(ctx context.Context) error
 }
 
-// remove any unused things
 type handler struct {
-	queueBroker     queue.Broker
-	eventsScheduler events.Scheduler
-	idGen           queue.NewIdFunc
-	dbRepository    db.Repository
-	log             logger.Logger
+	tickers tickers.Controller
+	jobs    jobs.Controller
+	log     logger.Logger
 }
 
-func (h *handler) updateAllTickers() error {
-	var err error
+func newHandler() dataManagerHandler {
+	cfg := config.GetAwsConfig()
+	log := logger.NewLogger(zapcore.InfoLevel)
+	idGen := uuid.NewString
 
-	// 1. get all tickers
+	// todo once tests split up, some of this can be moved to the controller
+	queueBroker := queue.NewBroker(cfg, idGen)
+	eventsScheduler := events.NewScheduler(cfg)
+	dbRepository := db.NewRepository(cfg)
 
-	// 2. convert the jobs_old into update actions
-	// 3. add queue jobs_old for ticker prices + dividends
-	// 4. enable the jobs_old ticker
+	jobsCtrl := jobs.NewController(queueBroker, eventsScheduler, idGen, log)
+	tickersCtrl := tickers.NewController(dbRepository, log)
+
+	return &handler{tickersCtrl, jobsCtrl, log}
 }
 
 func (h *handler) HandleRequest(ctx context.Context) error {
 	// todo look at zap docs to see if this can be done better
 	h.log = h.log.LoadLambdaContext(ctx)
 
-	return h.updateAllTickers()
-}
-
-func (handler DataManagerHandler) updateAllTickers(ctx context.Context) error {
-	// todo this might not work?
-	if handler.LogService == nil {
-		handler.LogService = logging_old.NewLogger(ctx)
-	}
-	defer handler.LogService.Sync()
-
-	var err error
-
 	// 1. get all tickers
-	tickers, err := handler.DbService.GetAllTickers()
+	tickerList, err := h.tickers.GetAll()
 
 	if err != nil {
-		handler.LogService.Fatalw("Errors in fetching the tickers",
-			"error", err,
-		)
+		return err
 	}
 
-	if len(tickers) == 0 {
-		handler.LogService.Fatal("No tickers found")
-	}
-
-	// 2. convert the jobs_old into update actions
-	jobActions := jobs_old.MakeUpdateJobs(tickers, handler.NewUuid)
-
-	// 3. add queue jobs_old for ticker prices + dividends
-	err = handler.QueueService.AddJobs(*jobActions, handler.NewUuid)
-
-	if err != nil {
-		handler.LogService.Fatalw("Failed to add jobs_old",
-			"error", err,
-		)
-	} else {
-		handler.LogService.Infow("Added Jobs for tickers",
-			"tickers", tickers,
-		)
-	}
-
-	// 4. enable the jobs_old ticker
-	err = handler.EventsService.StartTickerScheduler()
-
-	if err != nil {
-		handler.LogService.Fatalw("Failed to start the ticker",
-			"error", err,
-		)
-	}
-
-	return err
+	// 2. convert the jobs into update actions
+	return h.jobs.LaunchDailyTickerJobs(tickerList)
 }
 
-var serviceHandler = types_old.ServiceHandler{
-	QueueService:  jobs_old.NewQueueService(jobs_old.CreateSqsClient()),
-	EventsService: scheduler_old.NewEventsService(scheduler_old.CreateEventClients()),
-	DbService:     db_old.NewDatabaseService(db_old.CreateDatabaseClient()),
-	NewUuid:       uuid.NewString,
-}
+var serviceHandler = newHandler()
 
 func main() {
-	handler := DataManagerHandler{ServiceHandler: serviceHandler}
-	lambda.Start(handler.updateAllTickers)
+	lambda.Start(serviceHandler.HandleRequest)
 }
