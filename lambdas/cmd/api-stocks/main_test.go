@@ -9,6 +9,8 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/db"
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/events"
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/queue"
+	"github.com/jon-r/stock-service/lambdas/internal/controllers/jobs"
+	"github.com/jon-r/stock-service/lambdas/internal/controllers/tickers"
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 	"github.com/jon-r/stock-service/lambdas/internal/models/ticker"
 	"github.com/jon-r/stock-service/lambdas/internal/utils/logger"
@@ -22,14 +24,17 @@ func TestHandleRequest(t *testing.T) {
 
 func mockHandler(cfg aws.Config) apiStockHandler {
 	idGen := func() string { return "TEST_ID" }
+	log := logger.NewLogger(zapcore.DPanicLevel)
 
-	return &handler{
-		queueBroker:     queue.NewBroker(cfg, idGen),
-		eventsScheduler: events.NewScheduler(cfg),
-		dbRepository:    db.NewRepository(cfg),
-		log:             logger.NewLogger(zapcore.DPanicLevel),
-		idGen:           idGen,
-	}
+	// todo once tests split up, some of this can be moved to the controller
+	queueBroker := queue.NewBroker(cfg, idGen)
+	eventsScheduler := events.NewScheduler(cfg)
+	dbRepository := db.NewRepository(cfg)
+
+	jobsCtrl := jobs.NewController(queueBroker, eventsScheduler, idGen, log)
+	tickersCtrl := tickers.NewController(dbRepository, log)
+
+	return &handler{tickersCtrl, jobsCtrl, log}
 }
 
 func handleCreateTicker(t *testing.T) {
@@ -62,7 +67,7 @@ func handleCreateTicker(t *testing.T) {
 	var postEvent awsEvents.APIGatewayProxyRequest
 	test.ReadTestJson("./testevents/api-stocks_POST.json", &postEvent)
 
-	_, err := mockServiceHandler.handleRequest(ctx, postEvent)
+	_, err := mockServiceHandler.HandleRequest(ctx, postEvent)
 
 	test.Assert(t, stubber, err, nil)
 }

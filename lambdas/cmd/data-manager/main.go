@@ -5,15 +5,49 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/google/uuid"
+	"github.com/jon-r/stock-service/lambdas/internal/adapters/db"
+	"github.com/jon-r/stock-service/lambdas/internal/adapters/events"
+	"github.com/jon-r/stock-service/lambdas/internal/adapters/queue"
 	"github.com/jon-r/stock-service/lambdas/internal/db_old"
 	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
 	"github.com/jon-r/stock-service/lambdas/internal/logging_old"
 	"github.com/jon-r/stock-service/lambdas/internal/scheduler_old"
 	"github.com/jon-r/stock-service/lambdas/internal/types_old"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/logger"
 )
 
 type DataManagerHandler struct {
 	types_old.ServiceHandler
+}
+
+type dataManagerHandler interface {
+	HandleRequest(ctx context.Context) error
+}
+
+// remove any unused things
+type handler struct {
+	queueBroker     queue.Broker
+	eventsScheduler events.Scheduler
+	idGen           queue.NewIdFunc
+	dbRepository    db.Repository
+	log             logger.Logger
+}
+
+func (h *handler) updateAllTickers() error {
+	var err error
+
+	// 1. get all tickers
+
+	// 2. convert the jobs_old into update actions
+	// 3. add queue jobs_old for ticker prices + dividends
+	// 4. enable the jobs_old ticker
+}
+
+func (h *handler) HandleRequest(ctx context.Context) error {
+	// todo look at zap docs to see if this can be done better
+	h.log = h.log.LoadLambdaContext(ctx)
+
+	return h.updateAllTickers()
 }
 
 func (handler DataManagerHandler) updateAllTickers(ctx context.Context) error {
