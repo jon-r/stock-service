@@ -24,6 +24,16 @@ func NewPriceEntity(prices TickerPrices) *Entity {
 	return entity
 }
 
+func MapPriceEntities(prices *[]TickerPrices) *[]Entity {
+	pricesEntities := make([]Entity, len(*prices))
+
+	for i, price := range *prices {
+		pricesEntities[i] = *NewPriceEntity(price)
+	}
+
+	return &pricesEntities
+}
+
 func TableName() string {
 	return os.Getenv("DB_STOCKS_TABLE_NAME")
 }

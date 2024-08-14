@@ -88,7 +88,7 @@ func (p *p) getDailyPrices(tickerIds []string) (*[]prices.TickerPrices, error) {
 		return nil, nil
 	}
 
-	var prices []prices.TickerPrices
+	var pricesList []prices.TickerPrices
 
 	for _, tickerId := range tickerIds {
 		item, exists := array.Find(res.Results, func(price models.Agg) bool {
@@ -96,11 +96,11 @@ func (p *p) getDailyPrices(tickerIds []string) (*[]prices.TickerPrices, error) {
 		})
 
 		if exists {
-			prices = append(prices, p.aggregateToPrice(item, tickerId))
+			pricesList = append(pricesList, p.aggregateToPrice(item, tickerId))
 		}
 	}
 
-	return &prices, nil
+	return &pricesList, nil
 }
 
 func (p *p) aggregateToPrice(item models.Agg, tickerId string) prices.TickerPrices {

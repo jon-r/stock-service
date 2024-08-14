@@ -4,22 +4,24 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/db"
+	"github.com/jon-r/stock-service/lambdas/internal/adapters/providers"
+	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 	"github.com/jon-r/stock-service/lambdas/internal/models/ticker"
 	"github.com/jon-r/stock-service/lambdas/internal/utils/logger"
 )
 
 type Controller interface {
 	New(params *ticker.NewTickerParams) error
-	SetDescription(tickerId string, description *ticker.Description) (*dynamodb.UpdateItemOutput, error)
+	LoadDescription(provider provider.Name, tickerId string) error
 	GetOne(tickerId string) (*ticker.Entity, error)
 	GetAll() (*[]ticker.EntityStub, error)
 }
 
 type tickersController struct {
-	db  db.Repository
-	log logger.Logger
+	db        db.Repository
+	providers providers.Service
+	log       logger.Logger
 }
 
 func (c *tickersController) New(params *ticker.NewTickerParams) error {
@@ -36,8 +38,35 @@ func (c *tickersController) New(params *ticker.NewTickerParams) error {
 	return err
 }
 
-func (c *tickersController) SetDescription(tickerId string, description *ticker.Description) (*dynamodb.UpdateItemOutput, error) {
-	return nil, fmt.Errorf("NOT IMPLEMENTED")
+func (c *tickersController) LoadDescription(provider provider.Name, tickerId string) error {
+	var err error
+
+	description, err := c.providers.GetDescription(provider, tickerId)
+
+	if err != nil {
+		c.log.Errorw("error loading description", "error", err)
+		return err
+	}
+
+	updateEx := expression.Set(expression.Name("Description"), expression.Value(*description))
+	update, err := expression.NewBuilder().WithUpdate(updateEx).Build()
+
+	if err != nil {
+		c.log.Errorw("error building update expression", "error", err)
+		return err
+	}
+
+	item := ticker.NewTickerEntity(&ticker.NewTickerParams{Provider: provider, TickerId: tickerId})
+
+	c.log.Debugw("Update item", "item", item, "key", item.GetKey())
+
+	_, err = c.db.Update(ticker.TableName(), item.GetKey(), update)
+
+	if err != nil {
+		c.log.Errorw("error updating ticker", "error", err)
+	}
+
+	return err
 }
 
 func (c *tickersController) GetOne(tickerId string) (*ticker.Entity, error) {
@@ -68,6 +97,6 @@ func (c *tickersController) GetAll() (*[]ticker.EntityStub, error) {
 	return ticker.NewStubsFromDynamoDb(entities)
 }
 
-func NewController(db db.Repository, log logger.Logger) Controller {
-	return &tickersController{db, log}
+func NewController(db db.Repository, providers providers.Service, log logger.Logger) Controller {
+	return &tickersController{db, providers, log}
 }

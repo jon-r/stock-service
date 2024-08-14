@@ -3,9 +3,11 @@ package ticker
 import (
 	"encoding/json"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	dbTypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 )
 
 func NewTickerEntity(params *NewTickerParams) *Entity {
@@ -24,13 +26,40 @@ func NewParamsFromJsonString(jsonString string) (*NewTickerParams, error) {
 	return &params, err
 }
 
-func NewStubsFromDynamoDb(entities []map[string]types.AttributeValue) (*[]EntityStub, error) {
-	var tickers []EntityStub
+func NewStubsFromDynamoDb(entities []map[string]dbTypes.AttributeValue) (*[]EntityStub, error) {
+	tickers := make([]EntityStub, len(entities))
 	err := attributevalue.UnmarshalListOfMaps(entities, &tickers)
 
 	return &tickers, err
 }
 
+//func NewStubsFromSQS(messages []sqsTypes.Message) (*[]EntityStub, error) {
+//	var err error
+//
+//	tickers := make([]EntityStub, len(messages))
+//	for i, message := range messages {
+//		err = json.Unmarshal([]byte(*message.Body), &tickers[i])
+//		if err != nil {
+//			return nil, err
+//		}
+//	}
+//
+//	return &tickers, nil
+//}
+
 func TableName() string {
 	return os.Getenv("DB_STOCKS_TABLE_NAME")
+}
+
+func GroupByProvider(tickers []EntityStub) map[provider.Name][]string {
+	list := map[provider.Name][]string{}
+
+	for _, item := range tickers {
+		key := item.Provider
+		tickerId, _ := strings.CutPrefix(item.TickerSort, "T#")
+
+		list[key] = append(list[key], tickerId)
+	}
+
+	return list
 }

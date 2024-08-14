@@ -32,7 +32,7 @@ func mockHandler(cfg aws.Config) apiStockHandler {
 	dbRepository := db.NewRepository(cfg)
 
 	jobsCtrl := jobs.NewController(queueBroker, eventsScheduler, idGen, log)
-	tickersCtrl := tickers.NewController(dbRepository, log)
+	tickersCtrl := tickers.NewController(dbRepository, nil, log)
 
 	return &handler{tickersCtrl, jobsCtrl, log}
 }

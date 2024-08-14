@@ -17,13 +17,17 @@ func NewJob(jobType Types, id string, provider provider.Name, tickerId string) *
 	}
 }
 
-func NewJobs(jobTypes []Types, id string, provider provider.Name, tickerId string) *[]Job {
-	jobs := make([]Job, len(jobTypes))
-	for i, jobType := range jobTypes {
-		jobs[i] = *NewJob(jobType, id, provider, tickerId)
-	}
-	return &jobs
+func NewFailedJob(job Job, failReason string) *FailedJob {
+	return &FailedJob{job, failReason}
 }
+
+//func NewJobs(jobTypes []Types, id string, provider provider.Name, tickerId string) *[]Job {
+//	jobs := make([]Job, len(jobTypes))
+//	for i, jobType := range jobTypes {
+//		jobs[i] = *NewJob(jobType, id, provider, tickerId)
+//	}
+//	return &jobs
+//}
 
 func NewBulkJob(jobType Types, id string, provider provider.Name, tickerIds []string) *Job {
 	return &Job{

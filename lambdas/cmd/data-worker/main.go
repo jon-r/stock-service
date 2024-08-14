@@ -2,76 +2,70 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/jon-r/stock-service/lambdas/internal/db_old"
-	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
-	"github.com/jon-r/stock-service/lambdas/internal/logging_old"
-	"github.com/jon-r/stock-service/lambdas/internal/providers_old"
-	"github.com/jon-r/stock-service/lambdas/internal/types_old"
+	"github.com/jon-r/stock-service/lambdas/internal/adapters/config"
+	"github.com/jon-r/stock-service/lambdas/internal/adapters/db"
+	"github.com/jon-r/stock-service/lambdas/internal/adapters/providers"
+	"github.com/jon-r/stock-service/lambdas/internal/adapters/queue"
+	"github.com/jon-r/stock-service/lambdas/internal/controllers/jobs"
+	"github.com/jon-r/stock-service/lambdas/internal/controllers/prices"
+	"github.com/jon-r/stock-service/lambdas/internal/controllers/tickers"
+	"github.com/jon-r/stock-service/lambdas/internal/models/job"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/logger"
+	"go.uber.org/zap/zapcore"
 )
 
-type DataWorkerHandler struct {
-	types_old.ServiceHandler
-	ProviderService providers_old.ProviderService
+type dataWorkerHandler interface {
+	HandleRequest(ctx context.Context, job job.Job) error
 }
 
-func (handler DataWorkerHandler) doJob(job jobs_old.JobAction) error {
-	switch job.Type {
-	case jobs_old.LoadTickerDescription:
-		return handler.setTickerDescription(job.Provider, job.TickerId)
-	case jobs_old.LoadHistoricalPrices:
-		return handler.setTickerHistoricalPrices(job.Provider, job.TickerId)
-	case jobs_old.UpdatePrices:
-		return handler.updateTickerPrices(job.Provider, strings.Split(job.TickerId, ","))
-
-	// TODO STK-86
-	// jobs_old.LoadTickerIcon
-
-	// TODO STK-88
-	// jobs_old.UpdateDividends
-	// jobs_old.LoadHistoricalDividends
-
-	default:
-		return fmt.Errorf("invalid action type = %v", job.Type)
-	}
+type handler struct {
+	tickers tickers.Controller
+	jobs    jobs.Controller
+	prices  prices.Controller
+	log     logger.Logger
 }
 
-func (handler DataWorkerHandler) handleJobEvent(ctx context.Context, event jobs_old.JobAction) error {
-	// todo this might not work?
-	if handler.LogService == nil {
-		handler.LogService = logging_old.NewLogger(ctx)
-	}
-	defer handler.LogService.Sync()
+func newHandler() dataWorkerHandler {
+	cfg := config.GetAwsConfig()
+	log := logger.NewLogger(zapcore.InfoLevel)
 
-	var err error
+	// todo once tests split up, some of this can be moved to the controller
+	providersService := providers.NewService(nil)
+	queueBroker := queue.NewBroker(cfg, nil)
+	dbRepository := db.NewRepository(cfg)
+
+	jobsCtrl := jobs.NewController(queueBroker, nil, nil, log)
+	tickersCtrl := tickers.NewController(dbRepository, providersService, log)
+	pricesCtrl := prices.NewController(dbRepository, providersService, log)
+
+	return &handler{tickersCtrl, jobsCtrl, pricesCtrl, log}
+}
+
+func (h *handler) HandleRequest(ctx context.Context, j job.Job) error {
+	// todo look at zap docs to see if this can be done better
+	h.log = h.log.LoadLambdaContext(ctx)
 
 	// 1. handle action
-	handler.LogService.Infow("Attempt to do job",
-		"job", event,
-	)
-	err = handler.doJob(event)
+	err := h.doJob(j)
 
 	if err == nil {
-		handler.LogService.Infoln("Job completed",
-			"jobId", event.JobId,
-		)
+		h.log.Infoln("job completed", "jobId", j.JobId)
 		return nil // job done
 	}
 
-	handler.LogService.Warnw("failed to process event, re-adding it to queue",
-		"jobId", event.JobId,
+	// 2. if action failed or new queue actions after last, try again
+	h.log.Warnw("failed to process event, re-adding it to queue",
+		"jobId", j.JobId,
 		"error", err,
 	)
 
-	// 2. if action failed or new queue actions after last, try again
-	queueErr := handler.QueueService.RetryJob(event, err.Error(), handler.NewUuid)
+	queueErr := h.jobs.RetryJob(j, err.Error())
 
 	if queueErr != nil {
-		handler.LogService.Fatalw("Failed to add item to DLQ",
-			"jobId", event.JobId,
+		h.log.Errorw("Failed to add item to DLQ",
+			"jobId", j.JobId,
 			"error", queueErr,
 		)
 		return queueErr
@@ -80,12 +74,8 @@ func (handler DataWorkerHandler) handleJobEvent(ctx context.Context, event jobs_
 	return err
 }
 
-var serviceHandler = types_old.ServiceHandler{
-	QueueService: jobs_old.NewQueueService(jobs_old.CreateSqsClient()),
-	DbService:    db_old.NewDatabaseService(db_old.CreateDatabaseClient()),
-}
+var serviceHandler = newHandler()
 
 func main() {
-	handler := DataWorkerHandler{ServiceHandler: serviceHandler, ProviderService: providers_old.NewProviderService()}
-	lambda.Start(handler.handleJobEvent)
+	lambda.Start(serviceHandler.HandleRequest)
 }

@@ -12,7 +12,7 @@ const (
 	LoadHistoricalDividends Types = "LOAD_HISTORICAL_DIVIDENDS"
 
 	LoadTickerIcon  Types = "LOAD_TICKER_ICON"
-	UpdatePrices    Types = "UPDATE_PRICES"
+	LoadDailyPrices Types = "UPDATE_PRICES"
 	UpdateDividends Types = "UPDATE_DIVIDENDS"
 	// ???
 )
@@ -23,4 +23,9 @@ type Job struct {
 	Type     Types
 	TickerId string
 	Attempts int
+}
+
+type FailedJob struct {
+	Job
+	ErrorReason string
 }
