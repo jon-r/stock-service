@@ -8,36 +8,44 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/benbjohnson/clock"
-	"github.com/google/uuid"
 	"github.com/jon-r/stock-service/lambdas/internal/handlers"
-	"github.com/jon-r/stock-service/lambdas/internal/jobs_old"
-	"github.com/jon-r/stock-service/lambdas/internal/logging_old"
 	"github.com/jon-r/stock-service/lambdas/internal/models/job"
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
-	"github.com/jon-r/stock-service/lambdas/internal/providers_old"
-	"github.com/jon-r/stock-service/lambdas/internal/scheduler_old"
-	"github.com/jon-r/stock-service/lambdas/internal/types_old"
 )
 
 type handler struct {
 	*handlers.LambdaHandler
-	clock          clock.Clock
+	Clock          clock.Clock
 	done           chan bool
 	providerQueues map[provider.Name]chan job.Job
 }
 
-var dataTickerHandler = handler{
-	LambdaHandler: handlers.NewLambdaHandler(),
-	clock:         clock.New(),
-	done:          make(chan bool),
-	providerQueues: map[provider.Name]chan job.Job{
-		provider.PolygonIo: make(chan job.Job, 20),
-	},
+//var dataTickerHandler = handler{
+//	LambdaHandler: handlers.NewLambdaHandler(),
+//	clock:         clock.New(),
+//	done:          make(chan bool),
+//	providerQueues: map[provider.Name]chan job.Job{
+//		provider.PolygonIo: make(chan job.Job, 20),
+//	},
+//}
+
+func newHandler(lambdaHandler *handlers.LambdaHandler, c clock.Clock) *handler {
+	return &handler{
+		LambdaHandler: lambdaHandler,
+		Clock:         c,
+		done:          make(chan bool),
+		providerQueues: map[provider.Name]chan job.Job{
+			provider.PolygonIo: make(chan job.Job, 20),
+		},
+	}
 }
 
+var dataTickerHandler = newHandler(handlers.NewLambdaHandler(), clock.New())
+
 func (h *handler) HandleRequest(ctx context.Context) {
-	// todo look at zap docs to see if this can be done better
+	// todo look at zap docs to see if this can be done better. its not passing context to controllers
 	h.Log = h.Log.LoadLambdaContext(ctx)
+	defer h.Log.Sync()
 
 	// 1. get all queued items
 	go h.pollJobsQueue()
@@ -45,54 +53,55 @@ func (h *handler) HandleRequest(ctx context.Context) {
 	// 2. for each provider have a ticker function that invokes event provider/ticker/type to the worker fn
 	go h.pollProviderQueue(provider.PolygonIo)
 
-	// 3. Switch off after TICKER_TIMEOUT min
 	tickerTimeout, timeErr := strconv.Atoi(os.Getenv("TICKER_TIMEOUT"))
 	if timeErr != nil {
 		tickerTimeout = 5
 	}
 
-	h.clock.Sleep(time.Duration(tickerTimeout) * time.Minute)
+	// 3. Switch off after TICKER_TIMEOUT minutes
+	h.Clock.Sleep(time.Duration(tickerTimeout) * time.Minute)
 	h.done <- true
 
 	// return nil // todo have the goroutines send the error here?
 }
 
-type DataTickerHandler struct {
-	types_old.ServiceHandler
-	Clock clock.Clock
-	done  chan bool
-}
-
-func (handler DataTickerHandler) handleQueuedJobs(ctx context.Context) {
-	// todo this might not work?
-	if handler.LogService == nil {
-		handler.LogService = logging_old.NewLogger(ctx)
-	}
-	defer handler.LogService.Sync()
-
-	// 1. get all queued items
-	go handler.checkForJobs()
-
-	// 2. for each provider have a ticker function that invokes event provider/ticker/type to the worker fn
-	go handler.invokeWorkerTicker(providers_old.PolygonIo, providers_old.PolygonIoDelay)
-
-	// 3. Switch off after TICKER_TIMEOUT min
-	tickerTimeout, timeErr := strconv.Atoi(os.Getenv("TICKER_TIMEOUT"))
-	if timeErr != nil {
-		tickerTimeout = 5
-	}
-
-	handler.Clock.Sleep(time.Duration(tickerTimeout) * time.Minute)
-	handler.done <- true
-
-	//return nil // todo have the goroutines send the error here?
-}
-
-var serviceHandler = types_old.ServiceHandler{
-	QueueService:  jobs_old.NewQueueService(jobs_old.CreateSqsClient()),
-	EventsService: scheduler_old.NewEventsService(scheduler_old.CreateEventClients()),
-	NewUuid:       uuid.NewString,
-}
+//
+//type DataTickerHandler struct {
+//	types_old.ServiceHandler
+//	Clock clock.Clock
+//	done  chan bool
+//}
+//
+//func (handler DataTickerHandler) handleQueuedJobs(ctx context.Context) {
+//	// todo this might not work?
+//	if handler.LogService == nil {
+//		handler.LogService = logging_old.NewLogger(ctx)
+//	}
+//	defer handler.LogService.Sync()
+//
+//	// 1. get all queued items
+//	go handler.checkForJobs()
+//
+//	// 2. for each provider have a ticker function that invokes event provider/ticker/type to the worker fn
+//	go handler.invokeWorkerTicker(providers_old.PolygonIo, providers_old.PolygonIoDelay)
+//
+//	// 3. Switch off after TICKER_TIMEOUT min
+//	tickerTimeout, timeErr := strconv.Atoi(os.Getenv("TICKER_TIMEOUT"))
+//	if timeErr != nil {
+//		tickerTimeout = 5
+//	}
+//
+//	handler.Clock.Sleep(time.Duration(tickerTimeout) * time.Minute)
+//	handler.done <- true
+//
+//	//return nil // todo have the goroutines send the error here?
+//}
+//
+//var serviceHandler = types_old.ServiceHandler{
+//	QueueService:  jobs_old.NewQueueService(jobs_old.CreateSqsClient()),
+//	EventsService: scheduler_old.NewEventsService(scheduler_old.CreateEventClients()),
+//	NewUuid:       uuid.NewString,
+//}
 
 func main() {
 	//handler := DataTickerHandler{

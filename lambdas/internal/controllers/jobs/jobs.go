@@ -24,8 +24,6 @@ type jobsController struct {
 	eventsScheduler events.Scheduler
 	idGen           queue.NewIdFunc
 	log             logger.Logger
-
-	//attempts int
 }
 
 func (c *jobsController) LaunchNewTickerJobs(newTicker *ticker.NewTickerParams) error {
@@ -115,7 +113,7 @@ func (c *jobsController) InvokeWorker(j job.Job) error {
 		err = c.RequeueJob(j, err.Error())
 	}
 
-	_, err = c.queueBroker.DeleteMessage(job.QueueUrl(), j.JobId)
+	_, err = c.queueBroker.DeleteMessage(job.QueueUrl(), j.ReceiptId)
 	if err != nil {
 		c.log.Errorw("could not delete message", "error", err)
 	}
@@ -127,7 +125,7 @@ func (c *jobsController) StopScheduledRule() {
 	var err error
 
 	ruleName := os.Getenv("EVENTBRIDGE_RULE_NAME")
-	_, err = c.eventsScheduler.EnableRule(ruleName)
+	_, err = c.eventsScheduler.DisableRule(ruleName)
 
 	if err != nil {
 		c.log.Errorw("error disabling rule", "error", err)
@@ -159,6 +157,8 @@ func (c *jobsController) ReceiveJobs() (*[]job.Job, error) {
 		c.log.Errorw("error receiving messages", "error", err)
 		return nil, err
 	}
+
+	c.log.Debugw("received messages", "messages", messages)
 
 	return job.NewJobsFromSqs(messages)
 }

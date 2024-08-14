@@ -14,7 +14,19 @@ func (h *handler) pollJobsQueue() {
 	emptyResponses := 0
 	failedAttempts := 0
 
-	ticker := h.clock.Ticker(10 * time.Second)
+	//jobList, err = h.Jobs.ReceiveJobs()
+	//
+	//if err != nil {
+	//	failedAttempts++
+	//} else {
+	//	h.addJobsToQueues(jobList)
+	//}
+
+	ticker := h.Clock.Ticker(10 * time.Second)
+	//ticker := h.clock.Ticker(2 * time.Second)
+	//ticker := time.NewTicker(2 * time.Second)
+
+	h.Log.Debug("begin poll jobs queue")
 
 	for {
 		select {
@@ -23,20 +35,26 @@ func (h *handler) pollJobsQueue() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
+			h.Log.Debugw("tick!")
+
+			// 1. poll to get all items in queue
 			jobList, err = h.Jobs.ReceiveJobs()
 
+			// if queue errors too many times , disable the event rule and stop the ticker
 			if err != nil {
 				h.Log.Warnw("failed to receive jobs", "err", err)
 				failedAttempts++
 
 				if failedAttempts > 5 {
 					h.Log.Errorf("aborting after %d failed attempts", failedAttempts)
+					h.Jobs.StopScheduledRule()
 					h.done <- true
 				}
 			} else {
 				failedAttempts = 0
 			}
 
+			// 3. if queue is empty too many times, disable the event rule
 			if len(*jobList) == 0 {
 				h.Log.Debug("no jobs received")
 				emptyResponses++
@@ -53,8 +71,4 @@ func (h *handler) pollJobsQueue() {
 		}
 	}
 
-	//jobs, err := h.Jobs.ReceiveJobs()
-	//if err != nil {
-	//	pollAttempts += 1
-	//}
 }

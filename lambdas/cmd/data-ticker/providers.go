@@ -12,20 +12,19 @@ func (h *handler) addJobsToQueues(jobList *[]job.Job) {
 }
 
 func (h *handler) pollProviderQueue(providerName provider.Name) {
-	// todo send this error back to the handler
-	var _ error
-
 	interval := provider.GetRequestsPerMin()[providerName]
-	ticker := h.clock.Ticker(interval)
+	ticker := h.Clock.Ticker(interval)
 
 	for {
 		select {
 		case <-ticker.C:
 			select {
 			case j, ok := <-h.providerQueues[providerName]:
+				h.Log.Debugw("tock!")
 				if ok {
 					h.Log.Debugw("processing job", "job", j)
-					_ = h.Jobs.InvokeWorker(j)
+					// todo send this error back to the handler
+					h.Jobs.InvokeWorker(j)
 				} // else no jobs
 			}
 		}

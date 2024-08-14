@@ -19,7 +19,7 @@ type Broker interface {
 	SendMessage(queueUrl string, message interface{}) (*sqs.SendMessageOutput, error)
 	SendMessages(queueUrl string, messages interface{}) (*sqs.SendMessageBatchOutput, error)
 	ReceiveMessages(queueUrl string) (*[]types.Message, error)
-	DeleteMessage(queueUrl string, messageId string) (*sqs.DeleteMessageOutput, error)
+	DeleteMessage(queueUrl string, messageId *string) (*sqs.DeleteMessageOutput, error)
 }
 
 func (q *queue) SendMessage(queueUrl string, message interface{}) (*sqs.SendMessageOutput, error) {
@@ -85,10 +85,10 @@ func (q *queue) ReceiveMessages(queueUrl string) (*[]types.Message, error) {
 	return &res.Messages, nil
 }
 
-func (q *queue) DeleteMessage(queueUrl string, messageId string) (*sqs.DeleteMessageOutput, error) {
+func (q *queue) DeleteMessage(queueUrl string, messageId *string) (*sqs.DeleteMessageOutput, error) {
 	input := sqs.DeleteMessageInput{
 		QueueUrl:      aws.String(queueUrl),
-		ReceiptHandle: aws.String(messageId),
+		ReceiptHandle: messageId,
 	}
 
 	return q.client.DeleteMessage(context.TODO(), &input)

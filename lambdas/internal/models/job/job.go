@@ -38,6 +38,7 @@ func NewJobsFromSqs(messages *[]types.Message) (*[]Job, error) {
 
 	for i, message := range *messages {
 		err = json.Unmarshal([]byte(*message.Body), &job)
+		job.ReceiptId = message.ReceiptHandle
 		jobs[i] = job
 		if err != nil {
 			return nil, err

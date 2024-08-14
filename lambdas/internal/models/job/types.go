@@ -18,11 +18,12 @@ const (
 )
 
 type Job struct {
-	JobId    string
-	Provider provider.Name
-	Type     Types
-	TickerId string
-	Attempts int
+	ReceiptId *string `json:"-"`
+	JobId     string
+	Provider  provider.Name
+	Type      Types
+	TickerId  string
+	Attempts  int
 }
 
 type FailedJob struct {

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -10,7 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 	"github.com/benbjohnson/clock"
-	"github.com/jon-r/stock-service/lambdas/internal/testutil_old"
+	"github.com/jon-r/stock-service/lambdas/internal/handlers"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/test"
 )
 
 func TestPollSqsQueue(t *testing.T) {
@@ -18,14 +18,21 @@ func TestPollSqsQueue(t *testing.T) {
 }
 
 func pollSqsQueueNoErrors(t *testing.T) {
-	stubber, mockServiceHandler := testutil_old.EnterTest(nil)
+	//stubber, mockServiceHandler := testutil_old.EnterTest(nil)
+	stubber, ctx := test.Enter()
 	mockClock := clock.NewMock()
 
-	mockHandler := DataTickerHandler{
-		ServiceHandler: *mockServiceHandler,
-		Clock:          mockClock,
-		done:           make(chan bool),
-	}
+	// todo this should be done not here
+	mockHandler := newHandler(
+		handlers.NewMock(*stubber.SdkConfig),
+		mockClock,
+	)
+
+	//mockHandler := DataTickerHandler{
+	//	ServiceHandler: *mockServiceHandler,
+	//	Clock:          mockClock,
+	//	done:           make(chan bool),
+	//}
 
 	receiveQueueEvent(stubber, []types.Message{
 		{
@@ -38,12 +45,28 @@ func pollSqsQueueNoErrors(t *testing.T) {
 		},
 	})
 
-	receiveQueueEvent(stubber, []types.Message{})
+	//receiveQueueEvent(stubber, []types.Message{})
 	invokeWorkerEvent(stubber, `{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`)
 	deleteQueueEvent(stubber, "message1")
 	receiveQueueEvent(stubber, []types.Message{})
 	invokeWorkerEvent(stubber, `{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`)
 	deleteQueueEvent(stubber, "message2")
+	receiveQueueEvent(stubber, []types.Message{
+		{
+			ReceiptHandle: aws.String("message3"),
+			Body:          aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`),
+		},
+		{
+			ReceiptHandle: aws.String("message4"),
+			Body:          aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`),
+		},
+	})
+	invokeWorkerEvent(stubber, `{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`)
+	deleteQueueEvent(stubber, "message3")
+	receiveQueueEvent(stubber, []types.Message{})
+	invokeWorkerEvent(stubber, `{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`)
+	deleteQueueEvent(stubber, "message4")
+	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
@@ -58,25 +81,23 @@ func pollSqsQueueNoErrors(t *testing.T) {
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
 
-	//receiveQueueEvent(stubber, []types_old.Message{})
-
 	testDone := make(chan bool)
 	go func() {
 		// todo grab errors
-		mockHandler.handleQueuedJobs(context.TODO())
+		mockHandler.HandleRequest(ctx)
 
 		testDone <- true
 	}()
 
 	// todo this log needs to be here or the tests breaks. not sure why??
-	mockHandler.LogService.Debugln("fast forward 10min")
+	mockHandler.Log.Debugln("fast forward 10min")
 	mockClock.Add(10 * time.Minute)
 
 	stubber.Clear() // clear any lingering poll events
 
 	<-testDone
 
-	testutil_old.Assert(stubber, nil, nil, t)
+	test.Assert(t, stubber, nil, nil)
 }
 
 func receiveQueueEvent(stubber *testtools.AwsmStubber, messages []types.Message) {
@@ -88,15 +109,15 @@ func receiveQueueEvent(stubber *testtools.AwsmStubber, messages []types.Message)
 	queueResponse := &sqs.ReceiveMessageOutput{
 		Messages: messages,
 	}
-	stubber.Add(testutil_old.StubSqsReceiveMessages(expectedQueueInput, queueResponse, nil))
+	stubber.Add(test.StubSqsReceiveMessages(expectedQueueInput, queueResponse, nil))
 }
 func deleteQueueEvent(stubber *testtools.AwsmStubber, messageId string) {
-	stubber.Add(testutil_old.StubSqsDeleteMessage("SQS_QUEUE_URL", messageId, nil))
+	stubber.Add(test.StubSqsDeleteMessage("SQS_QUEUE_URL", messageId, nil))
 }
 
 func invokeWorkerEvent(stubber *testtools.AwsmStubber, payloadJson string) {
-	stubber.Add(testutil_old.StubLambdaInvoke("LAMBDA_WORKER_NAME", []byte(payloadJson), nil))
+	stubber.Add(test.StubLambdaInvoke("LAMBDA_WORKER_NAME", []byte(payloadJson), nil))
 }
 func disableRuleEvent(stubber *testtools.AwsmStubber) {
-	stubber.Add(testutil_old.StubEventbridgeDisableRule("EVENTBRIDGE_RULE_NAME", nil))
+	stubber.Add(test.StubEventbridgeDisableRule("EVENTBRIDGE_RULE_NAME", nil))
 }
