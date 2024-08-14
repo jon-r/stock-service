@@ -24,8 +24,6 @@ type Repository interface {
 	GetMany(tableName string, query expression.Expression) ([]map[string]types.AttributeValue, error)
 }
 
-// https://github.com/minhtran241/dynamodb-go-crud/blob/main/internal/repository/adapter/adapter.go
-
 func (db *database) HealthCheck() bool {
 	_, err := db.client.ListTables(context.TODO(), &dynamodb.ListTablesInput{})
 	return err == nil

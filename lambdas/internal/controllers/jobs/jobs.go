@@ -164,11 +164,5 @@ func (c *jobsController) ReceiveJobs() (*[]job.Job, error) {
 }
 
 func NewController(queueBroker queue.Broker, eventsScheduler events.Scheduler, idGen queue.NewIdFunc, log logger.Logger) Controller {
-	return &jobsController{
-		queueBroker,
-		eventsScheduler,
-		idGen,
-		log,
-		//0,
-	}
+	return &jobsController{queueBroker, eventsScheduler, idGen, log}
 }

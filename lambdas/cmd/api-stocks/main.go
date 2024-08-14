@@ -34,8 +34,6 @@ func (h *handler) HandleRequest(ctx context.Context, request awsEvents.APIGatewa
 	}
 }
 
-//var serviceHandler = newHandler()
-
 func main() {
 	lambda.Start(apiStocksHandler.HandleRequest)
 }

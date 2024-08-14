@@ -10,18 +10,6 @@ type EntityBase struct {
 	Sort string `dynamodbav:"SK"`
 }
 
-//type TickerItem struct {
-//	EntityBase
-//	Provider    providers.ProviderName
-//	Description providers.TickerDescription
-//}
-
-//type PriceItem struct {
-//	EntityBase
-//	Price providers.TickerPrices
-//	Date  string `dynamodbav:"DT"`
-//}
-
 type KeyType string
 
 // todo move these to separate entity sub-packages

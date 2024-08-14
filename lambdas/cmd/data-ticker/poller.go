@@ -9,22 +9,11 @@ import (
 func (h *handler) pollJobsQueue() {
 	var err error
 	var jobList *[]job.Job
-	//var done chan bool
 
 	emptyResponses := 0
 	failedAttempts := 0
 
-	//jobList, err = h.Jobs.ReceiveJobs()
-	//
-	//if err != nil {
-	//	failedAttempts++
-	//} else {
-	//	h.addJobsToQueues(jobList)
-	//}
-
 	ticker := h.Clock.Ticker(10 * time.Second)
-	//ticker := h.clock.Ticker(2 * time.Second)
-	//ticker := time.NewTicker(2 * time.Second)
 
 	h.Log.Debug("begin poll jobs queue")
 
