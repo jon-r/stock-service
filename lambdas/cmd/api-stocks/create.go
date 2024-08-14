@@ -15,19 +15,19 @@ func (h *handler) createTicker(req events.APIGatewayProxyRequest) (*events.APIGa
 	params, err := ticker.NewParamsFromJsonString(req.Body)
 
 	if err != nil {
-		h.log.Errorw("error unmarshalling ticker", "error", err)
+		h.Log.Errorw("error unmarshalling ticker", "error", err)
 		return response.StatusBadRequest(err)
 	}
 
 	// 2. enter basic content to the database
-	err = h.tickers.New(params)
+	err = h.Tickers.New(params)
 
 	if err != nil {
 		return response.StatusServerError(err)
 	}
 
 	// 3. Create new job queue items
-	err = h.jobs.LaunchNewTickerJobs(params)
+	err = h.Jobs.LaunchNewTickerJobs(params)
 
 	if err != nil {
 		return response.StatusServerError(err)

@@ -1,9 +1,11 @@
 package job
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 )
 
@@ -28,6 +30,22 @@ func NewFailedJob(job Job, failReason string) *FailedJob {
 //	}
 //	return &jobs
 //}
+
+func NewJobsFromSqs(messages *[]types.Message) (*[]Job, error) {
+	var err error
+	var job Job
+	jobs := make([]Job, len(*messages))
+
+	for i, message := range *messages {
+		err = json.Unmarshal([]byte(*message.Body), &job)
+		jobs[i] = job
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &jobs, nil
+}
 
 func NewBulkJob(jobType Types, id string, provider provider.Name, tickerIds []string) *Job {
 	return &Job{

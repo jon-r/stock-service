@@ -13,7 +13,10 @@ import (
 type Controller interface {
 	LaunchNewTickerJobs(ticker *ticker.NewTickerParams) error
 	LaunchDailyTickerJobs(tickers *[]ticker.EntityStub) error
-	RetryJob(j job.Job, failReason string) error
+	InvokeWorker(j job.Job) error
+	RequeueJob(j job.Job, failReason string) error
+	ReceiveJobs() (*[]job.Job, error)
+	StopScheduledRule()
 }
 
 type jobsController struct {
@@ -21,6 +24,8 @@ type jobsController struct {
 	eventsScheduler events.Scheduler
 	idGen           queue.NewIdFunc
 	log             logger.Logger
+
+	//attempts int
 }
 
 func (c *jobsController) LaunchNewTickerJobs(newTicker *ticker.NewTickerParams) error {
@@ -39,7 +44,7 @@ func (c *jobsController) LaunchNewTickerJobs(newTicker *ticker.NewTickerParams) 
 		return err
 	}
 
-	return c.startTicker()
+	return c.startScheduledRule()
 }
 
 func (c *jobsController) LaunchDailyTickerJobs(tickers *[]ticker.EntityStub) error {
@@ -74,10 +79,10 @@ func (c *jobsController) LaunchDailyTickerJobs(tickers *[]ticker.EntityStub) err
 		return err
 	}
 
-	return c.startTicker()
+	return c.startScheduledRule()
 }
 
-func (c *jobsController) startTicker() error {
+func (c *jobsController) startScheduledRule() error {
 	var err error
 
 	ruleName := os.Getenv("EVENTBRIDGE_RULE_NAME")
@@ -99,7 +104,37 @@ func (c *jobsController) startTicker() error {
 	return nil
 }
 
-func (c *jobsController) RetryJob(j job.Job, failReason string) error {
+func (c *jobsController) InvokeWorker(j job.Job) error {
+	var err error
+
+	functionName := os.Getenv("LAMBDA_WORKER_NAME")
+	_, err = c.eventsScheduler.InvokeFunction(functionName, j)
+
+	if err != nil {
+		c.log.Errorw("could not invoke function", "error", err)
+		err = c.RequeueJob(j, err.Error())
+	}
+
+	_, err = c.queueBroker.DeleteMessage(job.QueueUrl(), j.JobId)
+	if err != nil {
+		c.log.Errorw("could not delete message", "error", err)
+	}
+
+	return err
+}
+
+func (c *jobsController) StopScheduledRule() {
+	var err error
+
+	ruleName := os.Getenv("EVENTBRIDGE_RULE_NAME")
+	_, err = c.eventsScheduler.EnableRule(ruleName)
+
+	if err != nil {
+		c.log.Errorw("error disabling rule", "error", err)
+	}
+}
+
+func (c *jobsController) RequeueJob(j job.Job, failReason string) error {
 	var err error
 
 	if j.Attempts > 2 {
@@ -114,11 +149,26 @@ func (c *jobsController) RetryJob(j job.Job, failReason string) error {
 	return err
 }
 
+func (c *jobsController) ReceiveJobs() (*[]job.Job, error) {
+	var err error
+
+	c.log.Debug("attempting to receive jobs")
+	messages, err := c.queueBroker.ReceiveMessages(job.QueueUrl())
+
+	if err != nil {
+		c.log.Errorw("error receiving messages", "error", err)
+		return nil, err
+	}
+
+	return job.NewJobsFromSqs(messages)
+}
+
 func NewController(queueBroker queue.Broker, eventsScheduler events.Scheduler, idGen queue.NewIdFunc, log logger.Logger) Controller {
 	return &jobsController{
 		queueBroker,
 		eventsScheduler,
 		idGen,
 		log,
+		//0,
 	}
 }
