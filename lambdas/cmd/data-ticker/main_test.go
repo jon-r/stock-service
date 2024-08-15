@@ -13,13 +13,13 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/utils/test"
 )
 
-//func TestPollSqsQueue(t *testing.T) {
-//	t.Run("NoErrors", pollSqsQueueNoErrors)
-//}
-
-// fixme this test needs redoing, it works but inconsistently
-func pollSqsQueueNoErrors(t *testing.T) {
+func TestPollSqsQueue(t *testing.T) {
 	t.Skip("ignore this test for now")
+	// fixme this test needs redoing, it sort of works but inconsistently
+	t.Run("NoErrors", pollSqsQueueNoErrors)
+}
+
+func pollSqsQueueNoErrors(t *testing.T) {
 
 	stubber, ctx := test.Enter()
 	mockClock := clock.NewMock()
