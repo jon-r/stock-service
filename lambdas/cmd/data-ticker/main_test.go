@@ -13,7 +13,7 @@ import (
 func TestPollSqsQueue(t *testing.T) {
 	t.Skip("ignore this test for now")
 	// fixme this test needs redoing, it sort of works but inconsistently
-	t.Run("NoErrors", pollSqsQueueNoErrors)
+	//t.Run("NoErrors", pollSqsQueueNoErrors)
 }
 
 func pollSqsQueueNoErrors(t *testing.T) {
