@@ -1,55 +1,31 @@
 package main
 
 import (
-	"time"
-
-	"github.com/jon-r/stock-service/lambdas/internal/jobs"
-	"github.com/jon-r/stock-service/lambdas/internal/providers"
+	"github.com/jon-r/stock-service/lambdas/internal/models/job"
+	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 )
 
-var providerQueues = map[providers.ProviderName]chan jobs.JobQueueItem{
-	providers.PolygonIo: make(chan jobs.JobQueueItem, 20),
-}
-
-func allocateJobs(jobList *[]jobs.JobQueueItem) {
-	for _, job := range *jobList {
-		providerQueues[job.Action.Provider] <- job
+func (h *handler) addJobsToQueues(jobList *[]job.Job) {
+	for _, j := range *jobList {
+		h.providerQueues[j.Provider] <- j
 	}
 }
 
-func (handler DataTickerHandler) invokeWorkerTicker(provider providers.ProviderName, delay providers.SettingsDelay) {
-	var err error
-
-	duration := time.Duration(delay) * time.Second
-	ticker := handler.Clock.Ticker(duration)
+func (h *handler) pollProviderQueue(providerName provider.Name) {
+	interval := provider.GetRequestsPerMin()[providerName]
+	ticker := h.Clock.Ticker(interval)
 
 	for {
 		select {
 		case <-ticker.C:
 			select {
-			case job, ok := <-providerQueues[provider]:
+			case j, ok := <-h.providerQueues[providerName]:
+				h.Log.Debugw("tock!")
 				if ok {
-					handler.LogService.Infow("Invoking Job",
-						"job", job,
-					)
-					err = handler.EventsService.InvokeWorker(job.Action)
-					if err != nil {
-						handler.LogService.Warnw("Failed to Invoke Worker",
-							"error", err,
-						)
-
-						err = handler.QueueService.RetryJob(job.Action, err.Error(), handler.NewUuid)
-					}
-
-					err = handler.QueueService.DeleteJob(job.RecieptHandle)
-					if err != nil {
-						handler.LogService.Warnw("Failed to delete Job from queue",
-							"error", err,
-						)
-					}
-				}
-			default:
-				// no jobs for this provider
+					h.Log.Debugw("processing job", "job", j)
+					// todo send this error back to the handler
+					h.Jobs.InvokeWorker(j)
+				} // else no jobs
 			}
 		}
 	}

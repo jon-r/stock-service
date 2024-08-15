@@ -1,0 +1,13 @@
+{
+  "DT": "-62135596800000",
+  "PK": "T#TestTicker",
+  "SK": "P#-62135596800000",
+  "Prices": {
+    "Open": 20,
+    "Close": 30,
+    "High": 35,
+    "Low": 15,
+    "Id": "TestTicker",
+    "Timestamp": "0001-01-01T00:00:00Z"
+  }
+}

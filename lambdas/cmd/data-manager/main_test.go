@@ -1,16 +1,17 @@
 package main
 
 import (
-	"context"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	dbTypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	sqsTypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/jon-r/stock-service/lambdas/internal/db"
-	"github.com/jon-r/stock-service/lambdas/internal/providers"
-	"github.com/jon-r/stock-service/lambdas/internal/testutil"
+	"github.com/jon-r/stock-service/lambdas/internal/adapters/db"
+	"github.com/jon-r/stock-service/lambdas/internal/handlers"
+	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
+	"github.com/jon-r/stock-service/lambdas/internal/models/ticker"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/test"
 )
 
 func TestUpdateAllTickers(t *testing.T) {
@@ -18,17 +19,17 @@ func TestUpdateAllTickers(t *testing.T) {
 }
 
 func updateAllTickerNoErrors(t *testing.T) {
-	stubber, mockServiceHandler := testutil.EnterTest(nil)
-	mockHandler := DataManagerHandler{*mockServiceHandler}
+	stubber, ctx := test.Enter()
+	mockHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 
-	expectedTickers := []db.TickerItem{
+	expectedTickers := []ticker.Entity{
 		{
-			StocksTableItem: db.StocksTableItem{Id: "T#AMZN", Sort: "T#AMZN"},
-			Provider:        providers.PolygonIo,
+			EntityBase: db.EntityBase{Id: "T#AMZN", Sort: "T#AMZN"},
+			Provider:   provider.PolygonIo,
 		},
 		{
-			StocksTableItem: db.StocksTableItem{Id: "T#META", Sort: "T#META"},
-			Provider:        providers.PolygonIo,
+			EntityBase: db.EntityBase{Id: "T#META", Sort: "T#META"},
+			Provider:   provider.PolygonIo,
 		},
 	}
 	expectedQuery := &dynamodb.ScanInput{
@@ -43,7 +44,7 @@ func updateAllTickerNoErrors(t *testing.T) {
 		FilterExpression:     aws.String("begins_with (#0, :0)"),
 		ProjectionExpression: aws.String("#0, #1"),
 	}
-	stubber.Add(testutil.StubDynamoDbScan(expectedQuery, expectedTickers, nil))
+	stubber.Add(test.StubDynamoDbScan(expectedQuery, expectedTickers, nil))
 
 	expectedQueueItems := []sqsTypes.SendMessageBatchRequestEntry{
 		{
@@ -51,14 +52,14 @@ func updateAllTickerNoErrors(t *testing.T) {
 			MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"UPDATE_PRICES","TickerId":"AMZN,META","Attempts":0}`),
 		},
 	}
-	stubber.Add(testutil.StubSqsSendMessageBatch("SQS_QUEUE_URL", expectedQueueItems, nil))
+	stubber.Add(test.StubSqsSendMessageBatch("SQS_QUEUE_URL", expectedQueueItems, nil))
 
 	expectedRule := "EVENTBRIDGE_RULE_NAME"
-	stubber.Add(testutil.StubEventbridgeEnableRule(expectedRule, nil))
+	stubber.Add(test.StubEventbridgeEnableRule(expectedRule, nil))
 	expectedLambda := "LAMBDA_TICKER_NAME"
-	stubber.Add(testutil.StubLambdaInvoke(expectedLambda, nil, nil))
+	stubber.Add(test.StubLambdaInvoke(expectedLambda, nil, nil))
 
-	err := mockHandler.updateAllTickers(context.TODO())
+	err := mockHandler.HandleRequest(ctx)
 
-	testutil.Assert(stubber, err, nil, t)
+	test.Assert(t, stubber, err, nil)
 }

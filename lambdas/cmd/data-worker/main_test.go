@@ -1,15 +1,16 @@
 package main
 
 import (
-	"context"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	dbTypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/jon-r/stock-service/lambdas/internal/jobs"
-	"github.com/jon-r/stock-service/lambdas/internal/providers"
-	"github.com/jon-r/stock-service/lambdas/internal/testutil"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/jon-r/stock-service/lambdas/internal/handlers"
+	"github.com/jon-r/stock-service/lambdas/internal/models/job"
+	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/test"
 )
 
 func TestHandleJobAction(t *testing.T) {
@@ -19,161 +20,103 @@ func TestHandleJobAction(t *testing.T) {
 }
 
 func handleSetTickerDescriptionNoErrors(t *testing.T) {
-	stubber, mockServiceHander := testutil.EnterTest(nil)
-	mockHandler := DataWorkerHandler{
-		*mockServiceHander,
-		providers.NewMockProviderService(),
-	}
+	stubber, ctx := test.Enter()
+	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 
 	expectedUpdate := &dynamodb.UpdateItemInput{
 		TableName: aws.String("DB_STOCKS_TABLE_NAME"),
-		Key: map[string]dbTypes.AttributeValue{
-			"PK": &dbTypes.AttributeValueMemberS{Value: "T#TestTicker"},
-			"SK": &dbTypes.AttributeValueMemberS{Value: "T#TestTicker"},
+		Key: map[string]types.AttributeValue{
+			"PK": &types.AttributeValueMemberS{Value: "T#TestTicker"},
+			"SK": &types.AttributeValueMemberS{Value: "T#TestTicker"},
 		},
 		ExpressionAttributeNames: map[string]string{
 			"#0": "Description",
 		},
-		ExpressionAttributeValues: map[string]dbTypes.AttributeValue{
-			":0": &dbTypes.AttributeValueMemberM{
-				Value: map[string]dbTypes.AttributeValue{
-					"Currency":   &dbTypes.AttributeValueMemberS{Value: "GBP"},
-					"FullName":   &dbTypes.AttributeValueMemberS{Value: "Full name TestTicker"},
-					"FullTicker": &dbTypes.AttributeValueMemberS{Value: "Ticker:TestTicker"},
-					"Icon":       &dbTypes.AttributeValueMemberS{Value: "Icon:POLYGON_IO/TestTicker"},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":0": &types.AttributeValueMemberM{
+				Value: map[string]types.AttributeValue{
+					"Currency":   &types.AttributeValueMemberS{Value: "GBP"},
+					"FullName":   &types.AttributeValueMemberS{Value: "Full name TestTicker"},
+					"FullTicker": &types.AttributeValueMemberS{Value: "Ticker:TestTicker"},
+					"Icon":       &types.AttributeValueMemberS{Value: "Icon:POLYGON_IO/TestTicker"},
 				},
 			},
 		},
 		UpdateExpression: aws.String("SET #0 = :0\n"),
 	}
-	stubber.Add(testutil.StubDynamoDbUpdate(expectedUpdate, nil))
+	stubber.Add(test.StubDynamoDbUpdate(expectedUpdate, nil))
 
-	job := jobs.JobAction{
+	jobEvent := job.Job{
 		JobId:    "TestJob",
-		Provider: providers.PolygonIo,
-		Type:     jobs.LoadTickerDescription,
+		Provider: provider.PolygonIo,
+		Type:     job.LoadTickerDescription,
 		TickerId: "TestTicker",
 		Attempts: 0,
 	}
-	err := mockHandler.handleJobEvent(context.TODO(), job)
-
-	testutil.Assert(stubber, err, nil, t)
+	err := mockServiceHandler.HandleRequest(ctx, jobEvent)
+	test.Assert(t, stubber, err, nil)
 }
+
 func handleSetHistoricalPricesNoErrors(t *testing.T) {
-	stubber, mockServiceHander := testutil.EnterTest(nil)
-	mockHandler := DataWorkerHandler{
-		*mockServiceHander,
-		providers.NewMockProviderService(),
-	}
+	stubber, ctx := test.Enter()
+	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
+
+	var jsonData interface{}
+	test.ReadTestJson("./testdata/testTicker1Price.json", &jsonData)
+	item1, _ := attributevalue.MarshalMap(jsonData)
+	test.ReadTestJson("./testdata/testTicker2Price.json", &jsonData)
+	item2, _ := attributevalue.MarshalMap(jsonData)
 
 	expectedInput := &dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]dbTypes.WriteRequest{
+		RequestItems: map[string][]types.WriteRequest{
 			"DB_STOCKS_TABLE_NAME": {
-				{PutRequest: &dbTypes.PutRequest{
-					Item: map[string]dbTypes.AttributeValue{
-						"DT": &dbTypes.AttributeValueMemberS{Value: "-62135596800000"},
-						"PK": &dbTypes.AttributeValueMemberS{Value: "T#TestTicker:POLYGON_IO"},
-						"SK": &dbTypes.AttributeValueMemberS{Value: "P#-62135596800000"},
-						"Price": &dbTypes.AttributeValueMemberM{
-							Value: map[string]dbTypes.AttributeValue{
-								"Open":      &dbTypes.AttributeValueMemberN{Value: "10"},
-								"Close":     &dbTypes.AttributeValueMemberN{Value: "20"},
-								"High":      &dbTypes.AttributeValueMemberN{Value: "30"},
-								"Low":       &dbTypes.AttributeValueMemberN{Value: "5"},
-								"Id":        &dbTypes.AttributeValueMemberS{Value: "TestTicker:POLYGON_IO"},
-								"Timestamp": &dbTypes.AttributeValueMemberS{Value: "0001-01-01T00:00:00Z"},
-							}},
-					},
-				}},
-				{PutRequest: &dbTypes.PutRequest{
-					Item: map[string]dbTypes.AttributeValue{
-						"DT": &dbTypes.AttributeValueMemberS{Value: "-62135596800000"},
-						"PK": &dbTypes.AttributeValueMemberS{Value: "T#TestTicker:POLYGON_IO"},
-						"SK": &dbTypes.AttributeValueMemberS{Value: "P#-62135596800000"},
-						"Price": &dbTypes.AttributeValueMemberM{
-							Value: map[string]dbTypes.AttributeValue{
-								"Open":      &dbTypes.AttributeValueMemberN{Value: "20"},
-								"Close":     &dbTypes.AttributeValueMemberN{Value: "30"},
-								"High":      &dbTypes.AttributeValueMemberN{Value: "35"},
-								"Low":       &dbTypes.AttributeValueMemberN{Value: "15"},
-								"Id":        &dbTypes.AttributeValueMemberS{Value: "TestTicker:POLYGON_IO"},
-								"Timestamp": &dbTypes.AttributeValueMemberS{Value: "0001-01-01T00:00:00Z"},
-							}},
-					},
-				}},
+				{PutRequest: &types.PutRequest{Item: item1}},
+				{PutRequest: &types.PutRequest{Item: item2}},
 			},
 		},
 	}
-	stubber.Add(testutil.StubDynamoDbBatchWriteTicker(expectedInput, nil))
+	stubber.Add(test.StubDynamoDbBatchWriteTicker(expectedInput, nil))
 
-	job := jobs.JobAction{
+	jobEvent := job.Job{
 		JobId:    "TestJob",
-		Provider: providers.PolygonIo,
-		Type:     jobs.LoadHistoricalPrices,
+		Provider: provider.PolygonIo,
+		Type:     job.LoadHistoricalPrices,
 		TickerId: "TestTicker",
 		Attempts: 0,
 	}
 
-	err := mockHandler.handleJobEvent(context.TODO(), job)
-
-	testutil.Assert(stubber, err, nil, t)
+	err := mockServiceHandler.HandleRequest(ctx, jobEvent)
+	test.Assert(t, stubber, err, nil)
 }
 
 func handleUpdatePricesNoErrors(t *testing.T) {
-	stubber, mockServiceHander := testutil.EnterTest(nil)
-	mockHandler := DataWorkerHandler{
-		*mockServiceHander,
-		providers.NewMockProviderService(),
-	}
+	stubber, ctx := test.Enter()
+	mockHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
+
+	var jsonData interface{}
+	test.ReadTestJson("./testdata/testTicker3Price.json", &jsonData)
+	item3, _ := attributevalue.MarshalMap(jsonData)
+	test.ReadTestJson("./testdata/testTicker4Price.json", &jsonData)
+	item4, _ := attributevalue.MarshalMap(jsonData)
 
 	expectedInput := &dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]dbTypes.WriteRequest{
+		RequestItems: map[string][]types.WriteRequest{
 			"DB_STOCKS_TABLE_NAME": {
-				{PutRequest: &dbTypes.PutRequest{
-					Item: map[string]dbTypes.AttributeValue{
-						"DT": &dbTypes.AttributeValueMemberS{Value: "-62135596800000"},
-						"PK": &dbTypes.AttributeValueMemberS{Value: "T#TestTicker1:POLYGON_IO"},
-						"SK": &dbTypes.AttributeValueMemberS{Value: "P#-62135596800000"},
-						"Price": &dbTypes.AttributeValueMemberM{
-							Value: map[string]dbTypes.AttributeValue{
-								"Open":      &dbTypes.AttributeValueMemberN{Value: "40"},
-								"Close":     &dbTypes.AttributeValueMemberN{Value: "50"},
-								"High":      &dbTypes.AttributeValueMemberN{Value: "55"},
-								"Low":       &dbTypes.AttributeValueMemberN{Value: "35"},
-								"Id":        &dbTypes.AttributeValueMemberS{Value: "TestTicker1:POLYGON_IO"},
-								"Timestamp": &dbTypes.AttributeValueMemberS{Value: "0001-01-01T00:00:00Z"},
-							}},
-					},
-				}},
-				{PutRequest: &dbTypes.PutRequest{
-					Item: map[string]dbTypes.AttributeValue{
-						"DT": &dbTypes.AttributeValueMemberS{Value: "-62135596800000"},
-						"PK": &dbTypes.AttributeValueMemberS{Value: "T#TestTicker2:POLYGON_IO"},
-						"SK": &dbTypes.AttributeValueMemberS{Value: "P#-62135596800000"},
-						"Price": &dbTypes.AttributeValueMemberM{
-							Value: map[string]dbTypes.AttributeValue{
-								"Open":      &dbTypes.AttributeValueMemberN{Value: "40"},
-								"Close":     &dbTypes.AttributeValueMemberN{Value: "50"},
-								"High":      &dbTypes.AttributeValueMemberN{Value: "55"},
-								"Low":       &dbTypes.AttributeValueMemberN{Value: "35"},
-								"Id":        &dbTypes.AttributeValueMemberS{Value: "TestTicker2:POLYGON_IO"},
-								"Timestamp": &dbTypes.AttributeValueMemberS{Value: "0001-01-01T00:00:00Z"},
-							}},
-					},
-				}},
+				{PutRequest: &types.PutRequest{Item: item3}},
+				{PutRequest: &types.PutRequest{Item: item4}},
 			},
 		},
 	}
-	stubber.Add(testutil.StubDynamoDbBatchWriteTicker(expectedInput, nil))
+	stubber.Add(test.StubDynamoDbBatchWriteTicker(expectedInput, nil))
 
-	job := jobs.JobAction{
+	jobEvent := job.Job{
 		JobId:    "TestJob",
-		Provider: providers.PolygonIo,
-		Type:     jobs.UpdatePrices,
+		Provider: provider.PolygonIo,
+		Type:     job.LoadDailyPrices,
 		TickerId: "TestTicker1,TestTicker2",
 		Attempts: 0,
 	}
-	err := mockHandler.handleJobEvent(context.TODO(), job)
 
-	testutil.Assert(stubber, err, nil, t)
+	err := mockHandler.HandleRequest(ctx, jobEvent)
+	test.Assert(t, stubber, err, nil)
 }
