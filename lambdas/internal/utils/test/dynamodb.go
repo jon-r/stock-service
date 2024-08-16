@@ -8,7 +8,6 @@ import (
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 )
 
-// todo pass in any and marshal here (dry out the test?)
 func StubDynamoDbPutItem(tableName string, item interface{}, raiseErr error) testtools.Stub {
 	data, _ := attributevalue.MarshalMap(item)
 

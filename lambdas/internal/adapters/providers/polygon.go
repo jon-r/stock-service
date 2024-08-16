@@ -2,6 +2,7 @@ package providers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -34,6 +35,9 @@ func (p *p) getDescription(tickerId string) (*ticker.Description, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Printf("%+v\n", res)
+
 	description := ticker.Description{
 		Currency:   res.Results.CurrencyName,
 		FullName:   res.Results.Name,
@@ -58,15 +62,15 @@ func (p *p) getHistoricalPrices(tickerId string) (*[]prices.TickerPrices, error)
 
 	iter := p.client.ListAggs(context.TODO(), params)
 
-	var prices []prices.TickerPrices
+	var pricesList []prices.TickerPrices
 
 	for iter.Next() {
 		item := iter.Item()
 
-		prices = append(prices, p.aggregateToPrice(item, tickerId))
+		pricesList = append(pricesList, p.aggregateToPrice(item, tickerId))
 	}
 
-	return &prices, iter.Err()
+	return &pricesList, iter.Err()
 }
 
 func (p *p) getDailyPrices(tickerIds []string) (*[]prices.TickerPrices, error) {
