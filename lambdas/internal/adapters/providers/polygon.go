@@ -2,7 +2,6 @@ package providers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -36,8 +35,6 @@ func (p *p) getDescription(tickerId string) (*ticker.Description, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Printf("%+v\n", res)
 
 	description := ticker.Description{
 		Currency:   res.Results.CurrencyName,
