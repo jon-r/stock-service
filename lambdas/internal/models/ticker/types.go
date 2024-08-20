@@ -1,8 +1,6 @@
 package ticker
 
 import (
-	"strings"
-
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/db"
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 )
@@ -18,11 +16,6 @@ type Entity struct {
 	db.EntityBase
 	Provider    provider.Name
 	Description Description
-}
-
-func (e *Entity) GetTickerId() string {
-	tickerId, _ := strings.CutPrefix(e.EntityBase.Sort, string(KeyTickerId))
-	return tickerId
 }
 
 type EntityStub struct {

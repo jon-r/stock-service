@@ -14,13 +14,11 @@ import (
 )
 
 func TestPollSqsQueue(t *testing.T) {
-	//t.Skip("ignore this test for now")
 	// fixme this test needs redoing, it sort of works but inconsistently
 	t.Run("NoErrors", pollSqsQueueNoErrors)
 }
 
 func pollSqsQueueNoErrors(t *testing.T) {
-
 	stubber, ctx := test.Enter()
 	mockClock := clock.NewMock()
 
@@ -40,7 +38,6 @@ func pollSqsQueueNoErrors(t *testing.T) {
 		},
 	})
 
-	//receiveQueueEvent(stubber, []types.Message{})
 	invokeWorkerEvent(stubber, `{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`)
 	deleteQueueEvent(stubber, "message1")
 	receiveQueueEvent(stubber, []types.Message{})
@@ -70,27 +67,21 @@ func pollSqsQueueNoErrors(t *testing.T) {
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
-	receiveQueueEvent(stubber, []types.Message{})
+
+	// todo these shouldnt be needed
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
 
-	testDone := make(chan bool)
-	go func() {
-		// todo grab errors
-		mockHandler.HandleRequest(ctx)
+	// todo grab errors
+	go mockHandler.HandleRequest(ctx)
 
-		testDone <- true
-	}()
-
-	// todo this log needs to be here or the tests breaks. not sure why??
-	mockHandler.Log.Debugln("fast forward 10min")
+	// todo this sleep needs to be here or the tests breaks. not sure why??
+	time.Sleep(time.Second)
 	mockClock.Add(10 * time.Minute)
 
-	stubber.Clear() // clear any lingering poll events
-
-	<-testDone
+	stubber.Clear() // clear any lingering poll events fixme shouldnt need to do this
 
 	test.Assert(t, stubber, nil, nil)
 

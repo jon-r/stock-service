@@ -15,7 +15,7 @@ import (
 
 func NewMock(cfg aws.Config) *LambdaHandler {
 	idGen := func() string { return "TEST_ID" }
-	log := logger.NewLogger(zapcore.DPanicLevel) // todo raise once finished
+	log := logger.NewLogger(zapcore.DebugLevel) // todo raise once finished
 
 	// todo once tests split up, some of this can be moved to the controller
 	providersService := providers.NewMock()
