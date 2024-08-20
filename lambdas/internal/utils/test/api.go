@@ -43,8 +43,6 @@ func (stubber *ApiRequestStubber) Next() *ReqStub {
 
 func (stubber *ApiRequestStubber) NewTestClient() *http.Client {
 	handler := func(req *http.Request) *http.Response {
-		fmt.Printf("%+v\n", req)
-
 		var err error
 		stub := stubber.Next()
 
@@ -58,7 +56,7 @@ func (stubber *ApiRequestStubber) NewTestClient() *http.Client {
 		err = stubber.compare(*stub, *req)
 
 		if err != nil {
-			fmt.Printf("%+v\n", err)
+			fmt.Printf("ERROR: %+v\n", err)
 			return &http.Response{
 				StatusCode: http.StatusBadRequest,
 			}
@@ -81,7 +79,7 @@ func (stubber *ApiRequestStubber) NewTestClient() *http.Client {
 func (stubber *ApiRequestStubber) compare(expected ReqStub, actual http.Request) error {
 	var err error
 
-	// todo use assert test stuff
+	// todo use assert test stuff?
 	if expected.Method != actual.Method {
 		err = fmt.Errorf("expected method %s, got %s", expected.Method, actual.Method)
 	}

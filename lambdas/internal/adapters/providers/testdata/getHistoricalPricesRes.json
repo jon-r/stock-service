@@ -1,6 +1,6 @@
 {
   "adjusted": true,
-  "next_url": "https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/day/1578114000000/2020-01-10?cursor=bGltaXQ9MiZzb3J0PWFzYw",
+  "next_url": "https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/day/1638316800000/1666742400000?adjusted=true&sort=desc?cursor=bGltaXQ9MiZzb3J0PWFzYw",
   "queryCount": 2,
   "request_id": "6a7e466379af0a71039d60cc78e72282",
   "results": [
