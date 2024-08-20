@@ -3,10 +3,13 @@ package providers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/benbjohnson/clock"
 	"github.com/jon-r/stock-service/lambdas/internal/models/prices"
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 	"github.com/jon-r/stock-service/lambdas/internal/models/ticker"
+	"github.com/polygon-io/client-go/rest/models"
 )
 
 type Service interface {
@@ -46,9 +49,12 @@ func (api *api) GetDailyPrices(providerName provider.Name, tickerIds []string) (
 	}
 }
 
-// todo can mock the response client for tests?
-func NewService(httpClient *http.Client) Service {
+// free accounts won't be older than 2 years, so wont get all this
+var startDate, _ = time.Parse(time.DateOnly, "2021-12-01")
+var historyStart = models.Millis(startDate)
+
+func NewService(httpClient *http.Client, c clock.Clock) Service {
 	return &api{
-		polygon: newPolygonAPI(httpClient),
+		polygon: newPolygonAPI(httpClient, c),
 	}
 }

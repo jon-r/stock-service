@@ -13,23 +13,34 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 )
 
+type queueManager struct {
+	done           chan bool
+	emptyResponses int
+	failedAttempts int
+	queues         map[provider.Name]chan job.Job
+}
+
 type handler struct {
 	*handlers.LambdaHandler
-	Clock          clock.Clock
-	done           chan bool
-	providerQueues map[provider.Name]chan job.Job
+	Clock clock.Clock
+
+	queueManager queueManager
 }
 
 func newHandler(lambdaHandler *handlers.LambdaHandler, c clock.Clock) *handler {
 	return &handler{
 		LambdaHandler: lambdaHandler,
 		Clock:         c,
-		done:          make(chan bool),
-		providerQueues: map[provider.Name]chan job.Job{
-			provider.PolygonIo: make(chan job.Job, 20),
+		queueManager: queueManager{
+			done:           make(chan bool),
+			queues:         map[provider.Name]chan job.Job{provider.PolygonIo: make(chan job.Job, 20)},
+			emptyResponses: 0,
+			failedAttempts: 0,
 		},
 	}
 }
+
+var dataTickerHandler = newHandler(handlers.NewLambdaHandler(), clock.New())
 
 func (h *handler) HandleRequest(ctx context.Context) {
 	// todo look at zap docs to see if this can be done better. its not passing context to controllers
@@ -49,12 +60,10 @@ func (h *handler) HandleRequest(ctx context.Context) {
 
 	// 3. Switch off after TICKER_TIMEOUT minutes
 	h.Clock.Sleep(time.Duration(tickerTimeout) * time.Minute)
-	h.done <- true
+	h.queueManager.done <- true
 
 	// return nil // todo have the goroutines send the error here?
 }
-
-var dataTickerHandler = newHandler(handlers.NewLambdaHandler(), clock.New())
 
 func main() {
 	lambda.Start(dataTickerHandler.HandleRequest)

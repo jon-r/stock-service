@@ -29,6 +29,23 @@ func ReadTestJson(testFile string, target any) {
 	}
 }
 
+func ReadJsonToString(testFile string) string {
+	jsonFile, err := os.Open(testFile)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	defer jsonFile.Close()
+
+	byteValue, err := io.ReadAll(jsonFile)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+
+	return string(byteValue)
+}
+
 func unpackArray(s any) []any {
 	v := reflect.ValueOf(s)
 	r := make([]any, v.Len())

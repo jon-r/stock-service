@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
+	"github.com/benbjohnson/clock"
 	"github.com/jon-r/stock-service/lambdas/internal/models/prices"
 	"github.com/jon-r/stock-service/lambdas/internal/models/ticker"
 	"github.com/jon-r/stock-service/lambdas/internal/utils/array"
@@ -15,6 +15,7 @@ import (
 )
 
 type p struct {
+	clock  clock.Clock
 	client *polygon.Client
 }
 
@@ -34,6 +35,7 @@ func (p *p) getDescription(tickerId string) (*ticker.Description, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	description := ticker.Description{
 		Currency:   res.Results.CurrencyName,
 		FullName:   res.Results.Name,
@@ -44,33 +46,30 @@ func (p *p) getDescription(tickerId string) (*ticker.Description, error) {
 	return &description, nil
 }
 
-// free polygon account won't be older than 2 years, so wont get all this
-var historyStart = models.Millis(time.Date(2021, time.December, 1, 0, 0, 0, 0, time.UTC))
-
 func (p *p) getHistoricalPrices(tickerId string) (*[]prices.TickerPrices, error) {
 	params := models.ListAggsParams{
 		Ticker:     tickerId,
 		Multiplier: 1,
 		Timespan:   models.Day,
 		From:       historyStart,
-		To:         models.Millis(time.Now()),
+		To:         models.Millis(p.clock.Now()),
 	}.WithOrder(models.Desc).WithAdjusted(true)
 
 	iter := p.client.ListAggs(context.TODO(), params)
 
-	var prices []prices.TickerPrices
+	var pricesList []prices.TickerPrices
 
 	for iter.Next() {
 		item := iter.Item()
 
-		prices = append(prices, p.aggregateToPrice(item, tickerId))
+		pricesList = append(pricesList, p.aggregateToPrice(item, tickerId))
 	}
 
-	return &prices, iter.Err()
+	return &pricesList, iter.Err()
 }
 
 func (p *p) getDailyPrices(tickerIds []string) (*[]prices.TickerPrices, error) {
-	yesterday := models.Date(time.Now().AddDate(0, 0, -1))
+	yesterday := models.Date(p.clock.Now().AddDate(0, 0, -1))
 
 	params := models.GetGroupedDailyAggsParams{
 		Locale:     models.US,
@@ -114,8 +113,9 @@ func (p *p) aggregateToPrice(item models.Agg, tickerId string) prices.TickerPric
 	}
 }
 
-func newPolygonAPI(httpClient *http.Client) API {
+func newPolygonAPI(httpClient *http.Client, c clock.Clock) API {
 	return &p{
+		clock:  c,
 		client: polygon.NewWithClient(os.Getenv("POLYGON_API_KEY"), httpClient),
 	}
 }

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/benbjohnson/clock"
 	"github.com/google/uuid"
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/config"
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/db"
@@ -28,7 +29,7 @@ func NewLambdaHandler() *LambdaHandler {
 
 	// todo once tests split up, some of this can be moved to the controllers
 	eventsScheduler := events.NewScheduler(cfg)
-	providersService := providers.NewService(nil)
+	providersService := providers.NewService(nil, clock.New())
 	queueBroker := queue.NewBroker(cfg, idGen)
 	dbRepository := db.NewRepository(cfg)
 
