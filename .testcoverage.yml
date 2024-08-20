@@ -1,0 +1,16 @@
+profile: cover.out
+local-prefix: "github.com/jon-r/stock-service"
+
+threshold:
+  #  fixme raise this up at some point
+  # (optional; default 0)
+  # The minimum coverage that each file should have
+  file: 40 # 70
+
+  # (optional; default 0)
+  # The minimum coverage that each package should have
+  package: 40 # 70
+
+  # (optional; default 0)
+  # The minimum total coverage project should have
+  total: 50 # 80
