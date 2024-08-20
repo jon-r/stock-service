@@ -5,7 +5,7 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/providers"
 	"github.com/jon-r/stock-service/lambdas/internal/models/prices"
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
-	"github.com/jon-r/stock-service/lambdas/internal/utils/logger"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/logger_old"
 )
 
 type Controller interface {
@@ -16,7 +16,7 @@ type Controller interface {
 type pricesController struct {
 	providers providers.Service
 	db        db.Repository
-	log       logger.Logger
+	log       logger_old.Logger
 }
 
 func (c *pricesController) LoadHistoricalPrices(provider provider.Name, id string) error {
@@ -57,6 +57,6 @@ func (c *pricesController) addPricesToDb(pricesList *[]prices.TickerPrices) erro
 	return err
 }
 
-func NewController(db db.Repository, providers providers.Service, log logger.Logger) Controller {
+func NewController(db db.Repository, providers providers.Service, log logger_old.Logger) Controller {
 	return &pricesController{providers, db, log}
 }

@@ -1,4 +1,4 @@
-package logger
+package logger_old
 
 import (
 	"context"
@@ -14,9 +14,9 @@ import (
 //	config := zap.NewProductionConfig()
 //	config.Level = zap.NewAtomicLevelAt(level)
 //
-//	logger := zap.Must(config.Build())
+//	logger_old := zap.Must(config.Build())
 //
-//	return logger.With(
+//	return logger_old.With(
 //		zap.String("requestId", lc.AwsRequestID),
 //	).Sugar()
 //}

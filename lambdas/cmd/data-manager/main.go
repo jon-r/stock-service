@@ -16,6 +16,8 @@ func (h *handler) HandleRequest(ctx context.Context) error {
 	h.Log = h.Log.LoadLambdaContext(ctx)
 	defer h.Log.Sync()
 
+	h.Log.Debugln("test")
+
 	// 1. get all tickers
 	tickerList, err := h.Tickers.GetAll()
 

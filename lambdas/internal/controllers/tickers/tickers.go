@@ -8,7 +8,7 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/providers"
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 	"github.com/jon-r/stock-service/lambdas/internal/models/ticker"
-	"github.com/jon-r/stock-service/lambdas/internal/utils/logger"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/logger_old"
 )
 
 type Controller interface {
@@ -21,7 +21,7 @@ type Controller interface {
 type tickersController struct {
 	db        db.Repository
 	providers providers.Service
-	log       logger.Logger
+	log       logger_old.Logger
 }
 
 func (c *tickersController) New(params *ticker.NewTickerParams) error {
@@ -97,6 +97,6 @@ func (c *tickersController) GetAll() (*[]ticker.EntityStub, error) {
 	return ticker.NewStubsFromDynamoDb(entities)
 }
 
-func NewController(db db.Repository, providers providers.Service, log logger.Logger) Controller {
+func NewController(db db.Repository, providers providers.Service, log logger_old.Logger) Controller {
 	return &tickersController{db, providers, log}
 }

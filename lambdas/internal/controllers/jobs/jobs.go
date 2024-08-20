@@ -7,7 +7,7 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/queue"
 	"github.com/jon-r/stock-service/lambdas/internal/models/job"
 	"github.com/jon-r/stock-service/lambdas/internal/models/ticker"
-	"github.com/jon-r/stock-service/lambdas/internal/utils/logger"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/logger_old"
 )
 
 type Controller interface {
@@ -23,7 +23,7 @@ type jobsController struct {
 	queueBroker     queue.Broker
 	eventsScheduler events.Scheduler
 	idGen           queue.NewIdFunc
-	log             logger.Logger
+	log             logger_old.Logger
 }
 
 func (c *jobsController) LaunchNewTickerJobs(newTicker *ticker.NewTickerParams) error {
@@ -163,6 +163,6 @@ func (c *jobsController) ReceiveJobs() (*[]job.Job, error) {
 	return job.NewJobsFromSqs(messages)
 }
 
-func NewController(queueBroker queue.Broker, eventsScheduler events.Scheduler, idGen queue.NewIdFunc, log logger.Logger) Controller {
+func NewController(queueBroker queue.Broker, eventsScheduler events.Scheduler, idGen queue.NewIdFunc, log logger_old.Logger) Controller {
 	return &jobsController{queueBroker, eventsScheduler, idGen, log}
 }
