@@ -21,18 +21,18 @@ type Controller interface {
 type tickersController struct {
 	db        db.Repository
 	providers providers.Service
-	log       logger.Logger
+	Log       logger.Logger
 }
 
 func (c *tickersController) New(params *ticker.NewTickerParams) error {
 	entity := ticker.NewTickerEntity(params)
 
-	c.log.Debugw("new ticker", "entity", entity, "item", params)
+	c.Log.Debugw("new ticker", "entity", entity, "item", params)
 
 	_, err := c.db.AddOne(ticker.TableName(), entity)
 
 	if err != nil {
-		c.log.Errorw("error adding ticker", "error", err)
+		c.Log.Errorw("error adding ticker", "error", err)
 	}
 
 	return err
@@ -44,7 +44,7 @@ func (c *tickersController) LoadDescription(provider provider.Name, tickerId str
 	description, err := c.providers.GetDescription(provider, tickerId)
 
 	if err != nil {
-		c.log.Errorw("error loading description", "error", err)
+		c.Log.Errorw("error loading description", "error", err)
 		return err
 	}
 
@@ -52,18 +52,18 @@ func (c *tickersController) LoadDescription(provider provider.Name, tickerId str
 	update, err := expression.NewBuilder().WithUpdate(updateEx).Build()
 
 	if err != nil {
-		c.log.Errorw("error building update expression", "error", err)
+		c.Log.Errorw("error building update expression", "error", err)
 		return err
 	}
 
 	item := ticker.NewTickerEntity(&ticker.NewTickerParams{Provider: provider, TickerId: tickerId})
 
-	c.log.Debugw("Update item", "item", item, "key", item.GetKey())
+	c.Log.Debugw("Update item", "item", item, "key", item.GetKey())
 
 	_, err = c.db.Update(ticker.TableName(), item.GetKey(), update)
 
 	if err != nil {
-		c.log.Errorw("error updating ticker", "error", err)
+		c.Log.Errorw("error updating ticker", "error", err)
 	}
 
 	return err
@@ -83,14 +83,14 @@ func (c *tickersController) GetAll() (*[]ticker.EntityStub, error) {
 	query, err := expression.NewBuilder().WithFilter(filterEx).WithProjection(projEx).Build()
 
 	if err != nil {
-		c.log.Errorw("error building query", "error", err)
+		c.Log.Errorw("error building query", "error", err)
 		return nil, err
 	}
 
 	entities, err := c.db.GetMany(ticker.TableName(), query)
 
 	if err != nil {
-		c.log.Errorw("error getting tickers", "error", err)
+		c.Log.Errorw("error getting tickers", "error", err)
 		return nil, err
 	}
 

@@ -15,7 +15,7 @@ import (
 
 func NewMock(cfg aws.Config) *LambdaHandler {
 	idGen := func() string { return "TEST_ID" }
-	log := logger.NewLogger(zapcore.DebugLevel) // todo raise once finished
+	l := logger.New(zapcore.DebugLevel) // todo raise once finished
 
 	// todo once tests split up, some of this can be moved to the controller
 	providersService := providers.NewMock()
@@ -23,9 +23,9 @@ func NewMock(cfg aws.Config) *LambdaHandler {
 	eventsScheduler := events.NewScheduler(cfg)
 	dbRepository := db.NewRepository(cfg)
 
-	jobsCtrl := jobs.NewController(queueBroker, eventsScheduler, idGen, log)
-	tickersCtrl := tickers.NewController(dbRepository, providersService, log)
-	pricesCtrl := prices.NewController(dbRepository, providersService, log)
+	jobsCtrl := jobs.NewController(queueBroker, eventsScheduler, idGen, l)
+	tickersCtrl := tickers.NewController(dbRepository, providersService, l)
+	pricesCtrl := prices.NewController(dbRepository, providersService, l)
 
-	return &LambdaHandler{tickersCtrl, jobsCtrl, pricesCtrl, log}
+	return &LambdaHandler{tickersCtrl, jobsCtrl, pricesCtrl, l}
 }

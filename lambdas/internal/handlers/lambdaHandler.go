@@ -24,7 +24,7 @@ type LambdaHandler struct {
 
 func NewLambdaHandler() *LambdaHandler {
 	cfg := config.GetAwsConfig()
-	log := logger.NewLogger(zapcore.InfoLevel)
+	l := logger.New(zapcore.InfoLevel)
 	idGen := uuid.NewString
 
 	// todo once tests split up, some of this can be moved to the controllers
@@ -33,9 +33,9 @@ func NewLambdaHandler() *LambdaHandler {
 	queueBroker := queue.NewBroker(cfg, idGen)
 	dbRepository := db.NewRepository(cfg)
 
-	jobsCtrl := jobs.NewController(queueBroker, eventsScheduler, idGen, log)
-	tickersCtrl := tickers.NewController(dbRepository, providersService, log)
-	pricesCtrl := prices.NewController(dbRepository, providersService, log)
+	jobsCtrl := jobs.NewController(queueBroker, eventsScheduler, idGen, l)
+	tickersCtrl := tickers.NewController(dbRepository, providersService, l)
+	pricesCtrl := prices.NewController(dbRepository, providersService, l)
 
-	return &LambdaHandler{tickersCtrl, jobsCtrl, pricesCtrl, log}
+	return &LambdaHandler{tickersCtrl, jobsCtrl, pricesCtrl, l}
 }
