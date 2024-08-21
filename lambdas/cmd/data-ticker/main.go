@@ -39,10 +39,12 @@ func newHandler(lambdaHandler *handlers.LambdaHandler, c clock.Clock) *handler {
 
 var dataTickerHandler = newHandler(handlers.NewLambdaHandler(), clock.New())
 
+const defaultTimeoutMinutes = 5
+
 func (h *handler) HandleRequest(ctx context.Context) {
 	tickerTimeout, timeErr := strconv.Atoi(os.Getenv("TICKER_TIMEOUT"))
 	if timeErr != nil {
-		tickerTimeout = 5
+		tickerTimeout = defaultTimeoutMinutes
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
