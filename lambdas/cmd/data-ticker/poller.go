@@ -1,27 +1,31 @@
 package main
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 const pollInterval = 10 * time.Second
+const maxFailedAttempts = 5
+const maxEmptyResponses = 6
 
-func (h *handler) pollJobsQueue() {
+func (h *handler) pollJobsQueue(ctx context.Context, cancel context.CancelFunc) {
 	h.Log.Debugln("begin poll jobs queue")
 	ticker := h.Clock.Ticker(pollInterval)
 
 	for {
 		select {
-		case <-h.queueManager.done:
+		case <-ctx.Done():
 			h.Log.Debugln("finished polling jobs queue")
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			h.Log.Debugln("tick!")
-			h.checkForJobs()
+			h.checkForJobs(cancel)
 		}
 	}
 }
 
-func (h *handler) checkForJobs() {
+func (h *handler) checkForJobs(cancel context.CancelFunc) {
 	// 1. poll to get all items in queue
 	jobList, err := h.Jobs.ReceiveJobs()
 
@@ -30,10 +34,11 @@ func (h *handler) checkForJobs() {
 		h.Log.Warnw("failed to receive jobs", "err", err)
 		h.queueManager.failedAttempts++
 
-		if h.queueManager.failedAttempts > 5 {
+		if h.queueManager.failedAttempts > maxFailedAttempts {
 			h.Log.Errorf("aborting after %d failed attempts", h.queueManager.failedAttempts)
 			h.Jobs.StopScheduledRule()
-			h.queueManager.done <- true
+			cancel()
+			return
 		}
 
 		return
@@ -46,7 +51,7 @@ func (h *handler) checkForJobs() {
 		h.Log.Debugln("no jobs received")
 		h.queueManager.emptyResponses++
 
-		if h.queueManager.emptyResponses == 6 {
+		if h.queueManager.emptyResponses == maxEmptyResponses {
 			h.Log.Infoln("no new jobs received in 60 seconds, disabling scheduler")
 			h.Jobs.StopScheduledRule()
 		}
