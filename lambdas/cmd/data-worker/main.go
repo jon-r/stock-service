@@ -13,8 +13,7 @@ type handler struct{ *handlers.LambdaHandler }
 var dataWorkerHandler = handler{handlers.NewLambdaHandler()}
 
 func (h *handler) HandleRequest(ctx context.Context, j job.Job) error {
-	// todo look at zap docs to see if this can be done better. its not passing context to controllers
-	h.Log = h.Log.LoadLambdaContext(ctx)
+	h.Log.LoadContext(ctx)
 	defer h.Log.Sync()
 
 	// 1. handle action

@@ -5,7 +5,7 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/providers"
 	"github.com/jon-r/stock-service/lambdas/internal/models/prices"
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
-	"github.com/jon-r/stock-service/lambdas/internal/utils/logger_old"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/logger"
 )
 
 type Controller interface {
@@ -16,7 +16,7 @@ type Controller interface {
 type pricesController struct {
 	providers providers.Service
 	db        db.Repository
-	log       logger_old.Logger
+	Log       logger.Logger
 }
 
 func (c *pricesController) LoadHistoricalPrices(provider provider.Name, id string) error {
@@ -25,7 +25,7 @@ func (c *pricesController) LoadHistoricalPrices(provider provider.Name, id strin
 	historicalPrices, err := c.providers.GetHistoricalPrices(provider, id)
 
 	if err != nil {
-		c.log.Errorw("failed to get historical prices", "provider", provider, "error", err)
+		c.Log.Errorw("failed to get historical prices", "provider", provider, "error", err)
 		return err
 	}
 
@@ -38,7 +38,7 @@ func (c *pricesController) LoadDailyPrices(provider provider.Name, ids []string)
 	historicalPrices, err := c.providers.GetDailyPrices(provider, ids)
 
 	if err != nil {
-		c.log.Errorw("failed to get historical prices", "provider", provider, "error", err)
+		c.Log.Errorw("failed to get historical prices", "provider", provider, "error", err)
 		return err
 	}
 
@@ -51,12 +51,12 @@ func (c *pricesController) addPricesToDb(pricesList *[]prices.TickerPrices) erro
 	_, err := c.db.AddMany(prices.TableName(), *pricesEntities)
 
 	if err != nil {
-		c.log.Errorw("could not add prices to database", "error", err)
+		c.Log.Errorw("could not add prices to database", "error", err)
 	}
 
 	return err
 }
 
-func NewController(db db.Repository, providers providers.Service, log logger_old.Logger) Controller {
+func NewController(db db.Repository, providers providers.Service, log logger.Logger) Controller {
 	return &pricesController{providers, db, log}
 }

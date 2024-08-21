@@ -16,8 +16,7 @@ type handler struct{ *handlers.LambdaHandler }
 var apiStocksHandler = handler{handlers.NewLambdaHandler()}
 
 func (h *handler) HandleRequest(ctx context.Context, request awsEvents.APIGatewayProxyRequest) (*awsEvents.APIGatewayProxyResponse, error) {
-	// todo look at zap docs to see if this can be done better. its not passing context to controllers
-	h.Log = h.Log.LoadLambdaContext(ctx)
+	h.Log.LoadContext(ctx)
 	defer h.Log.Sync()
 
 	switch request.HTTPMethod {

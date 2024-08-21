@@ -15,11 +15,8 @@ func (h *handler) pollProviderQueue(providerName provider.Name) {
 	interval := provider.GetRequestsPerMin()[providerName]
 	ticker := h.Clock.Ticker(interval)
 
-	for {
-		select {
-		case <-ticker.C:
-			h.invokeNextJob(providerName)
-		}
+	for range ticker.C {
+		h.invokeNextJob(providerName)
 	}
 }
 

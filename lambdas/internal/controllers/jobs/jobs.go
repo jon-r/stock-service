@@ -7,7 +7,7 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/queue"
 	"github.com/jon-r/stock-service/lambdas/internal/models/job"
 	"github.com/jon-r/stock-service/lambdas/internal/models/ticker"
-	"github.com/jon-r/stock-service/lambdas/internal/utils/logger_old"
+	"github.com/jon-r/stock-service/lambdas/internal/utils/logger"
 )
 
 type Controller interface {
@@ -23,7 +23,7 @@ type jobsController struct {
 	queueBroker     queue.Broker
 	eventsScheduler events.Scheduler
 	idGen           queue.NewIdFunc
-	log             logger_old.Logger
+	Log             logger.Logger
 }
 
 func (c *jobsController) LaunchNewTickerJobs(newTicker *ticker.NewTickerParams) error {
@@ -34,11 +34,11 @@ func (c *jobsController) LaunchNewTickerJobs(newTicker *ticker.NewTickerParams) 
 		*job.NewJob(job.LoadHistoricalPrices, c.idGen(), newTicker.Provider, newTicker.TickerId),
 	}
 
-	c.log.Debugw("add jobs to the queue", "jobs", newJobs)
+	c.Log.Debugw("add jobs to the queue", "jobs", newJobs)
 	_, err = c.queueBroker.SendMessages(job.QueueUrl(), newJobs)
 
 	if err != nil {
-		c.log.Errorw("error sending messages", "error", err)
+		c.Log.Errorw("error sending messages", "error", err)
 		return err
 	}
 
@@ -69,11 +69,11 @@ func (c *jobsController) LaunchDailyTickerJobs(tickers *[]ticker.EntityStub) err
 		//}
 	}
 
-	c.log.Debugw("add jobs to the queue", "jobs", newJobs)
+	c.Log.Debugw("add jobs to the queue", "jobs", newJobs)
 	_, err = c.queueBroker.SendMessages(job.QueueUrl(), newJobs)
 
 	if err != nil {
-		c.log.Errorw("error sending messages", "error", err)
+		c.Log.Errorw("error sending messages", "error", err)
 		return err
 	}
 
@@ -87,7 +87,7 @@ func (c *jobsController) startScheduledRule() error {
 	_, err = c.eventsScheduler.EnableRule(ruleName)
 
 	if err != nil {
-		c.log.Errorw("error enabling rule", "error", err)
+		c.Log.Errorw("error enabling rule", "error", err)
 		return err
 	}
 
@@ -96,7 +96,7 @@ func (c *jobsController) startScheduledRule() error {
 	_, err = c.eventsScheduler.InvokeFunction(functionName, nil)
 
 	if err != nil {
-		c.log.Warnw("could not invoke function but continuing anyway (it may already be running)", "error", err)
+		c.Log.Warnw("could not invoke function but continuing anyway (it may already be running)", "error", err)
 	}
 
 	return nil
@@ -109,13 +109,13 @@ func (c *jobsController) InvokeWorker(j job.Job) error {
 	_, err = c.eventsScheduler.InvokeFunction(functionName, j)
 
 	if err != nil {
-		c.log.Errorw("could not invoke function", "error", err)
+		c.Log.Errorw("could not invoke function", "error", err)
 		err = c.RequeueJob(j, err.Error())
 	}
 
 	_, err = c.queueBroker.DeleteMessage(job.QueueUrl(), j.ReceiptId)
 	if err != nil {
-		c.log.Errorw("could not delete message", "error", err)
+		c.Log.Errorw("could not delete message", "error", err)
 	}
 
 	return err
@@ -128,7 +128,7 @@ func (c *jobsController) StopScheduledRule() {
 	_, err = c.eventsScheduler.DisableRule(ruleName)
 
 	if err != nil {
-		c.log.Errorw("error disabling rule", "error", err)
+		c.Log.Errorw("error disabling rule", "error", err)
 	}
 }
 
@@ -150,19 +150,19 @@ func (c *jobsController) RequeueJob(j job.Job, failReason string) error {
 func (c *jobsController) ReceiveJobs() (*[]job.Job, error) {
 	var err error
 
-	c.log.Debug("attempting to receive jobs")
+	c.Log.Debugln("attempting to receive jobs")
 	messages, err := c.queueBroker.ReceiveMessages(job.QueueUrl())
 
 	if err != nil {
-		c.log.Errorw("error receiving messages", "error", err)
+		c.Log.Errorw("error receiving messages", "error", err)
 		return nil, err
 	}
 
-	c.log.Debugw("received messages", "messages", messages)
+	c.Log.Debugw("received messages", "messages", messages)
 
 	return job.NewJobsFromSqs(messages)
 }
 
-func NewController(queueBroker queue.Broker, eventsScheduler events.Scheduler, idGen queue.NewIdFunc, log logger_old.Logger) Controller {
+func NewController(queueBroker queue.Broker, eventsScheduler events.Scheduler, idGen queue.NewIdFunc, log logger.Logger) Controller {
 	return &jobsController{queueBroker, eventsScheduler, idGen, log}
 }

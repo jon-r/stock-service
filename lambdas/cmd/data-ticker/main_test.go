@@ -68,7 +68,7 @@ func pollSqsQueueNoErrors(t *testing.T) {
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
 
-	// todo these shouldnt be needed
+	// todo these shouldnt be needed. race conditions cause things to be triggered inconsistently
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})
 	receiveQueueEvent(stubber, []types.Message{})

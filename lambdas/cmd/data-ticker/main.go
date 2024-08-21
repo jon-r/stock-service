@@ -43,8 +43,7 @@ func newHandler(lambdaHandler *handlers.LambdaHandler, c clock.Clock) *handler {
 var dataTickerHandler = newHandler(handlers.NewLambdaHandler(), clock.New())
 
 func (h *handler) HandleRequest(ctx context.Context) {
-	// todo look at zap docs to see if this can be done better. its not passing context to controllers
-	h.Log = h.Log.LoadLambdaContext(ctx)
+	h.Log.LoadContext(ctx)
 	defer h.Log.Sync()
 
 	// 1. get all queued items
