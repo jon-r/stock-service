@@ -28,7 +28,7 @@ func (h *handler) checkForJobs(cancel context.CancelFunc) {
 		h.Log.Warnw("failed to receive jobs", "err", err)
 		h.queueManager.failedAttempts++
 
-		if h.queueManager.failedAttempts > maxFailedAttempts {
+		if h.queueManager.failedAttempts == maxFailedAttempts {
 			h.Log.Errorf("aborting after %d failed attempts", h.queueManager.failedAttempts)
 			h.Jobs.StopScheduledRule()
 			cancel()
@@ -60,6 +60,14 @@ func (h *handler) checkForJobs(cancel context.CancelFunc) {
 	}
 }
 
+func (h *handler) pollProviderQueue(ctx context.Context, providerName provider.Name) {
+	interval := provider.GetRequestsPerMin()[providerName]
+	h.pollUntilCancelled(ctx, func() {
+		h.invokeNextJob(providerName)
+	}, interval)
+	h.Log.Debugln("finished polling provider jobs")
+}
+
 func (h *handler) invokeNextJob(providerName provider.Name) {
 	select {
 	case j, ok := <-h.queueManager.queues[providerName]:
@@ -67,19 +75,9 @@ func (h *handler) invokeNextJob(providerName provider.Name) {
 			h.Log.Debugw("processing job", "job", j)
 			// todo send error back to the handler
 			h.Jobs.InvokeWorker(j)
-		} else {
-			// else no jobs
-			h.Log.Debugw("no job to process", "provider", providerName)
 		}
+		// else no jobs
 	default:
-		// nothing in queue (keep this default, else the queue channel is blocking)
+		h.Log.Debugw("no job to process", "provider", providerName)
 	}
-}
-
-func (h *handler) pollProviderQueue(ctx context.Context, providerName provider.Name) {
-	interval := provider.GetRequestsPerMin()[providerName]
-	h.pollUntilCancelled(ctx, func() {
-		h.invokeNextJob(providerName)
-	}, interval)
-	h.Log.Debugln("finished polling provider jobs")
 }
