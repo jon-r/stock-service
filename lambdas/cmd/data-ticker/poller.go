@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// TODO TEST -> trigger stop
 func (h *handler) pollUntilCancelled(ctx context.Context, fn func(), interval time.Duration) {
 	ticker := h.Clock.Ticker(interval)
 

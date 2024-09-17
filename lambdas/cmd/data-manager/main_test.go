@@ -7,13 +7,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	dbTypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	sqsTypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 	"github.com/jon-r/stock-service/lambdas/internal/adapters/db"
 	"github.com/jon-r/stock-service/lambdas/internal/handlers"
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 	"github.com/jon-r/stock-service/lambdas/internal/models/ticker"
 	"github.com/jon-r/stock-service/lambdas/internal/utils/test"
+	"github.com/stretchr/testify/assert"
 )
 
+// TODO TEST -> handle errors
 func TestUpdateAllTickers(t *testing.T) {
 	t.Run("NoErrors", updateAllTickerNoErrors)
 }
@@ -61,5 +64,6 @@ func updateAllTickerNoErrors(t *testing.T) {
 
 	err := mockHandler.HandleRequest(ctx)
 
-	test.Assert(t, stubber, err, nil)
+	assert.NoError(t, err)
+	testtools.ExitTest(stubber, t)
 }

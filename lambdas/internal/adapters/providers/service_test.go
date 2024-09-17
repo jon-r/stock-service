@@ -36,7 +36,7 @@ func TestService(t *testing.T) {
 
 		res, err := service.GetDescription(provider.PolygonIo, "AAPL")
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, &ticker.Description{
 			FullName:   "Apple Inc.",
 			FullTicker: "XNAS:AAPL",
@@ -70,7 +70,7 @@ func TestService(t *testing.T) {
 
 		res, err := service.GetHistoricalPrices(provider.PolygonIo, "AAPL")
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, &[]prices.TickerPrices{
 			{
 				Id:        "AAPL",
@@ -104,7 +104,7 @@ func TestService(t *testing.T) {
 
 		res, err := service.GetDailyPrices(provider.PolygonIo, []string{"AAPL", "META"})
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, &[]prices.TickerPrices{{
 			Id:        "AAPL",
 			Open:      26.07,

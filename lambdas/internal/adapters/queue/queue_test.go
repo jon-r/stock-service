@@ -40,7 +40,7 @@ func TestQueue(t *testing.T) {
 
 		fmt.Printf("%+v", err)
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 	t.Run("SendMessages", func(t *testing.T) {
 		stubber.Add(testtools.Stub{
@@ -82,7 +82,7 @@ func TestQueue(t *testing.T) {
 
 		fmt.Printf("%+v", err)
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 	t.Run("ReceiveMessages", func(t *testing.T) {
 		stubber.Add(testtools.Stub{
@@ -110,7 +110,7 @@ func TestQueue(t *testing.T) {
 
 		fmt.Printf("%+v", res)
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, &[]types.Message{
 			{
 				ReceiptHandle: aws.String("abcd"),
@@ -135,6 +135,6 @@ func TestQueue(t *testing.T) {
 
 		_, err := client.DeleteMessage("queue1", aws.String("abcd"))
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 }

@@ -3,11 +3,9 @@ package test
 import (
 	"context"
 	"os"
-	"testing"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
-	"github.com/stretchr/testify/assert"
 )
 
 func Enter() (*testtools.AwsmStubber, context.Context) {
@@ -26,10 +24,4 @@ func Enter() (*testtools.AwsmStubber, context.Context) {
 	})
 
 	return stubber, ctx
-}
-
-func AssertAll(t *testing.T, stubber *testtools.AwsmStubber, actualError error, expectedError error) {
-	assert.Equal(t, expectedError, actualError)
-
-	testtools.ExitTest(stubber, t)
 }

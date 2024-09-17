@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 	"github.com/benbjohnson/clock"
 	"github.com/jon-r/stock-service/lambdas/internal/handlers"
 	"github.com/jon-r/stock-service/lambdas/internal/models/job"
@@ -59,7 +60,7 @@ func checkForJobsNoError(t *testing.T) {
 		Attempts:  0,
 	})
 
-	test.AssertAll(t, stubber, nil, nil)
+	testtools.ExitTest(stubber, t)
 }
 
 func checkForJobsNoMessages(t *testing.T) {
@@ -107,7 +108,7 @@ func checkForJobsNoMessages(t *testing.T) {
 	// empty 6 times, disable rule triggered
 	assert.Equal(t, 6, mockHandler.queueManager.emptyResponses)
 
-	test.AssertAll(t, stubber, nil, nil)
+	testtools.ExitTest(stubber, t)
 }
 
 func checkForJobsErrors(t *testing.T) {
@@ -145,7 +146,7 @@ func checkForJobsErrors(t *testing.T) {
 	assert.Equal(t, 5, mockHandler.queueManager.failedAttempts)
 	assert.Equal(t, 1, cancelSpyCount)
 
-	test.AssertAll(t, stubber, nil, nil)
+	testtools.ExitTest(stubber, t)
 }
 
 func TestInvokeNextJob(t *testing.T) {
@@ -187,7 +188,7 @@ func invokeNextJobNoErrors(t *testing.T) {
 
 	mockHandler.invokeNextJob(provider.PolygonIo)
 
-	test.AssertAll(t, stubber, nil, nil)
+	testtools.ExitTest(stubber, t)
 }
 
 func invokeNextJobNoJobs(t *testing.T) {
@@ -201,7 +202,7 @@ func invokeNextJobNoJobs(t *testing.T) {
 
 	mockHandler.invokeNextJob(provider.PolygonIo)
 
-	test.AssertAll(t, stubber, nil, nil)
+	testtools.ExitTest(stubber, t)
 }
 
 func invokeNextJobErrors(t *testing.T) {
@@ -242,5 +243,5 @@ func invokeNextJobErrors(t *testing.T) {
 
 	mockHandler.invokeNextJob(provider.PolygonIo)
 
-	test.AssertAll(t, stubber, nil, nil)
+	testtools.ExitTest(stubber, t)
 }

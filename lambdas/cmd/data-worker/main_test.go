@@ -7,12 +7,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 	"github.com/jon-r/stock-service/lambdas/internal/handlers"
 	"github.com/jon-r/stock-service/lambdas/internal/models/job"
 	"github.com/jon-r/stock-service/lambdas/internal/models/provider"
 	"github.com/jon-r/stock-service/lambdas/internal/utils/test"
+	"github.com/stretchr/testify/assert"
 )
 
+// TODO TEST -> handle errors
 func TestHandleJobAction(t *testing.T) {
 	t.Run("SetTickerDescriptionNoErrors", handleSetTickerDescriptionNoErrors)
 	t.Run("SetHistoricalPricesNoErrors", handleSetHistoricalPricesNoErrors)
@@ -54,7 +57,9 @@ func handleSetTickerDescriptionNoErrors(t *testing.T) {
 		Attempts: 0,
 	}
 	err := mockServiceHandler.HandleRequest(ctx, jobEvent)
-	test.Assert(t, stubber, err, nil)
+
+	assert.NoError(t, err)
+	testtools.ExitTest(stubber, t)
 }
 
 func handleSetHistoricalPricesNoErrors(t *testing.T) {
@@ -86,7 +91,9 @@ func handleSetHistoricalPricesNoErrors(t *testing.T) {
 	}
 
 	err := mockServiceHandler.HandleRequest(ctx, jobEvent)
-	test.Assert(t, stubber, err, nil)
+
+	assert.NoError(t, err)
+	testtools.ExitTest(stubber, t)
 }
 
 func handleUpdatePricesNoErrors(t *testing.T) {
@@ -118,5 +125,7 @@ func handleUpdatePricesNoErrors(t *testing.T) {
 	}
 
 	err := mockHandler.HandleRequest(ctx, jobEvent)
-	test.Assert(t, stubber, err, nil)
+
+	assert.NoError(t, err)
+	testtools.ExitTest(stubber, t)
 }
