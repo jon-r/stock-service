@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/benbjohnson/clock"
 	"github.com/jon-r/stock-service/lambdas/internal/handlers"
@@ -29,12 +30,20 @@ func checkForJobsNoError(t *testing.T) {
 		mockClock,
 	)
 
-	addReceiveQueueEventStub(stubber, []types.Message{
-		{
-			ReceiptHandle: aws.String("message1"),
-			Body:          aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`),
+	expectedQueueInput := &sqs.ReceiveMessageInput{
+		QueueUrl:            aws.String("SQS_QUEUE_URL"),
+		MaxNumberOfMessages: 10,
+		WaitTimeSeconds:     5,
+	}
+	queueResponse := &sqs.ReceiveMessageOutput{
+		Messages: []types.Message{
+			{
+				ReceiptHandle: aws.String("message1"),
+				Body:          aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`),
+			},
 		},
-	})
+	}
+	stubber.Add(test.StubSqsReceiveMessages(expectedQueueInput, queueResponse, nil))
 
 	cancelSpy := func() {}
 	mockHandler.checkForJobs(cancelSpy)
@@ -64,9 +73,25 @@ func checkForJobsNoMessages(t *testing.T) {
 	)
 
 	for range [6]int{} {
-		addReceiveQueueEventStub(stubber, []types.Message{})
+		//addReceiveQueueEventStub(stubber, []types.Message{})
+		expectedQueueInput := &sqs.ReceiveMessageInput{
+			QueueUrl:            aws.String("SQS_QUEUE_URL"),
+			MaxNumberOfMessages: 10,
+			WaitTimeSeconds:     5,
+		}
+		// no messages
+		queueResponse := &sqs.ReceiveMessageOutput{}
+		stubber.Add(test.StubSqsReceiveMessages(
+			expectedQueueInput,
+			queueResponse,
+			nil,
+		))
 	}
-	addDisableRuleStub(stubber)
+
+	stubber.Add(test.StubEventbridgeDisableRule(
+		"EVENTBRIDGE_RULE_NAME",
+		nil,
+	))
 
 	cancelSpyCount := 0
 	cancelSpy := func() { cancelSpyCount++ }
@@ -150,8 +175,18 @@ func invokeNextJobNoErrors(t *testing.T) {
 		Attempts:  0,
 	}
 
-	addInvokeWorkerStub(stubber, `{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`)
-	addDeleteQueueStub(stubber, "message1")
+	payloadJson := `{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`
+	stubber.Add(test.StubLambdaInvoke(
+		"LAMBDA_WORKER_NAME",
+		[]byte(payloadJson),
+		nil,
+	))
+
+	stubber.Add(test.StubSqsDeleteMessage(
+		"SQS_QUEUE_URL",
+		"message1",
+		nil,
+	))
 
 	mockHandler.invokeNextJob(provider.PolygonIo)
 
@@ -194,7 +229,7 @@ func invokeNextJobErrors(t *testing.T) {
 
 	stubber.Add(test.StubLambdaInvoke(
 		"LAMBDA_WORKER_NAME",
-		nil, //[]byte(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`),
+		nil,
 		fmt.Errorf("something went wrong"),
 	))
 

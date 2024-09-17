@@ -9,7 +9,7 @@ import (
 
 const pollInterval = 10 * time.Second
 const maxFailedAttempts = 5
-const maxEmptyResponses = 6
+const maxEmptyResponses = int(time.Minute / pollInterval)
 
 func (h *handler) pollJobsQueue(ctx context.Context, cancel context.CancelFunc) {
 	h.Log.Debugln("begin poll jobs queue")
@@ -61,6 +61,7 @@ func (h *handler) checkForJobs(cancel context.CancelFunc) {
 }
 
 func (h *handler) pollProviderQueue(ctx context.Context, providerName provider.Name) {
+	h.Log.Debugln("begin poll provider queue")
 	interval := provider.GetRequestsPerMin()[providerName]
 	h.pollUntilCancelled(ctx, func() {
 		h.invokeNextJob(providerName)

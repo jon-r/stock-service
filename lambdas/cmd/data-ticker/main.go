@@ -16,6 +16,7 @@ import (
 type queueList map[provider.Name]chan job.Job
 
 type queueManager struct {
+	lastErr        error
 	emptyResponses int
 	failedAttempts int
 	queues         queueList
@@ -53,7 +54,8 @@ func (h *handler) HandleRequest(ctx context.Context) {
 	h.Log.LoadContext(ctx)
 	defer h.Log.Sync()
 
-	// 1. get all queued items
+	// 1. get all queued items (also invoke once right away)
+	//h.checkForJobs(cancel)
 	go h.pollJobsQueue(ctx, cancel)
 
 	// 2. for each provider have a ticker function that invokes event provider/ticker/type to the worker fn
