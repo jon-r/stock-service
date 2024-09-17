@@ -59,8 +59,7 @@ func checkForJobsNoError(t *testing.T) {
 		Attempts:  0,
 	})
 
-	err := stubber.VerifyAllStubsCalled()
-	assert.Nil(t, err)
+	test.AssertAll(t, stubber, nil, nil)
 }
 
 func checkForJobsNoMessages(t *testing.T) {
@@ -108,8 +107,7 @@ func checkForJobsNoMessages(t *testing.T) {
 	// empty 6 times, disable rule triggered
 	assert.Equal(t, 6, mockHandler.queueManager.emptyResponses)
 
-	err := stubber.VerifyAllStubsCalled()
-	assert.Nil(t, err)
+	test.AssertAll(t, stubber, nil, nil)
 }
 
 func checkForJobsErrors(t *testing.T) {
@@ -147,8 +145,7 @@ func checkForJobsErrors(t *testing.T) {
 	assert.Equal(t, 5, mockHandler.queueManager.failedAttempts)
 	assert.Equal(t, 1, cancelSpyCount)
 
-	err := stubber.VerifyAllStubsCalled()
-	assert.Nil(t, err)
+	test.AssertAll(t, stubber, nil, nil)
 }
 
 func TestInvokeNextJob(t *testing.T) {
@@ -190,8 +187,7 @@ func invokeNextJobNoErrors(t *testing.T) {
 
 	mockHandler.invokeNextJob(provider.PolygonIo)
 
-	err := stubber.VerifyAllStubsCalled()
-	assert.Nil(t, err)
+	test.AssertAll(t, stubber, nil, nil)
 }
 
 func invokeNextJobNoJobs(t *testing.T) {
@@ -205,8 +201,7 @@ func invokeNextJobNoJobs(t *testing.T) {
 
 	mockHandler.invokeNextJob(provider.PolygonIo)
 
-	err := stubber.VerifyAllStubsCalled()
-	assert.Nil(t, err)
+	test.AssertAll(t, stubber, nil, nil)
 }
 
 func invokeNextJobErrors(t *testing.T) {
@@ -247,6 +242,5 @@ func invokeNextJobErrors(t *testing.T) {
 
 	mockHandler.invokeNextJob(provider.PolygonIo)
 
-	err := stubber.VerifyAllStubsCalled()
-	assert.Nil(t, err)
+	test.AssertAll(t, stubber, nil, nil)
 }

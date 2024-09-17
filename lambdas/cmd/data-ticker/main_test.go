@@ -52,5 +52,5 @@ func handleRequestNoErrors(t *testing.T) {
 		mockClock.Add(1 * time.Second)
 	}
 
-	test.Assert(t, stubber, nil, nil)
+	test.AssertAll(t, stubber, nil, nil)
 }
