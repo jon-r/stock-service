@@ -10,8 +10,7 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/utils/logger"
 )
 
-func NewMock(cfg aws.Config, log logger.Logger, c clock.Clock, httpClient *http.Client) Controller {
-	// todo redo this passing along the mock service
+func NewMock(cfg aws.Config, log logger.Logger, httpClient *http.Client, c clock.Clock) Controller {
 	providersService := providers.NewService(httpClient, c)
 	dbRepository := db.NewRepository(cfg)
 

@@ -14,16 +14,13 @@ import (
 )
 
 func TestHandleRequest(t *testing.T) {
+	stubber, ctx := test.SetupLambdaEnvironment()
+	mockClock := clock.NewMock()
+
+	mockHandler := newHandler(handlers.NewMock(*stubber.SdkConfig), mockClock)
+
 	// errors are handled in other tests
 	t.Run("No Errors", func(t *testing.T) {
-		stubber, ctx := test.Enter()
-		mockClock := clock.NewMock()
-
-		mockHandler := newHandler(
-			handlers.NewMock(*stubber.SdkConfig),
-			mockClock,
-		)
-
 		expectedQueueInput := &sqs.ReceiveMessageInput{
 			QueueUrl:            aws.String("SQS_QUEUE_URL"),
 			MaxNumberOfMessages: 10,
@@ -43,7 +40,7 @@ func TestHandleRequest(t *testing.T) {
 		stubber.Add(test.StubLambdaInvoke("LAMBDA_WORKER_NAME", []byte(payloadJson), nil))
 		stubber.Add(test.StubSqsDeleteMessage("SQS_QUEUE_URL", "message1", nil))
 
-		// todo grab errors ans check them
+		// todo grab errors and check them
 		go mockHandler.HandleRequest(ctx)
 
 		// have to add one second at a time otherwise the mock tickers all stack up

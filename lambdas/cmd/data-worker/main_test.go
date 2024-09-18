@@ -16,13 +16,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TODO TEST -> handle errors!!
-// also redo the provider stubs to they are setup for each test?
-// see if this pushes coverage above 80 consistently
-
 func TestHandleRequest(t *testing.T) {
 	t.Run("No Errors", func(t *testing.T) {
-		stubber, ctx := test.Enter()
+		stubber, ctx := test.SetupLambdaEnvironment()
 		apiStubber := test.NewApiStubber()
 		mockClock := clock.NewMock()
 
@@ -72,7 +68,7 @@ func TestHandleRequest(t *testing.T) {
 	})
 
 	t.Run("Invalid action type", func(t *testing.T) {
-		stubber, ctx := test.Enter()
+		stubber, ctx := test.SetupLambdaEnvironment()
 
 		mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 
@@ -92,7 +88,7 @@ func TestHandleRequest(t *testing.T) {
 	})
 
 	t.Run("AWS error", func(t *testing.T) {
-		stubber, ctx := test.Enter()
+		stubber, ctx := test.SetupLambdaEnvironment()
 
 		mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 

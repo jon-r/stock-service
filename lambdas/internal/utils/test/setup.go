@@ -8,7 +8,7 @@ import (
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 )
 
-func Enter() (*testtools.AwsmStubber, context.Context) {
+func SetupLambdaEnvironment() (*testtools.AwsmStubber, context.Context) {
 	stubber := testtools.NewStubber()
 	os.Setenv("DB_STOCKS_TABLE_NAME", "DB_STOCKS_TABLE_NAME")
 	os.Setenv("DB_LOGS_TABLE_NAME", "DB_LOGS_TABLE_NAME")

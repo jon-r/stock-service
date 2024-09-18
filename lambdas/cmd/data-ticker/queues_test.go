@@ -17,15 +17,12 @@ import (
 )
 
 func TestCheckForJobs(t *testing.T) {
+	stubber, _ := test.SetupLambdaEnvironment()
+	mockClock := clock.NewMock()
+
+	mockHandler := newHandler(handlers.NewMock(*stubber.SdkConfig), mockClock)
+
 	t.Run("No Errors", func(t *testing.T) {
-		stubber, _ := test.Enter()
-		mockClock := clock.NewMock()
-
-		mockHandler := newHandler(
-			handlers.NewMock(*stubber.SdkConfig),
-			mockClock,
-		)
-
 		expectedQueueInput := &sqs.ReceiveMessageInput{
 			QueueUrl:            aws.String("SQS_QUEUE_URL"),
 			MaxNumberOfMessages: 10,
@@ -58,26 +55,16 @@ func TestCheckForJobs(t *testing.T) {
 		testtools.ExitTest(stubber, t)
 	})
 	t.Run("No Messages", func(t *testing.T) {
-		stubber, _ := test.Enter()
-		mockClock := clock.NewMock()
-
-		mockHandler := newHandler(
-			handlers.NewMock(*stubber.SdkConfig),
-			mockClock,
-		)
-
 		for range [6]int{} {
-			//addReceiveQueueEventStub(stubber, []types.Message{})
 			expectedQueueInput := &sqs.ReceiveMessageInput{
 				QueueUrl:            aws.String("SQS_QUEUE_URL"),
 				MaxNumberOfMessages: 10,
 				WaitTimeSeconds:     5,
 			}
-			// no messages
-			queueResponse := &sqs.ReceiveMessageOutput{}
+
 			stubber.Add(test.StubSqsReceiveMessages(
 				expectedQueueInput,
-				queueResponse,
+				&sqs.ReceiveMessageOutput{ /* empty */ },
 				nil,
 			))
 		}
@@ -105,14 +92,6 @@ func TestCheckForJobs(t *testing.T) {
 		testtools.ExitTest(stubber, t)
 	})
 	t.Run("AWS Error", func(t *testing.T) {
-		stubber, _ := test.Enter()
-		mockClock := clock.NewMock()
-
-		mockHandler := newHandler(
-			handlers.NewMock(*stubber.SdkConfig),
-			mockClock,
-		)
-
 		for range [5]int{} {
 			stubber.Add(test.StubSqsReceiveMessages(
 				nil, nil, fmt.Errorf("test error"),
@@ -135,7 +114,7 @@ func TestCheckForJobs(t *testing.T) {
 			mockHandler.checkForJobs(cancelSpy)
 		}
 
-		// errored times, cancel triggered
+		// errored 6 times in total, invoke cancel
 		assert.Equal(t, 5, mockHandler.queueManager.failedAttempts)
 		assert.Equal(t, 1, cancelSpyCount)
 
@@ -144,15 +123,15 @@ func TestCheckForJobs(t *testing.T) {
 }
 
 func TestInvokeNextJob(t *testing.T) {
+	stubber, _ := test.SetupLambdaEnvironment()
+	mockClock := clock.NewMock()
+
+	mockHandler := newHandler(
+		handlers.NewMock(*stubber.SdkConfig),
+		mockClock,
+	)
+
 	t.Run("No Errors", func(t *testing.T) {
-		stubber, _ := test.Enter()
-		mockClock := clock.NewMock()
-
-		mockHandler := newHandler(
-			handlers.NewMock(*stubber.SdkConfig),
-			mockClock,
-		)
-
 		mockHandler.queueManager.queues[provider.PolygonIo] <- job.Job{
 			ReceiptId: aws.String("message1"),
 			JobId:     "TEST_ID",
@@ -180,27 +159,11 @@ func TestInvokeNextJob(t *testing.T) {
 		testtools.ExitTest(stubber, t)
 	})
 	t.Run("No Jobs", func(t *testing.T) {
-		stubber, _ := test.Enter()
-		mockClock := clock.NewMock()
-
-		mockHandler := newHandler(
-			handlers.NewMock(*stubber.SdkConfig),
-			mockClock,
-		)
-
 		mockHandler.invokeNextJob(provider.PolygonIo)
 
 		testtools.ExitTest(stubber, t)
 	})
 	t.Run("Errors", func(t *testing.T) {
-		stubber, _ := test.Enter()
-		mockClock := clock.NewMock()
-
-		mockHandler := newHandler(
-			handlers.NewMock(*stubber.SdkConfig),
-			mockClock,
-		)
-
 		mockHandler.queueManager.queues[provider.PolygonIo] <- job.Job{
 			ReceiptId: aws.String("message1"),
 			JobId:     "TEST_ID",

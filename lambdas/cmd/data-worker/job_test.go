@@ -20,8 +20,7 @@ import (
 )
 
 func TestSetTickerDescription(t *testing.T) {
-	// todo redo other tests like this to dry them out
-	stubber, _ := test.Enter()
+	stubber, _ := test.SetupLambdaEnvironment()
 	apiStubber := test.NewApiStubber()
 	mockClock := clock.NewMock()
 
@@ -82,7 +81,7 @@ func TestSetTickerDescription(t *testing.T) {
 }
 
 func TestSetHistoricalPrices(t *testing.T) {
-	stubber, _ := test.Enter()
+	stubber, _ := test.SetupLambdaEnvironment()
 	apiStubber := test.NewApiStubber()
 	mockClock := clock.NewMock()
 
@@ -226,7 +225,7 @@ func TestSetHistoricalPrices(t *testing.T) {
 }
 
 func TestUpdatePrices(t *testing.T) {
-	stubber, _ := test.Enter()
+	stubber, _ := test.SetupLambdaEnvironment()
 	apiStubber := test.NewApiStubber()
 	mockClock := clock.NewMock()
 
@@ -326,12 +325,4 @@ func TestUpdatePrices(t *testing.T) {
 		apiStubber.VerifyAllStubsCalled(t)
 		testtools.ExitTest(stubber, t)
 	})
-}
-
-func updatePricesApiError(t *testing.T) {
-	t.Error("NOT IMPLEMENTED")
-}
-
-func updatePricesAWSError(t *testing.T) {
-	t.Error("NOT IMPLEMENTED")
 }

@@ -21,11 +21,11 @@ func NewMock(cfg aws.Config) *LambdaHandler {
 	return &LambdaHandler{tickersCtrl, jobsCtrl, pricesCtrl, log}
 }
 
-func NewMockWithHttpClient(cfg aws.Config, c clock.Clock, httpClient *http.Client) *LambdaHandler {
+func NewMockWithHttpClient(cfg aws.Config, httpClient *http.Client, c clock.Clock) *LambdaHandler {
 	log := logger.NewMock()
 	jobsCtrl := jobs.NewMock(cfg, log)
-	tickersCtrl := tickers.NewMock(cfg, log, c, httpClient)
-	pricesCtrl := prices.NewMock(cfg, log, c, httpClient)
+	tickersCtrl := tickers.NewMock(cfg, log, httpClient, c)
+	pricesCtrl := prices.NewMock(cfg, log, httpClient, c)
 
 	return &LambdaHandler{tickersCtrl, jobsCtrl, pricesCtrl, log}
 }

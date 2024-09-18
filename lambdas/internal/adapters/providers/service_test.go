@@ -122,8 +122,5 @@ func TestService(t *testing.T) {
 		}}, res)
 	})
 
-	err := apiStubber.VerifyAllStubsCalled()
-	if err != nil {
-		t.Error(err)
-	}
+	apiStubber.VerifyAllStubsCalled(t)
 }
