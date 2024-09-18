@@ -33,7 +33,7 @@ func (h *handler) HandleRequest(ctx context.Context, j job.Job) error {
 	queueErr := h.Jobs.RequeueJob(j, err.Error())
 
 	if queueErr != nil {
-		h.Log.Errorw("Failed to add item to DLQ",
+		h.Log.Errorw("failed to requeue item",
 			"jobId", j.JobId,
 			"error", queueErr,
 		)
