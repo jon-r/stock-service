@@ -114,7 +114,7 @@ func TestCheckForJobs(t *testing.T) {
 			mockHandler.checkForJobs(cancelSpy)
 		}
 
-		// errored 6 times in total, invoke cancel
+		// errored 5 times in total, invoke cancel
 		assert.Equal(t, 5, mockHandler.queueManager.failedAttempts)
 		assert.Equal(t, 1, cancelSpyCount)
 

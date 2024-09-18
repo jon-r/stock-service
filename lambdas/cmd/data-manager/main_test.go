@@ -17,8 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TODO TEST -> handle errors!!
-// also group up inside the parent Test function
 func TestUpdateAllTickers(t *testing.T) {
 	stubber, ctx := test.SetupLambdaEnvironment()
 	mockHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
