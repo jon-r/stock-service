@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,9 +17,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TODO TEST -> handle errors
+// TODO TEST -> handle errors!!
 func TestUpdateAllTickers(t *testing.T) {
-	t.Run("NoErrors", updateAllTickerNoErrors)
+	t.Run("No Errors", updateAllTickerNoErrors)
+	t.Run("No Items", updateAllTickersNoItems)
 }
 
 func updateAllTickerNoErrors(t *testing.T) {
@@ -65,5 +67,30 @@ func updateAllTickerNoErrors(t *testing.T) {
 	err := mockHandler.HandleRequest(ctx)
 
 	assert.NoError(t, err)
+	testtools.ExitTest(stubber, t)
+}
+
+func updateAllTickersNoItems(t *testing.T) {
+	stubber, ctx := test.Enter()
+	mockHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
+
+	expectedQuery := &dynamodb.ScanInput{
+		TableName: aws.String("DB_STOCKS_TABLE_NAME"),
+		ExpressionAttributeNames: map[string]string{
+			"#0": "SK",
+			"#1": "Provider",
+		},
+		ExpressionAttributeValues: map[string]dbTypes.AttributeValue{
+			":0": &dbTypes.AttributeValueMemberS{Value: "T#"},
+		},
+		FilterExpression:     aws.String("begins_with (#0, :0)"),
+		ProjectionExpression: aws.String("#0, #1"),
+	}
+	stubber.Add(test.StubDynamoDbScan(expectedQuery, []ticker.Entity{}, nil))
+
+	err := mockHandler.HandleRequest(ctx)
+	expectedErr := test.StubbedError(fmt.Errorf("no items found"))
+
+	assert.Error(t, err, expectedErr)
 	testtools.ExitTest(stubber, t)
 }

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
@@ -15,14 +14,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TODO TEST -> handle errors
-func TestHandleJobAction(t *testing.T) {
-	t.Run("SetTickerDescriptionNoErrors", handleSetTickerDescriptionNoErrors)
-	t.Run("SetHistoricalPricesNoErrors", handleSetHistoricalPricesNoErrors)
-	t.Run("UpdatePricesNoErrors", handleUpdatePricesNoErrors)
+// TODO TEST -> handle errors!!
+// also redo the provider stubs to they are setup for each test?
+// see if this pushes coverage above 80 consistently
+
+func TestHandleRequest(t *testing.T) {
+	t.Run("No Errors", setTickerDescriptionNoErrors)
+	t.Run("Invalid action type", invalidActionType)
+	// other errors are handled in other tests
 }
 
-func handleSetTickerDescriptionNoErrors(t *testing.T) {
+func setTickerDescriptionNoErrors(t *testing.T) {
 	stubber, ctx := test.Enter()
 	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 
@@ -62,70 +64,6 @@ func handleSetTickerDescriptionNoErrors(t *testing.T) {
 	testtools.ExitTest(stubber, t)
 }
 
-func handleSetHistoricalPricesNoErrors(t *testing.T) {
-	stubber, ctx := test.Enter()
-	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
-
-	var jsonData interface{}
-	test.ReadTestJson("./testdata/testTicker1Price.json", &jsonData)
-	item1, _ := attributevalue.MarshalMap(jsonData)
-	test.ReadTestJson("./testdata/testTicker2Price.json", &jsonData)
-	item2, _ := attributevalue.MarshalMap(jsonData)
-
-	expectedInput := &dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]types.WriteRequest{
-			"DB_STOCKS_TABLE_NAME": {
-				{PutRequest: &types.PutRequest{Item: item1}},
-				{PutRequest: &types.PutRequest{Item: item2}},
-			},
-		},
-	}
-	stubber.Add(test.StubDynamoDbBatchWriteTicker(expectedInput, nil))
-
-	jobEvent := job.Job{
-		JobId:    "TestJob",
-		Provider: provider.PolygonIo,
-		Type:     job.LoadHistoricalPrices,
-		TickerId: "TestTicker",
-		Attempts: 0,
-	}
-
-	err := mockServiceHandler.HandleRequest(ctx, jobEvent)
-
-	assert.NoError(t, err)
-	testtools.ExitTest(stubber, t)
-}
-
-func handleUpdatePricesNoErrors(t *testing.T) {
-	stubber, ctx := test.Enter()
-	mockHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
-
-	var jsonData interface{}
-	test.ReadTestJson("./testdata/testTicker3Price.json", &jsonData)
-	item3, _ := attributevalue.MarshalMap(jsonData)
-	test.ReadTestJson("./testdata/testTicker4Price.json", &jsonData)
-	item4, _ := attributevalue.MarshalMap(jsonData)
-
-	expectedInput := &dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]types.WriteRequest{
-			"DB_STOCKS_TABLE_NAME": {
-				{PutRequest: &types.PutRequest{Item: item3}},
-				{PutRequest: &types.PutRequest{Item: item4}},
-			},
-		},
-	}
-	stubber.Add(test.StubDynamoDbBatchWriteTicker(expectedInput, nil))
-
-	jobEvent := job.Job{
-		JobId:    "TestJob",
-		Provider: provider.PolygonIo,
-		Type:     job.LoadDailyPrices,
-		TickerId: "TestTicker1,TestTicker2",
-		Attempts: 0,
-	}
-
-	err := mockHandler.HandleRequest(ctx, jobEvent)
-
-	assert.NoError(t, err)
-	testtools.ExitTest(stubber, t)
+func invalidActionType(t *testing.T) {
+	t.Error("NOT IMPLEMENTED")
 }
