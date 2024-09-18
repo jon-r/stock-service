@@ -45,6 +45,13 @@ func TestService(t *testing.T) {
 		}, res)
 	})
 
+	t.Run("GetDescription - invalid provider", func(t *testing.T) {
+		_, err := service.GetDescription("BADNAME", "AAPL")
+		expectedError := fmt.Errorf("incorrect provider name: BADNAME")
+
+		assert.Equal(t, expectedError, err)
+	})
+
 	t.Run("GetHistoricalPrices", func(t *testing.T) {
 		apiStubber.AddRequest(test.ReqStub{
 			Method: "GET",
@@ -91,6 +98,13 @@ func TestService(t *testing.T) {
 		}, res)
 	})
 
+	t.Run("GetHistoricalPrices - invalid provider", func(t *testing.T) {
+		_, err := service.GetHistoricalPrices("BADNAME", "AAPL")
+		expectedError := fmt.Errorf("incorrect provider name: BADNAME")
+
+		assert.Equal(t, expectedError, err)
+	})
+
 	t.Run("GetDailyPrices", func(t *testing.T) {
 		apiStubber.AddRequest(test.ReqStub{
 			Method: "GET",
@@ -120,6 +134,13 @@ func TestService(t *testing.T) {
 			Low:       22.65,
 			Timestamp: models.Millis(time.UnixMilli(1602705600000)),
 		}}, res)
+	})
+
+	t.Run("GetDailyPrices - invalid provider", func(t *testing.T) {
+		_, err := service.GetDailyPrices("BADNAME", []string{"AAPL", "META"})
+		expectedError := fmt.Errorf("incorrect provider name: BADNAME")
+
+		assert.Equal(t, expectedError, err)
 	})
 
 	apiStubber.VerifyAllStubsCalled(t)

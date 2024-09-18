@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -117,10 +118,15 @@ func (db *database) GetMany(tableName string, query expression.Expression) ([]ma
 	for scanPaginator.HasMorePages() {
 		response, err = scanPaginator.NextPage(context.TODO())
 		if err != nil {
+			log.Println(err)
 			break
 		} else {
 			items = append(items, response.Items...)
 		}
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	if len(items) == 0 {

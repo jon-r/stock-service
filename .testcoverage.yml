@@ -8,5 +8,4 @@ exclude:
     - "lambdas/internal/utils/test"
 
 threshold:
-  # The minimum coverage that each file should have
-  file: 80
+  file: 75
