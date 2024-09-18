@@ -17,9 +17,9 @@ import (
 )
 
 func TestCheckForJobs(t *testing.T) {
-	t.Run("checkForJobs NoErrors", checkForJobsNoError)
-	t.Run("checkForJobs NoMessages", checkForJobsNoMessages)
-	t.Run("checkForJobs Errors", checkForJobsErrors)
+	t.Run("No Errors", checkForJobsNoError)
+	t.Run("No Messages", checkForJobsNoMessages)
+	t.Run("AWS Error", checkForJobsAwsError)
 }
 
 func checkForJobsNoError(t *testing.T) {
@@ -111,7 +111,7 @@ func checkForJobsNoMessages(t *testing.T) {
 	testtools.ExitTest(stubber, t)
 }
 
-func checkForJobsErrors(t *testing.T) {
+func checkForJobsAwsError(t *testing.T) {
 	stubber, _ := test.Enter()
 	mockClock := clock.NewMock()
 

@@ -13,8 +13,9 @@ import (
 	"github.com/jon-r/stock-service/lambdas/internal/utils/test"
 )
 
-func TestPollSqsQueue(t *testing.T) {
-	t.Run("NoErrors", handleRequestNoErrors)
+func TestHandleRequest(t *testing.T) {
+	t.Run("No Errors", handleRequestNoErrors)
+	// errors are handled in other tests
 }
 
 func handleRequestNoErrors(t *testing.T) {

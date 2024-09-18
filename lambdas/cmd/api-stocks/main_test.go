@@ -17,14 +17,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHandleRequest(t *testing.T) {
-	t.Run("CreateTicker - No Errors", handleCreateTicker)
-	t.Run("Invalid request method", handleInvalidRequestMethod)
-	t.Run("Invalid request body", handleInvalidRequestBody)
-	t.Run("AWS database error", handleAwsError)
+func TestCreateTicker(t *testing.T) {
+	t.Run("No Errors", createTickerNoErrors)
+	t.Run("Invalid request method", createTickerInvalidRequestMethod)
+	t.Run("Invalid request body", createTickerInvalidRequestBody)
+	t.Run("AWS database error", createTickerAwsError)
 }
 
-func handleCreateTicker(t *testing.T) {
+func createTickerNoErrors(t *testing.T) {
 	stubber, ctx := test.Enter()
 	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 
@@ -62,7 +62,7 @@ func handleCreateTicker(t *testing.T) {
 	testtools.ExitTest(stubber, t)
 }
 
-func handleInvalidRequestMethod(t *testing.T) {
+func createTickerInvalidRequestMethod(t *testing.T) {
 	stubber, ctx := test.Enter()
 	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 
@@ -79,7 +79,7 @@ func handleInvalidRequestMethod(t *testing.T) {
 	testtools.ExitTest(stubber, t)
 }
 
-func handleInvalidRequestBody(t *testing.T) {
+func createTickerInvalidRequestBody(t *testing.T) {
 	stubber, ctx := test.Enter()
 	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 
@@ -97,7 +97,7 @@ func handleInvalidRequestBody(t *testing.T) {
 	testtools.ExitTest(stubber, t)
 }
 
-func handleAwsError(t *testing.T) {
+func createTickerAwsError(t *testing.T) {
 	stubber, ctx := test.Enter()
 	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 

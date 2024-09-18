@@ -10,10 +10,10 @@ import (
 )
 
 func TestPollUntilCanceled(t *testing.T) {
-	t.Run("triggers function until canceled", handleRequestsUntilStop)
+	t.Run("triggers function until canceled", pollUntilCanceled)
 }
 
-func handleRequestsUntilStop(t *testing.T) {
+func pollUntilCanceled(t *testing.T) {
 	mockClock := clock.NewMock()
 	mockHandler := handler{Clock: mockClock}
 
