@@ -10,6 +10,7 @@ import (
 
 func SetupLambdaEnvironment() (*testtools.AwsmStubber, context.Context) {
 	stubber := testtools.NewStubber()
+	os.Setenv("TZ", "utc")
 	os.Setenv("DB_STOCKS_TABLE_NAME", "DB_STOCKS_TABLE_NAME")
 	os.Setenv("DB_LOGS_TABLE_NAME", "DB_LOGS_TABLE_NAME")
 	os.Setenv("EVENTBRIDGE_RULE_NAME", "EVENTBRIDGE_RULE_NAME")
