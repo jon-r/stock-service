@@ -17,231 +17,219 @@ import (
 )
 
 func TestCheckForJobs(t *testing.T) {
-	t.Run("No Errors", checkForJobsNoError)
-	t.Run("No Messages", checkForJobsNoMessages)
-	t.Run("AWS Error", checkForJobsAwsError)
-}
+	t.Run("No Errors", func(t *testing.T) {
+		stubber, _ := test.Enter()
+		mockClock := clock.NewMock()
 
-func checkForJobsNoError(t *testing.T) {
-	stubber, _ := test.Enter()
-	mockClock := clock.NewMock()
+		mockHandler := newHandler(
+			handlers.NewMock(*stubber.SdkConfig),
+			mockClock,
+		)
 
-	mockHandler := newHandler(
-		handlers.NewMock(*stubber.SdkConfig),
-		mockClock,
-	)
-
-	expectedQueueInput := &sqs.ReceiveMessageInput{
-		QueueUrl:            aws.String("SQS_QUEUE_URL"),
-		MaxNumberOfMessages: 10,
-		WaitTimeSeconds:     5,
-	}
-	queueResponse := &sqs.ReceiveMessageOutput{
-		Messages: []types.Message{
-			{
-				ReceiptHandle: aws.String("message1"),
-				Body:          aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`),
-			},
-		},
-	}
-	stubber.Add(test.StubSqsReceiveMessages(expectedQueueInput, queueResponse, nil))
-
-	cancelSpy := func() {}
-	mockHandler.checkForJobs(cancelSpy)
-
-	queuedEvents := <-mockHandler.queueManager.queues[provider.PolygonIo]
-
-	assert.Equal(t, queuedEvents, job.Job{
-		ReceiptId: aws.String("message1"),
-		JobId:     "TEST_ID",
-		Provider:  provider.PolygonIo,
-		Type:      job.LoadTickerDescription,
-		TickerId:  "AMZN",
-		Attempts:  0,
-	})
-
-	testtools.ExitTest(stubber, t)
-}
-
-func checkForJobsNoMessages(t *testing.T) {
-	stubber, _ := test.Enter()
-	mockClock := clock.NewMock()
-
-	mockHandler := newHandler(
-		handlers.NewMock(*stubber.SdkConfig),
-		mockClock,
-	)
-
-	for range [6]int{} {
-		//addReceiveQueueEventStub(stubber, []types.Message{})
 		expectedQueueInput := &sqs.ReceiveMessageInput{
 			QueueUrl:            aws.String("SQS_QUEUE_URL"),
 			MaxNumberOfMessages: 10,
 			WaitTimeSeconds:     5,
 		}
-		// no messages
-		queueResponse := &sqs.ReceiveMessageOutput{}
-		stubber.Add(test.StubSqsReceiveMessages(
-			expectedQueueInput,
-			queueResponse,
+		queueResponse := &sqs.ReceiveMessageOutput{
+			Messages: []types.Message{
+				{
+					ReceiptHandle: aws.String("message1"),
+					Body:          aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`),
+				},
+			},
+		}
+		stubber.Add(test.StubSqsReceiveMessages(expectedQueueInput, queueResponse, nil))
+
+		cancelSpy := func() {}
+		mockHandler.checkForJobs(cancelSpy)
+
+		queuedEvents := <-mockHandler.queueManager.queues[provider.PolygonIo]
+
+		assert.Equal(t, queuedEvents, job.Job{
+			ReceiptId: aws.String("message1"),
+			JobId:     "TEST_ID",
+			Provider:  provider.PolygonIo,
+			Type:      job.LoadTickerDescription,
+			TickerId:  "AMZN",
+			Attempts:  0,
+		})
+
+		testtools.ExitTest(stubber, t)
+	})
+	t.Run("No Messages", func(t *testing.T) {
+		stubber, _ := test.Enter()
+		mockClock := clock.NewMock()
+
+		mockHandler := newHandler(
+			handlers.NewMock(*stubber.SdkConfig),
+			mockClock,
+		)
+
+		for range [6]int{} {
+			//addReceiveQueueEventStub(stubber, []types.Message{})
+			expectedQueueInput := &sqs.ReceiveMessageInput{
+				QueueUrl:            aws.String("SQS_QUEUE_URL"),
+				MaxNumberOfMessages: 10,
+				WaitTimeSeconds:     5,
+			}
+			// no messages
+			queueResponse := &sqs.ReceiveMessageOutput{}
+			stubber.Add(test.StubSqsReceiveMessages(
+				expectedQueueInput,
+				queueResponse,
+				nil,
+			))
+		}
+
+		stubber.Add(test.StubEventbridgeDisableRule(
+			"EVENTBRIDGE_RULE_NAME",
 			nil,
 		))
-	}
 
-	stubber.Add(test.StubEventbridgeDisableRule(
-		"EVENTBRIDGE_RULE_NAME",
-		nil,
-	))
+		cancelSpyCount := 0
+		cancelSpy := func() { cancelSpyCount++ }
 
-	cancelSpyCount := 0
-	cancelSpy := func() { cancelSpyCount++ }
-
-	mockHandler.checkForJobs(cancelSpy)
-
-	// empty once
-	assert.Equal(t, 1, mockHandler.queueManager.emptyResponses)
-
-	for range [5]int{} {
 		mockHandler.checkForJobs(cancelSpy)
-	}
 
-	// empty 6 times, disable rule triggered
-	assert.Equal(t, 6, mockHandler.queueManager.emptyResponses)
+		// empty once
+		assert.Equal(t, 1, mockHandler.queueManager.emptyResponses)
 
-	testtools.ExitTest(stubber, t)
-}
+		for range [5]int{} {
+			mockHandler.checkForJobs(cancelSpy)
+		}
 
-func checkForJobsAwsError(t *testing.T) {
-	stubber, _ := test.Enter()
-	mockClock := clock.NewMock()
+		// empty 6 times, disable rule triggered
+		assert.Equal(t, 6, mockHandler.queueManager.emptyResponses)
 
-	mockHandler := newHandler(
-		handlers.NewMock(*stubber.SdkConfig),
-		mockClock,
-	)
+		testtools.ExitTest(stubber, t)
+	})
+	t.Run("AWS Error", func(t *testing.T) {
+		stubber, _ := test.Enter()
+		mockClock := clock.NewMock()
 
-	for range [5]int{} {
-		stubber.Add(test.StubSqsReceiveMessages(
-			nil, nil, fmt.Errorf("test error"),
+		mockHandler := newHandler(
+			handlers.NewMock(*stubber.SdkConfig),
+			mockClock,
+		)
+
+		for range [5]int{} {
+			stubber.Add(test.StubSqsReceiveMessages(
+				nil, nil, fmt.Errorf("test error"),
+			))
+		}
+
+		stubber.Add(test.StubEventbridgeDisableRule(
+			"EVENTBRIDGE_RULE_NAME", nil,
 		))
-	}
 
-	stubber.Add(test.StubEventbridgeDisableRule(
-		"EVENTBRIDGE_RULE_NAME", nil,
-	))
+		cancelSpyCount := 0
+		cancelSpy := func() { cancelSpyCount++ }
 
-	cancelSpyCount := 0
-	cancelSpy := func() { cancelSpyCount++ }
-
-	mockHandler.checkForJobs(cancelSpy)
-
-	// errored once
-	assert.Equal(t, 1, mockHandler.queueManager.failedAttempts)
-
-	for range [4]int{} {
 		mockHandler.checkForJobs(cancelSpy)
-	}
 
-	// errored times, cancel triggered
-	assert.Equal(t, 5, mockHandler.queueManager.failedAttempts)
-	assert.Equal(t, 1, cancelSpyCount)
+		// errored once
+		assert.Equal(t, 1, mockHandler.queueManager.failedAttempts)
 
-	testtools.ExitTest(stubber, t)
+		for range [4]int{} {
+			mockHandler.checkForJobs(cancelSpy)
+		}
+
+		// errored times, cancel triggered
+		assert.Equal(t, 5, mockHandler.queueManager.failedAttempts)
+		assert.Equal(t, 1, cancelSpyCount)
+
+		testtools.ExitTest(stubber, t)
+	})
 }
 
 func TestInvokeNextJob(t *testing.T) {
-	t.Run("invokeNextJob NoErrors", invokeNextJobNoErrors)
-	t.Run("invokeNextJob NoJobs", invokeNextJobNoJobs)
-	t.Run("invokeNextJob Errors", invokeNextJobErrors)
-}
+	t.Run("No Errors", func(t *testing.T) {
+		stubber, _ := test.Enter()
+		mockClock := clock.NewMock()
 
-func invokeNextJobNoErrors(t *testing.T) {
-	stubber, _ := test.Enter()
-	mockClock := clock.NewMock()
+		mockHandler := newHandler(
+			handlers.NewMock(*stubber.SdkConfig),
+			mockClock,
+		)
 
-	mockHandler := newHandler(
-		handlers.NewMock(*stubber.SdkConfig),
-		mockClock,
-	)
+		mockHandler.queueManager.queues[provider.PolygonIo] <- job.Job{
+			ReceiptId: aws.String("message1"),
+			JobId:     "TEST_ID",
+			Provider:  provider.PolygonIo,
+			Type:      job.LoadHistoricalPrices,
+			TickerId:  "AMZN",
+			Attempts:  0,
+		}
 
-	mockHandler.queueManager.queues[provider.PolygonIo] <- job.Job{
-		ReceiptId: aws.String("message1"),
-		JobId:     "TEST_ID",
-		Provider:  provider.PolygonIo,
-		Type:      job.LoadHistoricalPrices,
-		TickerId:  "AMZN",
-		Attempts:  0,
-	}
+		payloadJson := `{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`
+		stubber.Add(test.StubLambdaInvoke(
+			"LAMBDA_WORKER_NAME",
+			[]byte(payloadJson),
+			nil,
+		))
 
-	payloadJson := `{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`
-	stubber.Add(test.StubLambdaInvoke(
-		"LAMBDA_WORKER_NAME",
-		[]byte(payloadJson),
-		nil,
-	))
+		stubber.Add(test.StubSqsDeleteMessage(
+			"SQS_QUEUE_URL",
+			"message1",
+			nil,
+		))
 
-	stubber.Add(test.StubSqsDeleteMessage(
-		"SQS_QUEUE_URL",
-		"message1",
-		nil,
-	))
+		mockHandler.invokeNextJob(provider.PolygonIo)
 
-	mockHandler.invokeNextJob(provider.PolygonIo)
+		testtools.ExitTest(stubber, t)
+	})
+	t.Run("No Jobs", func(t *testing.T) {
+		stubber, _ := test.Enter()
+		mockClock := clock.NewMock()
 
-	testtools.ExitTest(stubber, t)
-}
+		mockHandler := newHandler(
+			handlers.NewMock(*stubber.SdkConfig),
+			mockClock,
+		)
 
-func invokeNextJobNoJobs(t *testing.T) {
-	stubber, _ := test.Enter()
-	mockClock := clock.NewMock()
+		mockHandler.invokeNextJob(provider.PolygonIo)
 
-	mockHandler := newHandler(
-		handlers.NewMock(*stubber.SdkConfig),
-		mockClock,
-	)
+		testtools.ExitTest(stubber, t)
+	})
+	t.Run("Errors", func(t *testing.T) {
+		stubber, _ := test.Enter()
+		mockClock := clock.NewMock()
 
-	mockHandler.invokeNextJob(provider.PolygonIo)
+		mockHandler := newHandler(
+			handlers.NewMock(*stubber.SdkConfig),
+			mockClock,
+		)
 
-	testtools.ExitTest(stubber, t)
-}
+		mockHandler.queueManager.queues[provider.PolygonIo] <- job.Job{
+			ReceiptId: aws.String("message1"),
+			JobId:     "TEST_ID",
+			Provider:  provider.PolygonIo,
+			Type:      job.LoadHistoricalPrices,
+			TickerId:  "AMZN",
+			Attempts:  0,
+		}
 
-func invokeNextJobErrors(t *testing.T) {
-	stubber, _ := test.Enter()
-	mockClock := clock.NewMock()
+		stubber.Add(test.StubLambdaInvoke(
+			"LAMBDA_WORKER_NAME",
+			nil,
+			fmt.Errorf("something went wrong"),
+		))
 
-	mockHandler := newHandler(
-		handlers.NewMock(*stubber.SdkConfig),
-		mockClock,
-	)
+		stubber.Add(test.StubSqsSendMessage(
+			"SQS_QUEUE_URL",
+			`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":1}`,
+			nil,
+		))
 
-	mockHandler.queueManager.queues[provider.PolygonIo] <- job.Job{
-		ReceiptId: aws.String("message1"),
-		JobId:     "TEST_ID",
-		Provider:  provider.PolygonIo,
-		Type:      job.LoadHistoricalPrices,
-		TickerId:  "AMZN",
-		Attempts:  0,
-	}
+		stubber.Add(test.StubSqsDeleteMessage(
+			"SQS_QUEUE_URL",
+			"message1",
+			nil,
+		))
 
-	stubber.Add(test.StubLambdaInvoke(
-		"LAMBDA_WORKER_NAME",
-		nil,
-		fmt.Errorf("something went wrong"),
-	))
+		mockHandler.invokeNextJob(provider.PolygonIo)
 
-	stubber.Add(test.StubSqsSendMessage(
-		"SQS_QUEUE_URL",
-		`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":1}`,
-		nil,
-	))
-
-	stubber.Add(test.StubSqsDeleteMessage(
-		"SQS_QUEUE_URL",
-		"message1",
-		nil,
-	))
-
-	mockHandler.invokeNextJob(provider.PolygonIo)
-
-	testtools.ExitTest(stubber, t)
+		testtools.ExitTest(stubber, t)
+	})
 }

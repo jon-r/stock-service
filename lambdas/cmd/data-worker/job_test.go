@@ -28,43 +28,41 @@ func setTickerDescriptionAWSError(t *testing.T) {
 }
 
 func TestSetHistoricalPrices(t *testing.T) {
-	t.Run("No Errors", setHistoricalPricesNoErrors)
+	t.Run("No Errors", func(t *testing.T) {
+		stubber, _ := test.Enter()
+		mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
+
+		var jsonData interface{}
+		test.ReadTestJson("./testdata/testTicker1Price.json", &jsonData)
+		item1, _ := attributevalue.MarshalMap(jsonData)
+		test.ReadTestJson("./testdata/testTicker2Price.json", &jsonData)
+		item2, _ := attributevalue.MarshalMap(jsonData)
+
+		expectedInput := &dynamodb.BatchWriteItemInput{
+			RequestItems: map[string][]types.WriteRequest{
+				"DB_STOCKS_TABLE_NAME": {
+					{PutRequest: &types.PutRequest{Item: item1}},
+					{PutRequest: &types.PutRequest{Item: item2}},
+				},
+			},
+		}
+		stubber.Add(test.StubDynamoDbBatchWriteTicker(expectedInput, nil))
+
+		jobEvent := job.Job{
+			JobId:    "TestJob",
+			Provider: provider.PolygonIo,
+			Type:     job.LoadHistoricalPrices,
+			TickerId: "TestTicker",
+			Attempts: 0,
+		}
+
+		err := mockServiceHandler.doJob(jobEvent)
+
+		assert.NoError(t, err)
+		testtools.ExitTest(stubber, t)
+	})
 	t.Run("API Error", setHistoricalPricesApiError)
 	t.Run("AWS Error", setHistoricalPricesAWSError)
-}
-
-func setHistoricalPricesNoErrors(t *testing.T) {
-	stubber, _ := test.Enter()
-	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
-
-	var jsonData interface{}
-	test.ReadTestJson("./testdata/testTicker1Price.json", &jsonData)
-	item1, _ := attributevalue.MarshalMap(jsonData)
-	test.ReadTestJson("./testdata/testTicker2Price.json", &jsonData)
-	item2, _ := attributevalue.MarshalMap(jsonData)
-
-	expectedInput := &dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]types.WriteRequest{
-			"DB_STOCKS_TABLE_NAME": {
-				{PutRequest: &types.PutRequest{Item: item1}},
-				{PutRequest: &types.PutRequest{Item: item2}},
-			},
-		},
-	}
-	stubber.Add(test.StubDynamoDbBatchWriteTicker(expectedInput, nil))
-
-	jobEvent := job.Job{
-		JobId:    "TestJob",
-		Provider: provider.PolygonIo,
-		Type:     job.LoadHistoricalPrices,
-		TickerId: "TestTicker",
-		Attempts: 0,
-	}
-
-	err := mockServiceHandler.doJob(jobEvent)
-
-	assert.NoError(t, err)
-	testtools.ExitTest(stubber, t)
 }
 
 func setHistoricalPricesApiError(t *testing.T) {
@@ -76,43 +74,41 @@ func setHistoricalPricesAWSError(t *testing.T) {
 }
 
 func TestUpdatePrices(t *testing.T) {
-	t.Run("NoErrors", updatePricesNoErrors)
+	t.Run("No Errors", func(t *testing.T) {
+		stubber, _ := test.Enter()
+		mockHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
+
+		var jsonData interface{}
+		test.ReadTestJson("./testdata/testTicker3Price.json", &jsonData)
+		item3, _ := attributevalue.MarshalMap(jsonData)
+		test.ReadTestJson("./testdata/testTicker4Price.json", &jsonData)
+		item4, _ := attributevalue.MarshalMap(jsonData)
+
+		expectedInput := &dynamodb.BatchWriteItemInput{
+			RequestItems: map[string][]types.WriteRequest{
+				"DB_STOCKS_TABLE_NAME": {
+					{PutRequest: &types.PutRequest{Item: item3}},
+					{PutRequest: &types.PutRequest{Item: item4}},
+				},
+			},
+		}
+		stubber.Add(test.StubDynamoDbBatchWriteTicker(expectedInput, nil))
+
+		jobEvent := job.Job{
+			JobId:    "TestJob",
+			Provider: provider.PolygonIo,
+			Type:     job.LoadDailyPrices,
+			TickerId: "TestTicker1,TestTicker2",
+			Attempts: 0,
+		}
+
+		err := mockHandler.doJob(jobEvent)
+
+		assert.NoError(t, err)
+		testtools.ExitTest(stubber, t)
+	})
 	t.Run("API Error", updatePricesApiError)
 	t.Run("AWS Error", updatePricesAWSError)
-}
-
-func updatePricesNoErrors(t *testing.T) {
-	stubber, _ := test.Enter()
-	mockHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
-
-	var jsonData interface{}
-	test.ReadTestJson("./testdata/testTicker3Price.json", &jsonData)
-	item3, _ := attributevalue.MarshalMap(jsonData)
-	test.ReadTestJson("./testdata/testTicker4Price.json", &jsonData)
-	item4, _ := attributevalue.MarshalMap(jsonData)
-
-	expectedInput := &dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]types.WriteRequest{
-			"DB_STOCKS_TABLE_NAME": {
-				{PutRequest: &types.PutRequest{Item: item3}},
-				{PutRequest: &types.PutRequest{Item: item4}},
-			},
-		},
-	}
-	stubber.Add(test.StubDynamoDbBatchWriteTicker(expectedInput, nil))
-
-	jobEvent := job.Job{
-		JobId:    "TestJob",
-		Provider: provider.PolygonIo,
-		Type:     job.LoadDailyPrices,
-		TickerId: "TestTicker1,TestTicker2",
-		Attempts: 0,
-	}
-
-	err := mockHandler.doJob(jobEvent)
-
-	assert.NoError(t, err)
-	testtools.ExitTest(stubber, t)
 }
 
 func updatePricesApiError(t *testing.T) {

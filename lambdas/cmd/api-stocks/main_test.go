@@ -18,104 +18,96 @@ import (
 )
 
 func TestCreateTicker(t *testing.T) {
-	t.Run("No Errors", createTickerNoErrors)
-	t.Run("Invalid request method", createTickerInvalidRequestMethod)
-	t.Run("Invalid request body", createTickerInvalidRequestBody)
-	t.Run("AWS database error", createTickerAwsError)
-}
+	t.Run("No Errors", func(t *testing.T) {
+		stubber, ctx := test.Enter()
+		mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 
-func createTickerNoErrors(t *testing.T) {
-	stubber, ctx := test.Enter()
-	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
+		expectedTicker := ticker.Entity{
+			EntityBase: db.EntityBase{Id: "T#AMZN", Sort: "T#AMZN"},
+			Provider:   provider.PolygonIo,
+		}
+		stubber.Add(test.StubDynamoDbPutItem("DB_STOCKS_TABLE_NAME", expectedTicker, nil))
 
-	expectedTicker := ticker.Entity{
-		EntityBase: db.EntityBase{Id: "T#AMZN", Sort: "T#AMZN"},
-		Provider:   provider.PolygonIo,
-	}
-	stubber.Add(test.StubDynamoDbPutItem("DB_STOCKS_TABLE_NAME", expectedTicker, nil))
+		expectedQueueItems := []types.SendMessageBatchRequestEntry{
+			{
+				Id:          aws.String("TEST_ID"),
+				MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`),
+			},
+			{
+				Id:          aws.String("TEST_ID"),
+				MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`),
+			},
+		}
+		stubber.Add(test.StubSqsSendMessageBatch("SQS_QUEUE_URL", expectedQueueItems, nil))
 
-	expectedQueueItems := []types.SendMessageBatchRequestEntry{
-		{
-			Id:          aws.String("TEST_ID"),
-			MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_TICKER_DESCRIPTION","TickerId":"AMZN","Attempts":0}`),
-		},
-		{
-			Id:          aws.String("TEST_ID"),
-			MessageBody: aws.String(`{"JobId":"TEST_ID","Provider":"POLYGON_IO","Type":"LOAD_HISTORICAL_PRICES","TickerId":"AMZN","Attempts":0}`),
-		},
-	}
-	stubber.Add(test.StubSqsSendMessageBatch("SQS_QUEUE_URL", expectedQueueItems, nil))
+		expectedRule := "EVENTBRIDGE_RULE_NAME"
+		stubber.Add(test.StubEventbridgeEnableRule(expectedRule, nil))
+		expectedLambda := "LAMBDA_TICKER_NAME"
+		stubber.Add(test.StubLambdaInvoke(expectedLambda, nil, nil))
 
-	expectedRule := "EVENTBRIDGE_RULE_NAME"
-	stubber.Add(test.StubEventbridgeEnableRule(expectedRule, nil))
-	expectedLambda := "LAMBDA_TICKER_NAME"
-	stubber.Add(test.StubLambdaInvoke(expectedLambda, nil, nil))
+		var postEvent awsEvents.APIGatewayProxyRequest
+		test.ReadTestJson("./testdata/api-stocks_POST.json", &postEvent)
 
-	var postEvent awsEvents.APIGatewayProxyRequest
-	test.ReadTestJson("./testdata/api-stocks_POST.json", &postEvent)
+		res, err := mockServiceHandler.HandleRequest(ctx, postEvent)
+		expectedResponse, _ := response.StatusOK("Success: ticker 'AMZN' queued")
 
-	res, err := mockServiceHandler.HandleRequest(ctx, postEvent)
-	expectedResponse, _ := response.StatusOK("Success: ticker 'AMZN' queued")
+		assert.Equal(t, expectedResponse, res)
+		assert.NoError(t, err)
+		testtools.ExitTest(stubber, t)
+	})
+	t.Run("Invalid request method", func(t *testing.T) {
+		stubber, ctx := test.Enter()
+		mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 
-	assert.Equal(t, expectedResponse, res)
-	assert.NoError(t, err)
-	testtools.ExitTest(stubber, t)
-}
+		var putEvent awsEvents.APIGatewayProxyRequest
+		test.ReadTestJson("./testdata/api-stocks_PUT.json", &putEvent)
 
-func createTickerInvalidRequestMethod(t *testing.T) {
-	stubber, ctx := test.Enter()
-	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
+		res, err := mockServiceHandler.HandleRequest(ctx, putEvent)
 
-	var putEvent awsEvents.APIGatewayProxyRequest
-	test.ReadTestJson("./testdata/api-stocks_PUT.json", &putEvent)
+		expectedError := fmt.Errorf("request method PUT not supported")
+		expectedResponse, _ := response.StatusMethodNotAllowed(expectedError)
 
-	res, err := mockServiceHandler.HandleRequest(ctx, putEvent)
+		assert.Equal(t, expectedResponse, res)
+		assert.Error(t, expectedError, err)
+		testtools.ExitTest(stubber, t)
+	})
+	t.Run("Invalid request body", func(t *testing.T) {
+		stubber, ctx := test.Enter()
+		mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 
-	expectedError := fmt.Errorf("request method PUT not supported")
-	expectedResponse, _ := response.StatusMethodNotAllowed(expectedError)
+		emptyEvent := awsEvents.APIGatewayProxyRequest{
+			HTTPMethod: "POST",
+			Body:       "",
+		}
 
-	assert.Equal(t, expectedResponse, res)
-	assert.Error(t, expectedError, err)
-	testtools.ExitTest(stubber, t)
-}
+		res, err := mockServiceHandler.HandleRequest(ctx, emptyEvent)
 
-func createTickerInvalidRequestBody(t *testing.T) {
-	stubber, ctx := test.Enter()
-	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
+		expectedResponse, expectedError := response.StatusBadRequest(err)
 
-	emptyEvent := awsEvents.APIGatewayProxyRequest{
-		HTTPMethod: "POST",
-		Body:       "",
-	}
+		assert.Equal(t, expectedResponse, res)
+		assert.Error(t, expectedError, err)
+		testtools.ExitTest(stubber, t)
+	})
+	t.Run("AWS database error", func(t *testing.T) {
+		stubber, ctx := test.Enter()
+		mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
 
-	res, err := mockServiceHandler.HandleRequest(ctx, emptyEvent)
+		stubber.Add(test.StubDynamoDbPutItem(
+			"DB_STOCKS_TABLE_NAME",
+			nil,
+			fmt.Errorf("test error"),
+		))
 
-	expectedResponse, expectedError := response.StatusBadRequest(err)
+		var postEvent awsEvents.APIGatewayProxyRequest
+		test.ReadTestJson("./testdata/api-stocks_POST.json", &postEvent)
 
-	assert.Equal(t, expectedResponse, res)
-	assert.Error(t, expectedError, err)
-	testtools.ExitTest(stubber, t)
-}
+		res, err := mockServiceHandler.HandleRequest(ctx, postEvent)
 
-func createTickerAwsError(t *testing.T) {
-	stubber, ctx := test.Enter()
-	mockServiceHandler := handler{handlers.NewMock(*stubber.SdkConfig)}
+		expectedResponse, _ := response.StatusServerError(err)
+		expectedError := fmt.Errorf("test error")
 
-	stubber.Add(test.StubDynamoDbPutItem(
-		"DB_STOCKS_TABLE_NAME",
-		nil,
-		fmt.Errorf("test error"),
-	))
-
-	var postEvent awsEvents.APIGatewayProxyRequest
-	test.ReadTestJson("./testdata/api-stocks_POST.json", &postEvent)
-
-	res, err := mockServiceHandler.HandleRequest(ctx, postEvent)
-
-	expectedResponse, _ := response.StatusServerError(err)
-	expectedError := fmt.Errorf("test error")
-
-	assert.Equal(t, expectedResponse, res)
-	testtools.VerifyError(err, test.StubbedError(expectedError), t)
-	testtools.ExitTest(stubber, t)
+		assert.Equal(t, expectedResponse, res)
+		testtools.VerifyError(err, test.StubbedError(expectedError), t)
+		testtools.ExitTest(stubber, t)
+	})
 }

@@ -18,6 +18,7 @@ import (
 )
 
 // TODO TEST -> handle errors!!
+// also group up inside the parent Test function
 func TestUpdateAllTickers(t *testing.T) {
 	t.Run("No Errors", updateAllTickerNoErrors)
 	t.Run("No Items", updateAllTickersNoItems)
