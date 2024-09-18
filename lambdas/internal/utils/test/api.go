@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"testing"
 )
 
 // RoundTripFunc .
@@ -20,6 +21,7 @@ type ReqStub struct {
 	Method string
 	Input  string
 	Output string
+	Status int
 }
 
 type ApiRequestStubber struct {
@@ -62,8 +64,13 @@ func (stubber *ApiRequestStubber) NewTestClient() *http.Client {
 			}
 		}
 
+		status := stub.Status
+		if stub.Status == 0 {
+			status = http.StatusOK
+		}
+
 		return &http.Response{
-			StatusCode: http.StatusOK,
+			StatusCode: status,
 			Header: map[string][]string{
 				"Content-Type": {"application/json"},
 			},
@@ -96,11 +103,11 @@ func NewApiStubber() *ApiRequestStubber {
 	return &ApiRequestStubber{}
 }
 
-func (stubber *ApiRequestStubber) VerifyAllStubsCalled() error {
+func (stubber *ApiRequestStubber) VerifyAllStubsCalled(t *testing.T) {
 	var err error
 	next := stubber.Next()
 	if next != nil {
 		err = fmt.Errorf("remaining stub %v was never called", next.URL)
+		t.Error(err)
 	}
-	return err
 }

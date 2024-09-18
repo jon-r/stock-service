@@ -114,8 +114,5 @@ func (p *p) aggregateToPrice(item models.Agg, tickerId string) prices.TickerPric
 }
 
 func newPolygonAPI(httpClient *http.Client, c clock.Clock) API {
-	return &p{
-		clock:  c,
-		client: polygon.NewWithClient(os.Getenv("POLYGON_API_KEY"), httpClient),
-	}
+	return &p{c, polygon.NewWithClient(os.Getenv("POLYGON_API_KEY"), httpClient)}
 }

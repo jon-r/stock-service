@@ -44,7 +44,7 @@ func TestRepository(t *testing.T) {
 
 		_, err := client.AddOne("Table1", item)
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("AddMany", func(t *testing.T) {
@@ -71,7 +71,7 @@ func TestRepository(t *testing.T) {
 
 		res, err := client.AddMany("Table1", items)
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, 2, res)
 	})
 	t.Run("Update", func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestRepository(t *testing.T) {
 
 		_, err := client.Update("Table1", item.GetKey(), update)
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 	t.Run("GetMany", func(t *testing.T) {
 		item := EntityBase{Id: "123", Sort: "ABC"}
@@ -134,7 +134,7 @@ func TestRepository(t *testing.T) {
 		res, err := client.GetMany("Table1", query)
 		log.Println(err)
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, []map[string]types.AttributeValue{entity}, res)
 	})
 }

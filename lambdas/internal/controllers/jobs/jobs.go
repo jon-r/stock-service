@@ -106,11 +106,11 @@ func (c *jobsController) InvokeWorker(j job.Job) error {
 	var err error
 
 	functionName := os.Getenv("LAMBDA_WORKER_NAME")
-	_, err = c.eventsScheduler.InvokeFunction(functionName, j)
+	_, functionErr := c.eventsScheduler.InvokeFunction(functionName, j)
 
-	if err != nil {
-		c.Log.Errorw("could not invoke function", "error", err)
-		err = c.RequeueJob(j, err.Error())
+	if functionErr != nil {
+		c.Log.Errorw("could not invoke function", "error", functionErr)
+		err = c.RequeueJob(j, functionErr.Error())
 	}
 
 	_, err = c.queueBroker.DeleteMessage(job.QueueUrl(), j.ReceiptId)

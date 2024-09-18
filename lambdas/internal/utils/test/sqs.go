@@ -7,6 +7,15 @@ import (
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 )
 
+func StubSqsSendMessage(queue string, message string, raiseErr error) testtools.Stub {
+	return testtools.Stub{
+		OperationName: "SendMessage",
+		Input:         &sqs.SendMessageInput{QueueUrl: aws.String(queue), MessageBody: aws.String(message)},
+		Output:        &sqs.SendMessageOutput{},
+		Error:         StubbedError(raiseErr),
+	}
+}
+
 func StubSqsSendMessageBatch(queue string, items []types.SendMessageBatchRequestEntry, raiseErr error) testtools.Stub {
 	return testtools.Stub{
 		OperationName: "SendMessageBatch",

@@ -36,13 +36,20 @@ func TestService(t *testing.T) {
 
 		res, err := service.GetDescription(provider.PolygonIo, "AAPL")
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, &ticker.Description{
 			FullName:   "Apple Inc.",
 			FullTicker: "XNAS:AAPL",
 			Currency:   "usd",
 			Icon:       "https://api.polygon.io/v1/reference/company-branding/d3d3LmFwcGxlLmNvbQ/images/2022-01-10_icon.png",
 		}, res)
+	})
+
+	t.Run("GetDescription - invalid provider", func(t *testing.T) {
+		_, err := service.GetDescription("BADNAME", "AAPL")
+		expectedError := fmt.Errorf("incorrect provider name: BADNAME")
+
+		assert.Equal(t, expectedError, err)
 	})
 
 	t.Run("GetHistoricalPrices", func(t *testing.T) {
@@ -70,7 +77,7 @@ func TestService(t *testing.T) {
 
 		res, err := service.GetHistoricalPrices(provider.PolygonIo, "AAPL")
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, &[]prices.TickerPrices{
 			{
 				Id:        "AAPL",
@@ -91,6 +98,13 @@ func TestService(t *testing.T) {
 		}, res)
 	})
 
+	t.Run("GetHistoricalPrices - invalid provider", func(t *testing.T) {
+		_, err := service.GetHistoricalPrices("BADNAME", "AAPL")
+		expectedError := fmt.Errorf("incorrect provider name: BADNAME")
+
+		assert.Equal(t, expectedError, err)
+	})
+
 	t.Run("GetDailyPrices", func(t *testing.T) {
 		apiStubber.AddRequest(test.ReqStub{
 			Method: "GET",
@@ -104,7 +118,7 @@ func TestService(t *testing.T) {
 
 		res, err := service.GetDailyPrices(provider.PolygonIo, []string{"AAPL", "META"})
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, &[]prices.TickerPrices{{
 			Id:        "AAPL",
 			Open:      26.07,
@@ -122,8 +136,12 @@ func TestService(t *testing.T) {
 		}}, res)
 	})
 
-	err := apiStubber.VerifyAllStubsCalled()
-	if err != nil {
-		t.Error(err)
-	}
+	t.Run("GetDailyPrices - invalid provider", func(t *testing.T) {
+		_, err := service.GetDailyPrices("BADNAME", []string{"AAPL", "META"})
+		expectedError := fmt.Errorf("incorrect provider name: BADNAME")
+
+		assert.Equal(t, expectedError, err)
+	})
+
+	apiStubber.VerifyAllStubsCalled(t)
 }

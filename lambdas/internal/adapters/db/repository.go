@@ -123,6 +123,10 @@ func (db *database) GetMany(tableName string, query expression.Expression) ([]ma
 		}
 	}
 
+	if err != nil {
+		return nil, err
+	}
+
 	if len(items) == 0 {
 		return items, fmt.Errorf("no items found")
 	}

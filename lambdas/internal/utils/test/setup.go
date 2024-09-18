@@ -3,14 +3,14 @@ package test
 import (
 	"context"
 	"os"
-	"testing"
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/awsdocs/aws-doc-sdk-examples/gov2/testtools"
 )
 
-func Enter() (*testtools.AwsmStubber, context.Context) {
+func SetupLambdaEnvironment() (*testtools.AwsmStubber, context.Context) {
 	stubber := testtools.NewStubber()
+	os.Setenv("TZ", "utc")
 	os.Setenv("DB_STOCKS_TABLE_NAME", "DB_STOCKS_TABLE_NAME")
 	os.Setenv("DB_LOGS_TABLE_NAME", "DB_LOGS_TABLE_NAME")
 	os.Setenv("EVENTBRIDGE_RULE_NAME", "EVENTBRIDGE_RULE_NAME")
@@ -25,10 +25,4 @@ func Enter() (*testtools.AwsmStubber, context.Context) {
 	})
 
 	return stubber, ctx
-}
-
-func Assert(t *testing.T, stubber *testtools.AwsmStubber, actualError error, expectedError error) {
-	testtools.VerifyError(actualError, StubbedError(expectedError), t)
-
-	testtools.ExitTest(stubber, t)
 }

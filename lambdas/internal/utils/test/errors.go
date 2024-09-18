@@ -6,7 +6,7 @@ import (
 
 func StubbedError(err error) *testtools.StubError {
 	if err != nil {
-		return &testtools.StubError{Err: err, ContinueAfter: false}
+		return &testtools.StubError{Err: err, ContinueAfter: true}
 	}
 
 	return nil

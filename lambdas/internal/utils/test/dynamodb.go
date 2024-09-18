@@ -38,18 +38,22 @@ func StubDynamoDbBatchWriteTicker(request *dynamodb.BatchWriteItemInput, raiseEr
 }
 
 func StubDynamoDbScan(request *dynamodb.ScanInput, response interface{}, raiseErr error) testtools.Stub {
-	list := unpackArray(response)
+	var output *dynamodb.ScanOutput
+	if response != nil {
+		list := unpackArray(response)
 
-	var items []map[string]types.AttributeValue
-	for _, item := range list {
-		data, _ := attributevalue.MarshalMap(item)
-		items = append(items, data)
+		var items []map[string]types.AttributeValue
+		for _, item := range list {
+			data, _ := attributevalue.MarshalMap(item)
+			items = append(items, data)
+		}
+		output = &dynamodb.ScanOutput{Items: items}
 	}
 
 	return testtools.Stub{
 		OperationName: "Scan",
 		Input:         request,
-		Output:        &dynamodb.ScanOutput{Items: items},
+		Output:        output,
 		Error:         StubbedError(raiseErr),
 	}
 }

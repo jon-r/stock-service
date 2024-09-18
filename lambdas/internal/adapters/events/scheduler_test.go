@@ -23,7 +23,7 @@ func TestScheduler(t *testing.T) {
 
 		_, err := client.EnableRule("rule1")
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("DisableRule", func(t *testing.T) {
@@ -35,7 +35,7 @@ func TestScheduler(t *testing.T) {
 
 		_, err := client.DisableRule("rule1")
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("InvokeFunction", func(t *testing.T) {
@@ -52,7 +52,7 @@ func TestScheduler(t *testing.T) {
 		type action struct{ Payload string }
 		_, err := client.InvokeFunction("function1", action{Payload: "do something"})
 
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 }
