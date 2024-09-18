@@ -56,6 +56,7 @@ func (api *mockProviderApi) GetDailyPrices(_ provider.Name, tickerIds []string) 
 	return &p, nil
 }
 
-func NewMock() Service {
+// Deprecated
+func NewOldMock() Service {
 	return &mockProviderApi{}
 }

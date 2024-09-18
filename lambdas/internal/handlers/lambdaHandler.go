@@ -27,7 +27,6 @@ func NewLambdaHandler() *LambdaHandler {
 	l := logger.New(zapcore.InfoLevel)
 	idGen := uuid.NewString
 
-	// todo once tests split up, some of this can be moved to the controllers
 	eventsScheduler := events.NewScheduler(cfg)
 	providersService := providers.NewService(nil, clock.New())
 	queueBroker := queue.NewBroker(cfg, idGen)
