@@ -1,5 +1,6 @@
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 
+// todo move this to api-stack as a private method
 export function addCorsOptions(apiResource: apigateway.IResource) {
   apiResource.addMethod(
     "OPTIONS",

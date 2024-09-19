@@ -1,8 +1,8 @@
-import * as go from "@aws-cdk/aws-lambda-go-alpha";
-import { Stack, type StackProps } from "aws-cdk-lib";
+import * as lambdaGo from "@aws-cdk/aws-lambda-go-alpha";
+import * as cdk from "aws-cdk-lib";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
-import { RetentionDays } from "aws-cdk-lib/aws-logs";
+import * as logs from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 
 import { type TableNames, getDatabaseTableEnvVariables } from "./helpers/db.ts";
@@ -18,12 +18,12 @@ import {
   getTickerEnvVariables,
 } from "./helpers/ticker.ts";
 
-type DataManagerStackProps = StackProps & {
+type DataManagerStackProps = cdk.StackProps & {
   dataTickerProps: DataTickerProps;
   tableNames: TableNames;
 };
 
-export class DataManagerStack extends Stack {
+export class DataManagerStack extends cdk.Stack {
   constructor(app: Construct, id: string, props: DataManagerStackProps) {
     super(app, id, props);
 
@@ -44,15 +44,19 @@ export class DataManagerStack extends Stack {
       ],
     });
 
-    const managerFunction = new go.GoFunction(this, "DataManagerFunction", {
-      entry: "lambdas/cmd/data-manager",
-      role: managerFunctionRole,
-      environment: {
-        ...getDatabaseTableEnvVariables(props.tableNames),
-        ...getTickerEnvVariables(props.dataTickerProps),
+    const managerFunction = new lambdaGo.GoFunction(
+      this,
+      "DataManagerFunction",
+      {
+        entry: "lambdas/cmd/data-manager",
+        role: managerFunctionRole,
+        environment: {
+          ...getDatabaseTableEnvVariables(props.tableNames),
+          ...getTickerEnvVariables(props.dataTickerProps),
+        },
+        logRetention: logs.RetentionDays.THREE_MONTHS,
       },
-      logRetention: RetentionDays.THREE_MONTHS,
-    });
+    );
 
     rule.addTarget(new targets.LambdaFunction(managerFunction));
   }

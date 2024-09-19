@@ -1,5 +1,4 @@
 import * as iam from "aws-cdk-lib/aws-iam";
-import type { IPrincipal, IRole } from "aws-cdk-lib/aws-iam";
 import type { Construct } from "constructs";
 
 export const SQS_FULL_ACCESS_POLICY_ARN =
@@ -40,10 +39,10 @@ export function newLambdaIamRole(
 
   const principle = new iam.ServicePrincipal(
     "lambda.amazonaws.com",
-  ) as IPrincipal;
+  ) as iam.IPrincipal;
 
   return new iam.Role(scope, `${name}Role`, {
     assumedBy: principle,
     managedPolicies: lambdaPolicies,
-  }) as IRole;
+  }) as iam.IRole;
 }

@@ -1,5 +1,5 @@
-import * as go from "@aws-cdk/aws-lambda-go-alpha";
-import { Duration, Stack, type StackProps } from "aws-cdk-lib";
+import * as lambdaGo from "@aws-cdk/aws-lambda-go-alpha";
+import * as cdk from "aws-cdk-lib";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as logs from "aws-cdk-lib/aws-logs";
@@ -20,11 +20,11 @@ import {
   getTickerEnvVariables,
 } from "./helpers/ticker.ts";
 
-type DataEntryStackProps = StackProps & {
+type DataEntryStackProps = cdk.StackProps & {
   tableNames: TableNames;
 };
 
-export class DataEntryStack extends Stack {
+export class DataEntryStack extends cdk.Stack {
   dataTickerProps: DataTickerProps;
 
   constructor(app: Construct, id: string, props: DataEntryStackProps) {
@@ -32,12 +32,12 @@ export class DataEntryStack extends Stack {
 
     const deadLetterQueue = new sqs.Queue(this, "DataEntryDeadLetterQueue", {
       queueName: "DataEntryDeadLetterQueue",
-      retentionPeriod: Duration.days(7),
+      retentionPeriod: cdk.Duration.days(7),
     });
 
     const queue = new sqs.Queue(this, "DataEntryQueue", {
       queueName: "DataEntryQueue",
-      visibilityTimeout: Duration.minutes(4),
+      visibilityTimeout: cdk.Duration.minutes(4),
       deadLetterQueue: {
         maxReceiveCount: 1,
         queue: deadLetterQueue,
@@ -45,7 +45,7 @@ export class DataEntryStack extends Stack {
     });
 
     const rule = new events.Rule(this, "DataEntryPoll", {
-      schedule: events.Schedule.rate(Duration.minutes(2)),
+      schedule: events.Schedule.rate(cdk.Duration.minutes(2)),
       ruleName: TICKER_RULE_NAME,
       enabled: false,
     });
@@ -58,23 +58,27 @@ export class DataEntryStack extends Stack {
         EVENTS_FULL_ACCESS_POLICY_ARN,
       ],
     });
-    const workerFunction = new go.GoFunction(this, "DataEntryWorkerFunction", {
-      entry: "lambdas/cmd/data-worker",
-      role: workerFunctionRole,
-      environment: {
-        ...getDatabaseTableEnvVariables(props.tableNames),
-        ...getTickerEnvVariables({
-          eventRuleName: TICKER_RULE_NAME,
-          eventsQueueUrl: queue.queueUrl,
-          eventPollerFunctionName: "",
-        }),
+    const workerFunction = new lambdaGo.GoFunction(
+      this,
+      "DataEntryWorkerFunction",
+      {
+        entry: "lambdas/cmd/data-worker",
+        role: workerFunctionRole,
+        environment: {
+          ...getDatabaseTableEnvVariables(props.tableNames),
+          ...getTickerEnvVariables({
+            eventRuleName: TICKER_RULE_NAME,
+            eventsQueueUrl: queue.queueUrl,
+            eventPollerFunctionName: "",
+          }),
 
-        POLYGON_API_KEY: import.meta.env.VITE_POLYGON_IO_API_KEY,
+          POLYGON_API_KEY: import.meta.env.VITE_POLYGON_IO_API_KEY,
 
-        SQS_DLQ_URL: deadLetterQueue.queueUrl,
+          SQS_DLQ_URL: deadLetterQueue.queueUrl,
+        },
+        logRetention: logs.RetentionDays.THREE_MONTHS,
       },
-      logRetention: logs.RetentionDays.THREE_MONTHS,
-    });
+    );
 
     // poll lambda - reads the queue in a throttled way to pass the events on to the worker function
     const tickerFunctionRole = newLambdaIamRole(this, "DataEntryTicker", {
@@ -85,26 +89,30 @@ export class DataEntryStack extends Stack {
       ],
     });
     const tickerTimeout = 5;
-    const tickerFunction = new go.GoFunction(this, "DataEntryPollerFunction", {
-      entry: "lambdas/cmd/data-ticker",
-      role: tickerFunctionRole,
-      // Long timeout, single concurrent function only
-      timeout: Duration.minutes(tickerTimeout + 0.1),
-      reservedConcurrentExecutions: 1,
-      // Dont reattempt
-      retryAttempts: 0,
-      environment: {
-        ...getTickerEnvVariables({
-          eventRuleName: TICKER_RULE_NAME,
-          eventsQueueUrl: queue.queueUrl,
-          eventPollerFunctionName: "", // Wont self invoke
-        }),
+    const tickerFunction = new lambdaGo.GoFunction(
+      this,
+      "DataEntryPollerFunction",
+      {
+        entry: "lambdas/cmd/data-ticker",
+        role: tickerFunctionRole,
+        // Long timeout, single concurrent function only
+        timeout: cdk.Duration.minutes(tickerTimeout + 0.1),
+        reservedConcurrentExecutions: 1,
+        // Dont reattempt
+        retryAttempts: 0,
+        environment: {
+          ...getTickerEnvVariables({
+            eventRuleName: TICKER_RULE_NAME,
+            eventsQueueUrl: queue.queueUrl,
+            eventPollerFunctionName: "", // Wont self invoke
+          }),
 
-        TICKER_TIMEOUT: String(tickerTimeout),
-        LAMBDA_WORKER_NAME: workerFunction.functionName,
+          TICKER_TIMEOUT: String(tickerTimeout),
+          LAMBDA_WORKER_NAME: workerFunction.functionName,
+        },
+        logRetention: logs.RetentionDays.THREE_MONTHS,
       },
-      logRetention: logs.RetentionDays.THREE_MONTHS,
-    });
+    );
 
     rule.addTarget(new targets.LambdaFunction(tickerFunction));
 

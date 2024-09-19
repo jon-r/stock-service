@@ -1,6 +1,5 @@
-import { RemovalPolicy, Stack, type StackProps } from "aws-cdk-lib";
+import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
-import { AttributeType } from "aws-cdk-lib/aws-dynamodb";
 import type { Construct } from "constructs";
 
 import {
@@ -10,10 +9,10 @@ import {
   USERS_MODEL_NAME,
 } from "./helpers/db.js";
 
-export class DatabaseStack extends Stack {
+export class DatabaseStack extends cdk.Stack {
   tableNames: TableNames;
 
-  constructor(app: Construct, id: string, props?: StackProps) {
+  constructor(app: Construct, id: string, props?: cdk.StackProps) {
     super(app, id, props);
 
     const stockTable = this.#newDynamoDBTable("Stock");
@@ -43,12 +42,13 @@ export class DatabaseStack extends Stack {
     props?: Partial<dynamodb.TablePropsV2>,
   ) {
     return new dynamodb.TableV2(this, `${modelName}Table`, {
+      // todo STK-114 make a dynamoDB attribute method
       partitionKey: {
         name: `${modelName}Id`,
         type: dynamodb.AttributeType.STRING,
       },
 
-      removalPolicy: RemovalPolicy.DESTROY,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
 
       ...props,
     });
@@ -56,17 +56,17 @@ export class DatabaseStack extends Stack {
 
   #newDynamoDBTable(modelName: string) {
     return new dynamodb.TableV2(this, `${modelName}Table`, {
-      partitionKey: { type: AttributeType.STRING, name: "PK" },
-      sortKey: { type: AttributeType.STRING, name: "SK" },
+      partitionKey: { type: dynamodb.AttributeType.STRING, name: "PK" },
+      sortKey: { type: dynamodb.AttributeType.STRING, name: "SK" },
       globalSecondaryIndexes: [
         {
           indexName: "GSI",
-          partitionKey: { type: AttributeType.STRING, name: "PK" },
-          sortKey: { type: AttributeType.STRING, name: "DT" },
+          partitionKey: { type: dynamodb.AttributeType.STRING, name: "PK" },
+          sortKey: { type: dynamodb.AttributeType.STRING, name: "DT" },
         },
       ],
 
-      removalPolicy: RemovalPolicy.DESTROY,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
   }
 }

@@ -6,9 +6,6 @@
     "stock-app": "bin/stock-app.js"
   },
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
-    "test": "jest",
     "cdk": "cdk",
     "prettify": "prettier . --write --ignore-unknown",
     "lint": "eslint .  --cache --fix --fix-type=suggestion",
