@@ -10,6 +10,7 @@
     "prettify": "prettier . --write --ignore-unknown",
     "lint": "eslint .  --cache --fix --fix-type=suggestion",
     "type-check": "tsc --noEmit",
+    "analyse": "eslint . & tsc --noEmit",
     "prepare": "husky"
   },
   "lint-staged": {
