@@ -8,10 +8,11 @@ import { type TableNames, getDatabaseTableEnvVariables } from "./helpers/db.ts";
 import {
   DB_FULL_ACCESS_POLICY_ARN,
   EVENTS_FULL_ACCESS_POLICY_ARN,
+  type KnownEnvVariables,
   LAMBDA_INVOKE_POLICY_ARN,
   SQS_FULL_ACCESS_POLICY_ARN,
   newLambdaIamRole,
-} from "./helpers/iam.ts";
+} from "./helpers/lambdas.ts";
 import {
   type DataTickerProps,
   getTickerEnvVariables,
@@ -40,7 +41,7 @@ export class ApiStack extends cdk.Stack {
         entry: "lambdas/cmd/api-users",
         environment: {
           ...getDatabaseTableEnvVariables(props.tableNames),
-        },
+        } satisfies KnownEnvVariables,
         logRetention: logs.RetentionDays.THREE_MONTHS,
       },
     );
@@ -57,7 +58,7 @@ export class ApiStack extends cdk.Stack {
         entry: "lambdas/cmd/api-logs",
         environment: {
           ...getDatabaseTableEnvVariables(props.tableNames),
-        },
+        } satisfies KnownEnvVariables,
         logRetention: logs.RetentionDays.THREE_MONTHS,
       },
     );
@@ -88,7 +89,7 @@ export class ApiStack extends cdk.Stack {
         environment: {
           ...getTickerEnvVariables(props.dataTickerProps),
           ...getDatabaseTableEnvVariables(props.tableNames),
-        },
+        } satisfies KnownEnvVariables,
         logRetention: logs.RetentionDays.THREE_MONTHS,
       },
     );

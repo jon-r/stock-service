@@ -1,3 +1,5 @@
+import { LambdaEnvVariables } from "./lambdas.ts";
+
 export const TICKER_RULE_NAME = "DataEntryTickerPoll";
 
 export type DataTickerProps = {
@@ -7,8 +9,8 @@ export type DataTickerProps = {
 
 export function getTickerEnvVariables(ticker: DataTickerProps) {
   return {
-    LAMBDA_TICKER_NAME: ticker.eventPollerFunctionName,
-    EVENTBRIDGE_RULE_NAME: TICKER_RULE_NAME,
-    SQS_QUEUE_URL: ticker.eventsQueueUrl,
+    [LambdaEnvVariables.LambdaTickerName]: ticker.eventPollerFunctionName,
+    [LambdaEnvVariables.EventBridgeRuleName]: TICKER_RULE_NAME,
+    [LambdaEnvVariables.SqsQueueUrl]: ticker.eventsQueueUrl,
   };
 }

@@ -1,10 +1,4 @@
-export const LOGS_MODEL_NAME = "Log";
-
-export const USERS_MODEL_NAME = "User";
-
-export const TICKERS_MODEL_NAME = "Ticker";
-
-export const TRANSACTIONS_MODEL_NAME = "Transaction";
+import { LambdaEnvVariables } from "./lambdas.ts";
 
 export type TableNames = {
   logs: string;
@@ -13,7 +7,7 @@ export type TableNames = {
 
 export function getDatabaseTableEnvVariables(tableNames: TableNames) {
   return {
-    DB_STOCKS_TABLE_NAME: tableNames.stocks,
-    DB_LOGS_TABLE_NAME: tableNames.logs,
+    [LambdaEnvVariables.DbStocksTableName]: tableNames.stocks,
+    [LambdaEnvVariables.DbLogsTableName]: tableNames.logs,
   };
 }

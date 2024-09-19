@@ -10,10 +10,12 @@ import { type TableNames, getDatabaseTableEnvVariables } from "./helpers/db.ts";
 import {
   DB_FULL_ACCESS_POLICY_ARN,
   EVENTS_FULL_ACCESS_POLICY_ARN,
+  type KnownEnvVariables,
   LAMBDA_INVOKE_POLICY_ARN,
+  LambdaEnvVariables,
   SQS_FULL_ACCESS_POLICY_ARN,
   newLambdaIamRole,
-} from "./helpers/iam.ts";
+} from "./helpers/lambdas.ts";
 import {
   type DataTickerProps,
   TICKER_RULE_NAME,
@@ -71,10 +73,10 @@ export class DataEntryStack extends cdk.Stack {
             eventPollerFunctionName: "", // Wont self invoke
           }),
 
-          POLYGON_API_KEY: import.meta.env.VITE_POLYGON_IO_API_KEY,
-
-          SQS_DLQ_URL: deadLetterQueue.queueUrl,
-        },
+          [LambdaEnvVariables.PolygonApiKey]: import.meta.env
+            .VITE_POLYGON_IO_API_KEY,
+          [LambdaEnvVariables.SqsDlqUrl]: deadLetterQueue.queueUrl,
+        } satisfies KnownEnvVariables,
         logRetention: logs.RetentionDays.THREE_MONTHS,
       },
     );
@@ -94,7 +96,7 @@ export class DataEntryStack extends cdk.Stack {
       {
         entry: "lambdas/cmd/data-ticker",
         role: tickerFunctionRole,
-        // Long timeout, single concurrent function only
+        // Long timeout, single concurrent function only. Add a few seconds so the inner function stops gracefully
         timeout: cdk.Duration.minutes(tickerTimeout + 0.1),
         reservedConcurrentExecutions: 1,
         // Dont reattempt
@@ -105,9 +107,9 @@ export class DataEntryStack extends cdk.Stack {
             eventPollerFunctionName: "", // Wont self invoke
           }),
 
-          TICKER_TIMEOUT: String(tickerTimeout),
-          LAMBDA_WORKER_NAME: workerFunction.functionName,
-        },
+          [LambdaEnvVariables.LambdaTickerTimeout]: String(tickerTimeout),
+          [LambdaEnvVariables.LambdaWorkerName]: workerFunction.functionName,
+        } satisfies KnownEnvVariables,
         logRetention: logs.RetentionDays.THREE_MONTHS,
       },
     );

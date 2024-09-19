@@ -19,6 +19,23 @@ export const LAMBDA_INVOKE_POLICY_ARN =
 export const EVENTS_FULL_ACCESS_POLICY_ARN =
   "arn:aws:iam::aws:policy/CloudWatchEventsFullAccess";
 
+export const enum LambdaEnvVariables {
+  EventBridgeRuleName = "EVENTBRIDGE_RULE_NAME",
+  DbLogsTableName = "DB_LOGS_TABLE_NAME",
+  DbStocksTableName = "DB_STOCKS_TABLE_NAME",
+  LambdaTickerName = "LAMBDA_TICKER_NAME",
+  LambdaTickerTimeout = "TICKER_TIMEOUT",
+  LambdaWorkerName = "LAMBDA_WORKER_NAME",
+  PolygonApiKey = "POLYGON_API_KEY",
+  SqsDlqUrl = "SQS_DLQ_URL",
+  SqsQueueUrl = "SQS_QUEUE_URL",
+}
+
+// this means we dont mistype env variables
+export type KnownEnvVariables = Partial<{
+  [key in LambdaEnvVariables]: string;
+}>;
+
 type NewLambdaIamRoleProps = {
   policyARNs: string[];
 };
