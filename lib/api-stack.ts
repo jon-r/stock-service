@@ -29,11 +29,11 @@ export class ApiStack extends Stack {
   constructor(app: Construct, id: string, props: ApiStackProps) {
     super(app, id, props);
 
-    // auth middleware
+    // Auth middleware
     // TODO https://github.com/aws-samples/aws-cdk-examples/blob/master/typescript/api-gateway-lambda-token-authorizer/lib/stack/gateway-lambda-auth-stack.ts#L98C1-L127C2
     // const lambdaAuthFunction
 
-    // user controller
+    // User controller
     const usersControllerFunction = new go.GoFunction(
       this,
       "UsersControllerFunction",
@@ -50,7 +50,7 @@ export class ApiStack extends Stack {
     );
     // TODO roles
 
-    // observability controller (checking logs)
+    // Observability controller (checking logs)
     const logsControllerFunction = new go.GoFunction(
       this,
       "LogsControllerFunction",

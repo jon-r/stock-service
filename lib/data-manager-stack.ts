@@ -27,14 +27,14 @@ export class DataManagerStack extends Stack {
   constructor(app: Construct, id: string, props: DataManagerStackProps) {
     super(app, id, props);
 
-    // nightly rule
+    // Nightly rule
     const daily1AM: events.CronOptions = { hour: "1", minute: "0" };
     const rule = new events.Rule(this, "DataManagerPoll", {
       schedule: events.Schedule.cron(daily1AM),
       enabled: true,
     });
 
-    // manager lambda - batches tickers to fetch latest data
+    // Manager lambda - batches tickers to fetch latest data
     const managerFunctionRole = newLambdaIamRole(this, "DataManager", {
       policyARNs: [
         SQS_FULL_ACCESS_POLICY_ARN,

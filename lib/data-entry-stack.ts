@@ -2,7 +2,7 @@ import * as go from "@aws-cdk/aws-lambda-go-alpha";
 import { Duration, Stack, type StackProps } from "aws-cdk-lib";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
-import { RetentionDays } from "aws-cdk-lib/aws-logs";
+import * as logs from "aws-cdk-lib/aws-logs";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import type { Construct } from "constructs";
 
@@ -73,7 +73,7 @@ export class DataEntryStack extends Stack {
 
         SQS_DLQ_URL: deadLetterQueue.queueUrl,
       },
-      logRetention: RetentionDays.THREE_MONTHS,
+      logRetention: logs.RetentionDays.THREE_MONTHS,
     });
 
     // poll lambda - reads the queue in a throttled way to pass the events on to the worker function
@@ -88,22 +88,22 @@ export class DataEntryStack extends Stack {
     const tickerFunction = new go.GoFunction(this, "DataEntryPollerFunction", {
       entry: "lambdas/cmd/data-ticker",
       role: tickerFunctionRole,
-      // long timeout, single concurrent function only
+      // Long timeout, single concurrent function only
       timeout: Duration.minutes(tickerTimeout + 0.1),
       reservedConcurrentExecutions: 1,
-      // dont reattempt
+      // Dont reattempt
       retryAttempts: 0,
       environment: {
         ...getTickerEnvVariables({
           eventRuleName: TICKER_RULE_NAME,
           eventsQueueUrl: queue.queueUrl,
-          eventPollerFunctionName: "", // wont self invoke
+          eventPollerFunctionName: "", // Wont self invoke
         }),
 
         TICKER_TIMEOUT: String(tickerTimeout),
         LAMBDA_WORKER_NAME: workerFunction.functionName,
       },
-      logRetention: RetentionDays.THREE_MONTHS,
+      logRetention: logs.RetentionDays.THREE_MONTHS,
     });
 
     rule.addTarget(new targets.LambdaFunction(tickerFunction));

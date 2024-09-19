@@ -1,22 +1,28 @@
 {
-  "extends": "astro/tsconfigs/strictest",
+  //  todo copy from blackjack project. remove astro
+  "extends": "@tsconfig/strictest/tsconfig.json",
   "compilerOptions": {
     "target": "ES2020",
+    "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020", "ESNext"],
+    "skipLibCheck": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
     "isolatedModules": true,
+    "moduleDetection": "force",
     "noEmit": true,
 
-    /* overwrite strictest ruleset */
-    "noUnusedLocals": false,
-    "exactOptionalPropertyTypes": false,
-
-    "typeRoots": ["./node_modules/@types"]
+    /* Linting */
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true
   },
+  "include": ["**/*.ts"],
   "exclude": ["node_modules", "cdk.out"]
 }

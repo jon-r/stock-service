@@ -1,9 +1,9 @@
 import * as iam from "aws-cdk-lib/aws-iam";
+import type { IPrincipal, IRole } from "aws-cdk-lib/aws-iam";
 import type { Construct } from "constructs";
 
 export const SQS_FULL_ACCESS_POLICY_ARN =
   "arn:aws:iam::aws:policy/AmazonSQSFullAccess";
-
 export const SQS_READ_ONLY_POLICY_ARN =
   "arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess";
 
@@ -14,7 +14,6 @@ export const DB_READ_ONLY_POLICY_ARN =
 
 export const LAMBDA_BASIC_POLICY_ARN =
   "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole";
-
 export const LAMBDA_INVOKE_POLICY_ARN =
   "arn:aws:iam::aws:policy/service-role/AWSLambdaRole";
 
@@ -39,8 +38,12 @@ export function newLambdaIamRole(
       ),
   );
 
+  const principle = new iam.ServicePrincipal(
+    "lambda.amazonaws.com",
+  ) as IPrincipal;
+
   return new iam.Role(scope, `${name}Role`, {
-    assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+    assumedBy: principle,
     managedPolicies: lambdaPolicies,
-  });
+  }) as IRole;
 }
