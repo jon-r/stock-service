@@ -13,6 +13,7 @@ import {
   type KnownEnvVariables,
   LAMBDA_INVOKE_POLICY_ARN,
   LambdaEnvVariables,
+  type LambdaTarget,
   SQS_FULL_ACCESS_POLICY_ARN,
   newLambdaIamRole,
 } from "./helpers/lambdas.ts";
@@ -28,6 +29,7 @@ type DataEntryStackProps = cdk.StackProps & {
 
 export class DataEntryStack extends cdk.Stack {
   dataTickerProps: DataTickerProps;
+  dataEntryLambdas: LambdaTarget[];
 
   constructor(app: Construct, id: string, props: DataEntryStackProps) {
     super(app, id, props);
@@ -120,5 +122,18 @@ export class DataEntryStack extends cdk.Stack {
       eventsQueueUrl: queue.queueUrl,
       eventPollerFunctionName: tickerFunction.functionName,
     };
+
+    this.dataEntryLambdas = [
+      {
+        name: "data-worker",
+        path: "lambdas/cms/data-worker",
+        arn: workerFunction.functionArn,
+      },
+      {
+        name: "data-ticker",
+        path: "lambdas/cms/data-ticker",
+        arn: tickerFunction.functionArn,
+      },
+    ];
   }
 }

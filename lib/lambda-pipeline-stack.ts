@@ -34,7 +34,7 @@ export class LambdaPipelineStack extends cdk.Stack {
 
     // codebuild create & save each lambda artifact
     props.lambdaTargets.map((fn) => {
-      new codebuild.Project(this, "Codebuild", {
+      new codebuild.Project(this, `Codebuild_${fn.name}`, {
         projectName: `${fn.name}_builder`,
         buildSpec: this.#goLambdaBuildSpec(fn),
         source: githubSource,

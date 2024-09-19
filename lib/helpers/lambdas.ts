@@ -1,6 +1,12 @@
 import * as iam from "aws-cdk-lib/aws-iam";
 import type { Construct } from "constructs";
 
+export type LambdaTarget = {
+  name: string;
+  path: string;
+  arn: string;
+};
+
 export const SQS_FULL_ACCESS_POLICY_ARN =
   "arn:aws:iam::aws:policy/AmazonSQSFullAccess";
 export const SQS_READ_ONLY_POLICY_ARN =

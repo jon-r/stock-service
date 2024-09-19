@@ -10,6 +10,7 @@ import {
   EVENTS_FULL_ACCESS_POLICY_ARN,
   type KnownEnvVariables,
   LAMBDA_INVOKE_POLICY_ARN,
+  type LambdaTarget,
   SQS_FULL_ACCESS_POLICY_ARN,
   newLambdaIamRole,
 } from "./helpers/lambdas.ts";
@@ -25,6 +26,7 @@ type ApiStackProps = cdk.StackProps & {
 
 export class ApiStack extends cdk.Stack {
   apiUrl: string;
+  apiLambdas: LambdaTarget[];
 
   constructor(app: Construct, id: string, props: ApiStackProps) {
     super(app, id, props);
@@ -119,6 +121,24 @@ export class ApiStack extends cdk.Stack {
 
     this.apiUrl = api.url;
     new cdk.CfnOutput(this, "API Url", { value: this.apiUrl });
+
+    this.apiLambdas = [
+      {
+        name: "api-users",
+        path: "lambdas/cmd/api-users",
+        arn: usersControllerFunction.functionArn,
+      },
+      {
+        name: "api-logs",
+        path: "lambdas/cmd/api-logs",
+        arn: logsControllerFunction.functionArn,
+      },
+      {
+        name: "api-stocks",
+        path: "lambdas/cmd/api-stocks",
+        arn: stocksControllerFunction.functionArn,
+      },
+    ];
   }
 
   #addCorsOptions(apiResource: apigateway.IResource) {

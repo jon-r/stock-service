@@ -11,6 +11,7 @@ import {
   EVENTS_FULL_ACCESS_POLICY_ARN,
   type KnownEnvVariables,
   LAMBDA_INVOKE_POLICY_ARN,
+  type LambdaTarget,
   SQS_FULL_ACCESS_POLICY_ARN,
   newLambdaIamRole,
 } from "./helpers/lambdas.ts";
@@ -25,6 +26,8 @@ type DataManagerStackProps = cdk.StackProps & {
 };
 
 export class DataManagerStack extends cdk.Stack {
+  dataManagerLambdas: LambdaTarget[];
+
   constructor(app: Construct, id: string, props: DataManagerStackProps) {
     super(app, id, props);
 
@@ -60,5 +63,13 @@ export class DataManagerStack extends cdk.Stack {
     );
 
     rule.addTarget(new targets.LambdaFunction(managerFunction));
+
+    this.dataManagerLambdas = [
+      {
+        name: "data-manager",
+        path: "lambdas/cmd/data-manager",
+        arn: managerFunction.functionArn,
+      },
+    ];
   }
 }
