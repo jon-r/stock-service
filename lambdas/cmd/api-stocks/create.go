@@ -38,5 +38,6 @@ func (h *handler) createTicker(req events.APIGatewayProxyRequest) (*events.APIGa
 
 func (h *handler) handlePost(req events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	// todo would be switch if multiple endpoints
+	// todo add a 'toggle event ticker' endpoint
 	return h.createTicker(req)
 }
