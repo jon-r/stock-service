@@ -1,4 +1,4 @@
-POST {{apigatewayurl}}/stocks/test
+POST {{apigatewayurl}}stocks/test
 Accept:
 
 {

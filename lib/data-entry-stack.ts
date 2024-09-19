@@ -67,9 +67,8 @@ export class DataEntryStack extends cdk.Stack {
         environment: {
           ...getDatabaseTableEnvVariables(props.tableNames),
           ...getTickerEnvVariables({
-            eventRuleName: TICKER_RULE_NAME,
             eventsQueueUrl: queue.queueUrl,
-            eventPollerFunctionName: "",
+            eventPollerFunctionName: "", // Wont self invoke
           }),
 
           POLYGON_API_KEY: import.meta.env.VITE_POLYGON_IO_API_KEY,
@@ -102,7 +101,6 @@ export class DataEntryStack extends cdk.Stack {
         retryAttempts: 0,
         environment: {
           ...getTickerEnvVariables({
-            eventRuleName: TICKER_RULE_NAME,
             eventsQueueUrl: queue.queueUrl,
             eventPollerFunctionName: "", // Wont self invoke
           }),
@@ -117,7 +115,6 @@ export class DataEntryStack extends cdk.Stack {
     rule.addTarget(new targets.LambdaFunction(tickerFunction));
 
     this.dataTickerProps = {
-      eventRuleName: TICKER_RULE_NAME,
       eventsQueueUrl: queue.queueUrl,
       eventPollerFunctionName: tickerFunction.functionName,
     };

@@ -1,7 +1,6 @@
 export const TICKER_RULE_NAME = "DataEntryTickerPoll";
 
 export type DataTickerProps = {
-  eventRuleName: string;
   eventsQueueUrl: string;
   eventPollerFunctionName: string;
 };
@@ -9,7 +8,7 @@ export type DataTickerProps = {
 export function getTickerEnvVariables(ticker: DataTickerProps) {
   return {
     LAMBDA_TICKER_NAME: ticker.eventPollerFunctionName,
-    EVENTBRIDGE_RULE_NAME: ticker.eventRuleName,
+    EVENTBRIDGE_RULE_NAME: TICKER_RULE_NAME,
     SQS_QUEUE_URL: ticker.eventsQueueUrl,
   };
 }

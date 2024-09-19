@@ -4,7 +4,6 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as logs from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 
-import { addCorsOptions } from "./helpers/api.ts";
 import { type TableNames, getDatabaseTableEnvVariables } from "./helpers/db.ts";
 import {
   DB_FULL_ACCESS_POLICY_ARN,
@@ -106,18 +105,60 @@ export class ApiStack extends cdk.Stack {
 
     const usersApi = api.root.addResource("users").addResource("{path+}");
     usersApi.addMethod("GET", usersIntegration);
-    addCorsOptions(usersApi);
+    this.#addCorsOptions(usersApi);
 
     const logsApi = api.root.addResource("logs").addResource("{path+}");
     logsApi.addMethod("GET", logsIntegration);
-    addCorsOptions(logsApi);
+    this.#addCorsOptions(logsApi);
 
     const stocksApi = api.root.addResource("stocks").addResource("{path+}");
     stocksApi.addMethod("GET", stocksIntegration);
     stocksApi.addMethod("POST", stocksIntegration);
-    addCorsOptions(stocksApi);
+    this.#addCorsOptions(stocksApi);
 
     this.apiUrl = api.url;
     new cdk.CfnOutput(this, "API Url", { value: this.apiUrl });
+  }
+
+  #addCorsOptions(apiResource: apigateway.IResource) {
+    apiResource.addMethod(
+      "OPTIONS",
+      new apigateway.MockIntegration({
+        // In case you want to use binary media types, uncomment the following line
+        // contentHandling: ContentHandling.CONVERT_TO_TEXT,
+        integrationResponses: [
+          {
+            statusCode: "200",
+            responseParameters: {
+              "method.response.header.Access-Control-Allow-Headers":
+                "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+              "method.response.header.Access-Control-Allow-Origin": "'*'",
+              "method.response.header.Access-Control-Allow-Credentials":
+                "'false'",
+              "method.response.header.Access-Control-Allow-Methods":
+                "'OPTIONS,GET,PUT,POST,DELETE'",
+            },
+          },
+        ],
+        // In case you want to use binary media types, comment out the following line
+        passthroughBehavior: apigateway.PassthroughBehavior.NEVER,
+        requestTemplates: {
+          "application/json": '{"statusCode": 200}',
+        },
+      }),
+      {
+        methodResponses: [
+          {
+            statusCode: "200",
+            responseParameters: {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Credentials": true,
+              "method.response.header.Access-Control-Allow-Origin": true,
+            },
+          },
+        ],
+      },
+    );
   }
 }
